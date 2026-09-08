@@ -5,6 +5,7 @@ steps, shows real output). See SPEC.md.
 
 from __future__ import annotations
 
+import difflib
 import random
 import shutil
 import subprocess
@@ -41,10 +42,6 @@ MAX_TYPING_FRACTION = 0.7  # typing never eats more than 70% of a step's slice
 MIN_TYPING_SECONDS = 0.3
 MIN_HOLD_SECONDS = 0.5
 FLASH_SECONDS = 0.35  # border flash cueing "the code just changed", steps 2+
-# Two-stage transition between steps (fade to blank, then fade to the next
-# step), each leg long enough to actually read as a fade rather than a cut.
-FADE_OUT_SECONDS = 0.6
-FADE_IN_SECONDS = 0.6
 FONT_SIZE = 34
 MIN_FONT_SIZE = 20
 MAX_FONT_SIZE = 64
@@ -240,19 +237,77 @@ def _reveal_schedule(total_chars: int, typing_frames: int) -> list[int]:
     return schedule
 
 
-def _draw_code(draw, lines, reveal_count, font, char_width, line_height, x0, y0, show_cursor):
-    def line_width(line):
-        return char_width * _line_char_units(line)
+def _line_texts(lines: list[list[tuple[str, tuple[int, int, int]]]]) -> list[str]:
+    return ["".join(ch for ch, _ in line) for line in lines]
 
-    remaining = reveal_count
+
+def _static_line_indices(prev_lines, new_lines) -> set[int]:
+    """Row indices into new_lines that are byte-identical to a line in
+    the previous step and should render fully from frame 0, not animate.
+    Real bug this fixes: every step transition used to clear and retype
+    the WHOLE panel even when only one or two lines actually changed
+    (confirmed on a real render: three steps sharing near-identical code
+    each retyped "public class Main {" from scratch). Diffed on plain
+    text per line (not the raw code_snippet string) so this can never
+    disagree with what _layout_lines actually produced -- rendering and
+    diffing read the exact same line list.
+    """
+    if prev_lines is None:
+        return set()
+    matcher = difflib.SequenceMatcher(None, _line_texts(prev_lines), _line_texts(new_lines), autojunk=False)
+    static: set[int] = set()
+    for tag, _i1, _i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            static.update(range(j1, j2))
+    return static
+
+
+def _build_line_reveal_schedule(lines, static_indices: set[int], typing_frames: int) -> list[list[int]]:
+    """Per-frame list of per-line reveal counts. Static (unchanged) lines
+    are fully revealed on every frame of this step -- nothing to animate,
+    they were already on screen. Only the changed/new lines actually type
+    up, sharing _reveal_schedule's natural-pacing curve but scoped to
+    just their own character budget -- less to type when less actually
+    changed, not a fixed-size animation regardless of how small the edit
+    was.
+    """
+    full_lengths = [len(line) for line in lines]
+    changed_indices = [i for i in range(len(lines)) if i not in static_indices]
+    changed_total = sum(full_lengths[i] for i in changed_indices)
+    cumulative_schedule = _reveal_schedule(changed_total, typing_frames)
+
+    frames: list[list[int]] = []
+    for cumulative in cumulative_schedule:
+        counts = [full_lengths[i] if i in static_indices else 0 for i in range(len(lines))]
+        remaining = cumulative
+        for i in changed_indices:
+            take = min(full_lengths[i], remaining)
+            counts[i] = take
+            remaining -= take
+            if remaining <= 0:
+                break
+        frames.append(counts)
+    return frames
+
+
+def _draw_code(draw, lines, line_reveal_counts, font, char_width, line_height, x0, y0, show_cursor):
+    """line_reveal_counts: one entry per line, how many of that line's
+    chars to draw -- a static (unchanged-from-previous-step) line passes
+    its full length every frame; a line still typing passes a count that
+    grows frame to frame. Replaces the old single flat reveal_count that
+    consumed the whole panel's chars in one sequential cursor sweep,
+    which is what forced every step transition to clear and retype the
+    entire panel even when only one line actually changed.
+    """
+    def line_width(line, count):
+        return char_width * _line_char_units(line[:count])
+
     cursor_pos = None
     for row, line in enumerate(lines):
         y = y0 + row * line_height
         x = x0
-        for ch, color in line:
-            if remaining <= 0:
-                cursor_pos = (x, y)
-                break
+        count = line_reveal_counts[row]
+        for ch, color in line[:count]:
             if ch == "\t":
                 # tabs (real code indentation, e.g. gofmt) have no visible
                 # glyph in a monospace font — advance the cursor, don't draw.
@@ -260,15 +315,15 @@ def _draw_code(draw, lines, reveal_count, font, char_width, line_height, x0, y0,
             else:
                 draw.text((x, y), ch, font=font, fill=color)
                 x += char_width
-            remaining -= 1
-        if remaining <= 0:
-            if cursor_pos is None:
-                cursor_pos = (x, y)
-            break
+        if cursor_pos is None and count < len(line):
+            cursor_pos = (x, y)
 
     if cursor_pos is None and lines:
         last_row = len(lines) - 1
-        cursor_pos = (x0 + line_width(lines[last_row]), y0 + last_row * line_height)
+        cursor_pos = (
+            x0 + line_width(lines[last_row], line_reveal_counts[last_row]),
+            y0 + last_row * line_height,
+        )
 
     if show_cursor and cursor_pos is not None:
         cx, cy = cursor_pos
@@ -277,7 +332,7 @@ def _draw_code(draw, lines, reveal_count, font, char_width, line_height, x0, y0,
 
 def _render_step_frame(
     lines,
-    reveal_count: int,
+    line_reveal_counts: list[int],
     output_text: str | None,
     font,
     output_font,
@@ -352,7 +407,7 @@ def _render_step_frame(
 
     text_x0 = panel_x + PANEL_PADDING
     text_y0 = panel_y + TITLEBAR_HEIGHT + PANEL_PADDING // 2
-    _draw_code(draw, lines, reveal_count, font, char_width, line_height, text_x0, text_y0, show_cursor)
+    _draw_code(draw, lines, line_reveal_counts, font, char_width, line_height, text_x0, text_y0, show_cursor)
 
     if has_output_area:
         divider_y = panel_y + code_area_h
@@ -460,105 +515,69 @@ def render_multi_step(steps: list[dict], output_path: Path, language: str | None
         "theme": theme,
     }
 
-    # Precompute per-step frame budgets first (typing paced to content
-    # length, not a flat window) so a following step can carve its
-    # crossfade out of THIS step's hold time without shifting anything
-    # else — total frame count per step stays fixed either way, so the
-    # concatenated video's duration still matches the concatenated audio.
+    # Diff each step's code against the PREVIOUS step's (real fix, not
+    # cosmetic: confirmed on a real render that every transition cleared
+    # and retyped the whole panel even for lines that never changed).
+    # Step 0 has nothing to diff against -- everything in it is new.
+    static_indices_per_step = [
+        _static_line_indices(step_lines[i - 1] if i > 0 else None, step_lines[i])
+        for i in range(len(step_lines))
+    ]
+
+    # Precompute per-step frame budgets (typing paced to content length,
+    # not a flat window). Typing duration is based on CHANGED characters
+    # only for steps after the first -- unchanged lines need no typing
+    # time at all, so a small edit gets a short typing phase and a long
+    # hold, not the other way around. Total frame count per step is still
+    # fixed by the real narration duration either way, so the
+    # concatenated video stays frame-accurate against the audio.
     step_plan = []
-    for step, lines in zip(steps, step_lines):
-        total_chars = sum(len(line) for line in lines)
+    for step, lines, static_indices in zip(steps, step_lines, static_indices_per_step):
+        changed_chars = sum(len(line) for i, line in enumerate(lines) if i not in static_indices)
         duration = step["duration"]
-        natural_typing = total_chars / TYPING_CHARS_PER_SEC if total_chars else MIN_TYPING_SECONDS
+        natural_typing = changed_chars / TYPING_CHARS_PER_SEC if changed_chars else MIN_TYPING_SECONDS
         typing_seconds = min(natural_typing, duration * MAX_TYPING_FRACTION)
         typing_seconds = max(MIN_TYPING_SECONDS, typing_seconds)
         hold_seconds = max(MIN_HOLD_SECONDS, duration - typing_seconds)
         typing_frames = max(1, round(typing_seconds * FPS))
         hold_frames = max(1, round(hold_seconds * FPS))
-        step_plan.append(
-            {"total_chars": total_chars, "typing_frames": typing_frames, "hold_frames": hold_frames}
-        )
-
-    # Carve each transition's two-stage fade out of the OUTGOING step's
-    # hold frames — keep the out/in split even even when a short hold
-    # forces the total to shrink, rather than silently dropping to
-    # something too brief to register as a fade.
-    for i in range(len(step_plan) - 1):
-        available = step_plan[i]["hold_frames"] - 1  # keep at least one real hold frame
-        desired = round(FADE_OUT_SECONDS * FPS) + round(FADE_IN_SECONDS * FPS)
-        total_fade = max(0, min(desired, available))
-        fade_out = total_fade // 2
-        fade_in = total_fade - fade_out
-        step_plan[i]["hold_frames"] -= total_fade
-        step_plan[i]["fade_out_frames"] = fade_out
-        step_plan[i]["fade_in_frames"] = fade_in
-    step_plan[-1]["fade_out_frames"] = 0
-    step_plan[-1]["fade_in_frames"] = 0
-
-    # A neutral "blank panel" frame (no code, no output, no cursor) — the
-    # midpoint of the two-stage transition. reveal_count=0 draws nothing
-    # but the panel chrome itself, so this is identical regardless of
-    # which step's lines it's built from.
-    blank_frame = _render_step_frame(
-        step_lines[0], 0, None, font, output_font, char_width,
-        line_height, output_line_height, False, False, layout,
-    )
+        step_plan.append({"typing_frames": typing_frames, "hold_frames": hold_frames})
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="visuals_code_") as tmp:
         tmp_dir = Path(tmp)
         frame_idx = 0
-        last_frame_image = None
 
-        for step_i, (step, lines, plan) in enumerate(zip(steps, step_lines, step_plan)):
-            total_chars = plan["total_chars"]
+        for step_i, (step, lines, plan, static_indices) in enumerate(
+            zip(steps, step_lines, step_plan, static_indices_per_step)
+        ):
             typing_frames = plan["typing_frames"]
             hold_frames = plan["hold_frames"]
-            flash_frames = round(FLASH_SECONDS * FPS) if step_i > 0 else 0
+            # Only cue a change with the border flash when something is
+            # actually animating -- no flash (and no point-of-interest)
+            # if this step's code is identical to the last one.
+            flash_frames = round(FLASH_SECONDS * FPS) if step_i > 0 and len(static_indices) < len(lines) else 0
             normalized_output = (step["output_text"] or "").replace("\\n", "\n") or None
+            full_reveal = [len(line) for line in lines]
 
-            if step_i > 0:
-                prev = step_plan[step_i - 1]
-                fade_out_frames = prev["fade_out_frames"]
-                fade_in_frames = prev["fade_in_frames"]
-                if (fade_out_frames > 0 or fade_in_frames > 0) and last_frame_image is not None:
-                    for k in range(fade_out_frames):
-                        alpha = (k + 1) / fade_out_frames
-                        blended = Image.blend(last_frame_image, blank_frame, alpha)
-                        blended.save(tmp_dir / f"{frame_idx:05d}.png")
-                        frame_idx += 1
-
-                    target_frame = _render_step_frame(
-                        lines, 0, None, font, output_font, char_width,
-                        line_height, output_line_height, False, False, layout,
-                    )
-                    for k in range(fade_in_frames):
-                        alpha = (k + 1) / fade_in_frames
-                        blended = Image.blend(blank_frame, target_frame, alpha)
-                        blended.save(tmp_dir / f"{frame_idx:05d}.png")
-                        frame_idx += 1
-
-            reveal_schedule = _reveal_schedule(total_chars, typing_frames)
+            line_reveal_schedule = _build_line_reveal_schedule(lines, static_indices, typing_frames)
             for f in range(typing_frames):
-                reveal_count = reveal_schedule[f]
                 blink_on = (f // (FPS // 2)) % 2 == 0
                 frame = _render_step_frame(
-                    lines, reveal_count, None, font, output_font, char_width,
+                    lines, line_reveal_schedule[f], None, font, output_font, char_width,
                     line_height, output_line_height, blink_on, f < flash_frames, layout,
                 )
                 frame.save(tmp_dir / f"{frame_idx:05d}.png")
                 frame_idx += 1
-                last_frame_image = frame
 
             for h in range(hold_frames):
                 blink_on = (h // (FPS // 2)) % 2 == 0
                 frame = _render_step_frame(
-                    lines, total_chars, normalized_output, font, output_font, char_width,
+                    lines, full_reveal, normalized_output, font, output_font, char_width,
                     line_height, output_line_height, blink_on, False, layout,
                 )
                 frame.save(tmp_dir / f"{frame_idx:05d}.png")
                 frame_idx += 1
-                last_frame_image = frame
 
         ffmpeg_path = shutil.which("ffmpeg")
         if ffmpeg_path is None:
