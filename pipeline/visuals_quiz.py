@@ -16,6 +16,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from pipeline.brand import INDIGO as BRAND_INDIGO, TEAL as BRAND_TEAL, paste_gradient_rounded_rect
+from pipeline.render_text import draw_centered_lines, encode_png, fit_multiline, fit_single_line, wrap_text
 from pipeline.state import get_video, get_video_steps, update_video
 from pipeline.voice import voice
 
@@ -66,75 +67,6 @@ DIM_TEXT = (120, 121, 112)
 COUNTDOWN_TRACK = (54, 55, 48)
 
 
-def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
-    words = text.split()
-    lines: list[str] = []
-    current = ""
-    for word in words:
-        trial = f"{current} {word}".strip()
-        if not current or draw.textlength(trial, font=font) <= max_width:
-            current = trial
-        else:
-            lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines
-
-
-def _fit_multiline(
-    draw: ImageDraw.ImageDraw, text: str, font_path: Path, base_size: int, min_size: int, max_width: int
-) -> tuple[ImageFont.FreeTypeFont, list[str]]:
-    """Shrinks font size in a loop, re-wrapping at each size, until every
-    wrapped line fits within max_width — word-wrapping alone isn't a
-    safety net against a single long unbroken word/token, only shrinking
-    (or shrinking down to min_size and re-wrapping) actually guarantees
-    that.
-    """
-    size = base_size
-    font = ImageFont.truetype(str(font_path), size)
-    lines = _wrap_text(draw, text, font, max_width)
-    while size > min_size and max((draw.textlength(line, font=font) for line in lines), default=0) > max_width:
-        size -= 2
-        font = ImageFont.truetype(str(font_path), size)
-        lines = _wrap_text(draw, text, font, max_width)
-    return font, lines
-
-
-def _fit_single_line(
-    draw: ImageDraw.ImageDraw, text: str, font_path: Path, base_size: int, min_size: int, max_width: int
-) -> tuple[ImageFont.FreeTypeFont, str]:
-    """Shrinks font size until the (unwrapped) text fits on one line; if
-    it still doesn't fit at min_size, truncates with an ellipsis as a
-    last resort so it can never render past max_width.
-    """
-    size = base_size
-    font = ImageFont.truetype(str(font_path), size)
-    while size > min_size and draw.textlength(text, font=font) > max_width:
-        size -= 2
-        font = ImageFont.truetype(str(font_path), size)
-
-    if draw.textlength(text, font=font) <= max_width:
-        return font, text
-
-    truncated = text
-    while truncated and draw.textlength(truncated + "…", font=font) > max_width:
-        truncated = truncated[:-1]
-    return font, (truncated + "…") if truncated else "…"
-
-
-def _encode_png(frame: Image.Image) -> bytes:
-    buf = io.BytesIO()
-    frame.save(buf, format="PNG")
-    return buf.getvalue()
-
-
-def _draw_centered_lines(draw, lines, font, color, cx, top_y, line_height):
-    for i, line in enumerate(lines):
-        w = draw.textlength(line, font=font)
-        draw.text((cx - w / 2, top_y + i * line_height), line, font=font, fill=color)
-
-
 def _compute_panel_geometry(steps: list[dict]) -> tuple[tuple[int, int, int, int], int, int]:
     """One panel size/position for the whole video (not resized per
     question — that would look jarring) — sized to the LONGEST wrapped
@@ -149,7 +81,7 @@ def _compute_panel_geometry(steps: list[dict]) -> tuple[tuple[int, int, int, int
     own bottom edge, visible in a real render (confirmed: option D fully
     outside the panel border). Fix: shrink the base question font size
     in a loop — same "shrink until it fits" principle as
-    _fit_multiline/_fit_single_line, applied to the whole video's shared
+    fit_multiline/fit_single_line, applied to the whole video's shared
     panel budget instead of one line's width — until content_h actually
     fits available_h, before the panel size is ever fixed.
     """
@@ -166,7 +98,7 @@ def _compute_panel_geometry(steps: list[dict]) -> tuple[tuple[int, int, int, int
     while True:
         q_font = ImageFont.truetype(str(FONT_PATH), size)
         max_q_lines = max(
-            (len(_wrap_text(dummy_draw, t, q_font, safe_content_w)) for t in question_texts), default=1,
+            (len(wrap_text(dummy_draw, t, q_font, safe_content_w)) for t in question_texts), default=1,
         )
         ascent, descent = q_font.getmetrics()
         q_line_height = int((ascent + descent) * 1.3)
@@ -205,12 +137,12 @@ def _render_text_card(text: str, panel_box: tuple[int, int, int, int], base_pane
     draw = ImageDraw.Draw(frame)
     x0, y0, x1, y1 = panel_box
     max_width = int(((x1 - x0) - 2 * PANEL_PADDING) * (1 - SAFE_MARGIN_FRACTION))
-    font, lines = _fit_multiline(draw, text, FONT_PATH, INTRO_OUTRO_FONT_SIZE, MIN_QUESTION_FONT_SIZE, max_width)
+    font, lines = fit_multiline(draw, text, FONT_PATH, INTRO_OUTRO_FONT_SIZE, MIN_QUESTION_FONT_SIZE, max_width)
     ascent, descent = font.getmetrics()
     line_height = int((ascent + descent) * 1.4)
     total_h = len(lines) * line_height
     top_y = (y0 + y1) // 2 - total_h // 2
-    _draw_centered_lines(draw, lines, font, TEXT_COLOR, WIDTH // 2, top_y, line_height)
+    draw_centered_lines(draw, lines, font, TEXT_COLOR, WIDTH // 2, top_y, line_height)
     return frame
 
 
@@ -234,11 +166,11 @@ def _fit_question_layout(
     content_w = (x1 - x0) - 2 * PANEL_PADDING
     safe_content_w = int(content_w * (1 - SAFE_MARGIN_FRACTION))
 
-    # Word-wrapping (_wrap_text) already keeps normal questions within
+    # Word-wrapping (wrap_text) already keeps normal questions within
     # bounds; the shrink loop here is the real safety net — a single
     # long unbroken token (or an unusually long question) can't be
     # wrapped away, only shrunk.
-    q_font_fit, q_lines = _fit_multiline(draw, question, FONT_PATH, base_font_size, MIN_QUESTION_FONT_SIZE, safe_content_w)
+    q_font_fit, q_lines = fit_multiline(draw, question, FONT_PATH, base_font_size, MIN_QUESTION_FONT_SIZE, safe_content_w)
     q_ascent, q_descent = q_font_fit.getmetrics()
     q_line_height_fit = int((q_ascent + q_descent) * 1.3)
     q_top = y0 + PANEL_PADDING
@@ -252,7 +184,7 @@ def _fit_question_layout(
     option_max_w = int((content_w - label_reserved_w - 24) * (1 - SAFE_MARGIN_FRACTION))  # 24px right-side breathing room
 
     fitted_options = [
-        _fit_single_line(draw, opt, FONT_PATH, OPTION_FONT_SIZE, MIN_OPTION_FONT_SIZE, option_max_w)
+        fit_single_line(draw, opt, FONT_PATH, OPTION_FONT_SIZE, MIN_OPTION_FONT_SIZE, option_max_w)
         for opt in options
     ]
 
@@ -277,7 +209,7 @@ def _render_question_card(
     x0, y0, x1, y1 = panel_box
     cx = WIDTH // 2
 
-    _draw_centered_lines(draw, layout["q_lines"], layout["q_font"], TEXT_COLOR, cx, layout["q_top"], layout["q_line_height"])
+    draw_centered_lines(draw, layout["q_lines"], layout["q_font"], TEXT_COLOR, cx, layout["q_top"], layout["q_line_height"])
 
     row_x0, row_w = layout["row_x0"], layout["row_w"]
     for i, (opt_font_fit, fitted_text) in enumerate(layout["fitted_options"]):
@@ -341,7 +273,7 @@ def render_quiz_video(steps: list[dict], output_path: Path) -> Path:
                 # Identical content for the whole duration — render once,
                 # write the same bytes to every needed frame index rather
                 # than re-running Pillow draw calls per frame.
-                frame_bytes = _encode_png(frame)
+                frame_bytes = encode_png(frame)
                 for _ in range(max(1, round(duration * FPS))):
                     (tmp_dir / f"{frame_idx:05d}.png").write_bytes(frame_bytes)
                     frame_idx += 1
@@ -367,7 +299,7 @@ def render_quiz_video(steps: list[dict], output_path: Path) -> Path:
             # Narration phase: content is static (no countdown bar) for
             # its whole span — same one-render-many-writes optimization.
             frame = _render_question_card(layout, correct_index, reveal, None, label_font, panel_box, base_panel)
-            frame_bytes = _encode_png(frame)
+            frame_bytes = encode_png(frame)
             for f in range(narration_frames):
                 (tmp_dir / f"{frame_idx:05d}.png").write_bytes(frame_bytes)
                 frame_idx += 1
