@@ -51,6 +51,14 @@ _COLUMNS = (
     "code_theme",
     "cta_overlay_variant",
     "cta_comment_posted",
+    "genome_hook_style",
+    "genome_concept_type",
+    "genome_item_count",
+    "genome_visual_density",
+    "views",
+    "likes",
+    "comment_count",
+    "stats_synced_at",
     "created_at",
     "updated_at",
 )
@@ -119,6 +127,33 @@ def init_db(db_path: Path = DB_PATH) -> None:
         # posted once they've actually gone public.
         if "cta_comment_posted" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN cta_comment_posted INTEGER")
+        # "Genome" tags -- a small, deliberately fixed set of categorical
+        # descriptors per video, captured now so it exists once there's
+        # real volume to look at (~40-50+ videos). No scoring/weighting
+        # logic reads these yet -- see ROADMAP.md. genome_hook_style and
+        # genome_concept_type currently mirror approach/template (the
+        # real distinctions that already exist); genome_item_count and
+        # genome_visual_density are computed fresh (beat count, average
+        # seconds per beat) once a video's steps/duration are final.
+        if "genome_hook_style" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN genome_hook_style TEXT")
+        if "genome_concept_type" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN genome_concept_type TEXT")
+        if "genome_item_count" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN genome_item_count INTEGER")
+        if "genome_visual_density" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN genome_visual_density REAL")
+        # Real view/like/comment counts, synced daily for videos in a
+        # 48h-14d age window (see scripts/sync_analytics.py) -- data
+        # collection only, nothing reads these yet either.
+        if "views" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN views INTEGER")
+        if "likes" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN likes INTEGER")
+        if "comment_count" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN comment_count INTEGER")
+        if "stats_synced_at" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN stats_synced_at TEXT")
 
         # video_steps: both templates break a video into narrated beats so
         # the visual can change exactly when the narration describing that

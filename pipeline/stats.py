@@ -13,6 +13,7 @@ from pathlib import Path
 
 from googleapiclient.discovery import build
 
+from pipeline.state import update_video
 from pipeline.upload import _load_credentials
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -60,3 +61,41 @@ def weekly_report_data(days: int = 7) -> list[dict]:
         s = stats.get(r["youtube_video_id"], {"views": 0, "likes": 0, "comments": 0})
         rows.append({**r, **s})
     return rows
+
+
+def sync_analytics(min_age_hours: float = 48, max_age_days: float = 14) -> int:
+    """Persists real view/like/comment counts into state.db for uploaded
+    videos in a min_age_hours-max_age_days window -- old enough that
+    initial-hour view counts have stabilized a bit, not so old the
+    numbers are ancient by the time anything eventually reads them.
+    Collection only: nothing scores, weights, or feeds these back into
+    generation yet (out of scope until there's real volume -- see
+    ROADMAP.md). Returns how many rows were actually updated.
+    """
+    now = datetime.now(timezone.utc)
+    newest_eligible = now - timedelta(hours=min_age_hours)
+    oldest_eligible = now - timedelta(days=max_age_days)
+    candidates = [
+        r
+        for r in _load_video_log()
+        if oldest_eligible <= datetime.fromisoformat(r["uploaded_at"]) <= newest_eligible
+    ]
+    if not candidates:
+        return 0
+
+    stats = fetch_statistics([r["youtube_video_id"] for r in candidates])
+    synced_at = now.isoformat()
+    updated = 0
+    for r in candidates:
+        s = stats.get(r["youtube_video_id"])
+        if s is None:
+            continue
+        update_video(
+            r["video_id"],
+            views=s["views"],
+            likes=s["likes"],
+            comment_count=s["comments"],
+            stats_synced_at=synced_at,
+        )
+        updated += 1
+    return updated

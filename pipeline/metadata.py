@@ -171,12 +171,27 @@ def generate_metadata(video_id: str) -> dict:
     require_review = os.environ.get("REQUIRE_REVIEW", "true").lower() == "true"
     next_status = "awaiting_review" if require_review else "approved"
 
+    # "Genome" tags -- capture only, nothing reads these yet (see
+    # ROADMAP.md). Computed here since every step's real duration is
+    # already final by this stage. genome_hook_style/concept_type mirror
+    # approach/template (the real distinctions that already exist);
+    # item_count and visual_density (avg seconds per beat -- lower means
+    # faster cuts) are real numbers, not guesses.
+    steps = get_video_steps(video_id)
+    item_count = len(steps)
+    total_duration = sum(s["duration"] or 0.0 for s in steps)
+    visual_density = round(total_duration / item_count, 2) if item_count else None
+
     update_video(
         video_id,
         status=next_status,
         title=title,
         description=description,
         tags=tags,
+        genome_hook_style=video["approach"],
+        genome_concept_type=video["template"],
+        genome_item_count=item_count,
+        genome_visual_density=visual_density,
     )
     return {"title": title, "description": description, "tags": tags, "status": next_status}
 

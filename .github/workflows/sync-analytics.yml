@@ -1,0 +1,57 @@
+name: Sync Analytics
+
+# Pulls real view/like/comment counts for uploaded videos in a 48h-14d
+# age window and persists them into state.db. Data collection only --
+# no scoring/weighting/feedback logic reads these yet, see ROADMAP.md.
+# Stays on the free Data API quota (videos.list with part=statistics).
+
+on:
+  schedule:
+    - cron: "30 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Sync analytics
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python scripts/sync_analytics.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "faceless-shorts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.db
+          if git diff --cached --quiet; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          git commit -m "Update state.db [skip ci]"
+
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed state on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt/3) -- rebasing onto latest main"
+            git pull --rebase
+          done
+
+          echo "state push failed after 3 attempts"
+          exit 1
