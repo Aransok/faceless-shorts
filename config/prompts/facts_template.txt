@@ -1,0 +1,70 @@
+You are writing the script for a 45-second YouTube Short delivering
+THREE quick, distinct facts in rapid succession — not one fact explored
+for the full runtime. Think "rapid-fire wild facts," not a single deep
+dive.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Requirements:
+- Pick THREE specific, narrow facts that share a real connecting theme or
+  angle — not a random grab-bag of unrelated trivia. The connection can be
+  loose (a category, a place, a mechanism, a "things that break your
+  intuition about X" angle) but it must be real and stated or implied
+  clearly enough that a viewer feels it, not three facts that just happen
+  to be in the same video.
+  - BAD (zero connection, feels like three separate videos stitched
+    together): a mantis shrimp fact, a Finland traffic-fine fact, an
+    English-dictionary fact.
+  - GOOD (loose but real connecting angle — "things that sound made up
+    but check out"): three facts all under a "this shouldn't be legal /
+    real / possible, but it is" framing, each landing that same feeling.
+- Each fact gets roughly 30-40 words — short, punchy, one clear idea,
+  not a mini-essay. Move fast.
+- At least ONE of the three facts MUST include a genuine hook or opinion
+  that goes beyond restating the fact — this is non-negotiable, the same
+  requirement as before, just now scoped to one beat instead of the
+  whole script. The other two can be tighter, more matter-of-fact "wait,
+  what?" deliveries — but don't let all three flatten into plain trivia
+  lines. A rapid-fire format is not an excuse to drop the point of view
+  entirely.
+  - BAD (all three flat, no POV anywhere): "Octopuses have three hearts.
+    Bananas are berries but strawberries aren't. Honey never spoils."
+  - GOOD (fact 2 carries a real opinion, others still punchy): "Octopuses
+    have three hearts. Bananas are botanically berries, but strawberries
+    aren't — which means the produce aisle has been lying to you your
+    whole life. Honey found in Egyptian tombs is still edible after
+    3,000 years; nothing else on earth just refuses to rot."
+- Total SCRIPT length across all three facts combined: 110-145 words,
+  spoken in 40-55 seconds total. edge_tts paces close to ~2.6 words/sec,
+  so aim for the lower half (closer to 110-125 total) if you want to
+  land comfortably under 55 seconds. Conversational pace, no filler, no
+  "did you know" openers, no numbering out loud ("fact one...").
+- For each fact, also give 2-3 concrete, visually-searchable KEYWORDS —
+  things a stock-footage search would actually find (a subject, a place,
+  an action), not abstract ideas. These drive the background footage for
+  that specific fact, so they need to match THAT fact's actual visual
+  subject, not the video's theme as a whole and not an incidental word
+  from the script.
+  - If the fact's core idea is a number, a word, a statistic, or another
+    non-visual abstraction (like "the word 'set' has 400+ meanings" or "a
+    speeding fine cost $103,000"), do NOT use the abstraction itself as a
+    keyword ("counting", "one hundred", "money") — pick the concrete
+    real-world subject the fact is actually ABOUT instead (a dictionary,
+    a courtroom, the specific animal/place/object involved).
+  - BAD keywords (too abstract for a stock search, or drift toward a
+    generic word in the sentence instead of the fact's real subject):
+    "surprising", "history", "nature", "counting", "one hundred", "money"
+  - GOOD keywords (concrete, findable, tied to the actual subject):
+    "octopus swimming", "strawberry field", "ancient egyptian tomb",
+    "dictionary pages closeup", "courtroom gavel"
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+TOPIC: <5-8 word label covering the set, distinct from the avoid list>
+HOOK: <one sentence — the strongest opinion/gotcha across the three, used later as the video title>
+FACT_1_SCRIPT: <~30-40 word narration for fact 1>
+FACT_1_KEYWORDS: <2-3 comma-separated visual search keywords for fact 1>
+FACT_2_SCRIPT: <~30-40 word narration for fact 2>
+FACT_2_KEYWORDS: <2-3 comma-separated visual search keywords for fact 2>
+FACT_3_SCRIPT: <~30-40 word narration for fact 3>
+FACT_3_KEYWORDS: <2-3 comma-separated visual search keywords for fact 3>

@@ -1,0 +1,78 @@
+You are writing a 45-second YouTube Short that demonstrates a programming
+tip, gotcha, or "why this works" moment as a small LIVE-CODING sequence:
+the viewer watches the code actually change on screen (buggy -> the fix
+-> corrected), narrated step by step, not one static code block shown
+once while a voiceover explains it.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Requirements:
+- Pick ONE specific, narrow topic (a real gotcha, a surprising behavior, a
+  "why does this happen" moment) — not a broad topic like "JavaScript
+  tips".
+- The narration MUST include one genuine hook, opinion, or gotcha that is
+  not just restating a fact. This is non-negotiable — YouTube's
+  inauthentic-content policy penalizes videos that look interchangeable or
+  template-generated with no real point of view.
+- Break the demo into 2-4 STEPS. Each step is one beat of the story, and
+  each has its own CODE (what's on screen during that step) and its own
+  SCRIPT (the narration spoken during that step, timed to match). A
+  typical shape:
+    Step 1: the buggy/surprising code, and what it actually
+      produces (OUTPUT) — the wrong or confusing result.
+    Step 2 (and 3, if needed): the code changing — show the actual edit,
+      explain why.
+    Last step: the corrected code, and its OUTPUT — the right result.
+  Use however many steps the gotcha actually needs (2 is fine for a
+  simple one, up to 4 for something with a real multi-part fix) — don't
+  pad to hit a number.
+- Each step's CODE is the FULL code as it should appear on screen at that
+  point (not a diff) — repeat unchanged lines from the previous step.
+- OUTPUT is what that step's code actually prints/returns/does — written
+  exactly as it would appear in a real terminal. If multiple lines get
+  printed, put each on its own real line (an actual line break in your
+  output), never a literal backslash-n — a terminal never shows the two
+  characters "\n", it shows a new line.
+  - BAD: [[1, 2, 99], [3, 4]]\n[[1, 2, 99], [3, 4]]
+  - GOOD:
+    [[1, 2, 99], [3, 4]]
+    [[1, 2, 99], [3, 4]]
+  Skip OUTPUT (write "(none)") for a step that's pure narration with no
+  new result (e.g. a step that's just explaining WHY, with the same code
+  as before).
+- Each step's SCRIPT is spoken narration ONLY — plain prose, describing
+  the code in words a person would actually say out loud. NEVER put
+  literal code syntax, symbols, or punctuation-heavy fragments in SCRIPT
+  (no `=`, `[]`, `()`, `def foo():`, etc.) — a TTS engine will try to
+  pronounce them literally and mangle the narration.
+  - BAD (breaks TTS): "Write def add_item(item, cart=[]) and every call
+    shares the same list."
+  - GOOD (describes it in words): "Define a function with an empty list
+    as its default argument, and every call that skips that argument
+    shares that exact same list."
+- Total SCRIPT length across ALL steps combined: 110-145 words, spoken in
+  40-55 seconds total. edge_tts paces close to ~2.6 words/sec, so aim for
+  the lower half (closer to 110-125 total) if you want to land
+  comfortably under 55 seconds. Split that budget across steps roughly by
+  how much each step has to say — a short "here's the fix" step doesn't
+  need the same word count as the setup step. Conversational pace, no
+  filler, no "hey guys" or "let's dive in" openers.
+- State the language in the LANGUAGE field. This MUST be exactly one of:
+  python, javascript, typescript, bash, java, c, cpp, go, rust, sql —
+  lowercase, no other value.
+
+Output EXACTLY in this format, with no extra commentary before or after.
+Use exactly as many STEP_n blocks as your STEPS count (2, 3, or 4) and no
+others.
+
+TOPIC: <5-8 word specific topic, distinct from the avoid list>
+HOOK: <one sentence — the genuine opinion/gotcha/surprise, used later as the video title>
+LANGUAGE: <one of: python, javascript, typescript, bash, java, c, cpp, go, rust, sql>
+STEPS: <2, 3, or 4>
+STEP_1_SCRIPT: <narration for step 1, prose only>
+STEP_1_CODE: <the full code shown in step 1, real line breaks, no markdown fences>
+STEP_1_OUTPUT: <what step 1's code actually produces, or "(none)">
+STEP_2_SCRIPT: <narration for step 2, prose only>
+STEP_2_CODE: <the full code shown in step 2, real line breaks, no markdown fences>
+STEP_2_OUTPUT: <what step 2's code actually produces, or "(none)">
+(continue STEP_3_* / STEP_4_* only if STEPS is 3 or 4)

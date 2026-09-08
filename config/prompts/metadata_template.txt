@@ -1,0 +1,70 @@
+You are writing the YouTube Shorts title, description, and tags for a
+video that has already been scripted, voiced, and rendered. Your job is
+to make it findable and clickable — not to summarize the script
+mechanically.
+
+Video template: {template}
+Topic: {topic}
+Hook: {hook}
+Full narration script: {script_text}
+
+Requirements:
+- TITLE: under 100 characters (YouTube's hard limit), written to make
+  someone stop scrolling. Lead with the hook or the most surprising
+  concrete detail, not a generic label like "Interesting Python Fact" or
+  "Did You Know...". No clickbait that the video doesn't actually pay off.
+  Put the strongest real search term EARLY in the title, not buried at
+  the end — someone searching "python list copy bug" should see that
+  phrase (or close to it) near the front, not after ten other words.
+  Think about what someone would actually type into YouTube search for
+  this exact topic, not just what sounds catchy. Do not put hashtags in
+  the title — they belong in the description.
+- DESCRIPTION: 2-4 short lines. First line restates the hook in
+  different words AND works the real search terms for this topic in
+  naturally (this is what shows before "...more" gets clicked, so it
+  must stand alone, and it's the part search weights most heavily —
+  don't waste it on pure flavor text with no real keywords in it). Then
+  a line of real context specific to THIS video's content — not filler.
+  Then a one-line call-to-action mentioning the channel by name:
+  ByteBits. Always say "subscribe" — NEVER "follow". This is YouTube,
+  not Instagram/TikTok; "follow" is the wrong platform's word and reads
+  as a real mismatch to anyone who notices. Do not invent channel facts
+  (upload schedule, follower counts, other video references) that
+  aren't true. Finish
+  with ONE final line of hashtags:
+  - EXACTLY 8 hashtags total, in this order:
+    1. "#Shorts" — REQUIRED, always first. Videos uploaded through the
+       API are not reliably classified as a Short without it, even when
+       the file is already vertical and under 60 seconds. This is a
+       real, observed platform quirk, not a style choice — never omit it.
+    2. 2-3 broad category tags for the template (e.g. #Python or #C for
+       programming, #WeirdFacts or #DidYouKnow for facts) — these CAN
+       repeat across videos, they're the category, not the specific hook.
+    3. 4-5 tags specific to THIS video's exact subject — not a generic
+       block reused across videos. A pointers video gets something like
+       #Pointers #CBugs #MemoryLayout; a different video about
+       list.copy() gets #ListCopy #ShallowCopy #PythonGotcha instead.
+       Two different videos in the same template should almost never end
+       up with the same specific-tag set.
+    - NEVER exceed 15 hashtags total across title+description combined —
+      this is YouTube's hard cap, and going over it silently discards
+      EVERY hashtag, not just the extras past 15. Exactly 8 is the
+      target — not fewer, not more.
+    - BAD (generic, reused every video, not specific): #viral #fyp
+      #trending #foryou #ProgrammingBugs #CodingTips
+    - GOOD (8 total: #Shorts, 2 broad, 5 specific): #Shorts #C
+      #ProgrammingTips #Pointers #ArrayDecay #CBugs #MemoryLayout
+      #Sizeof
+  Keep the whole description under 5000 characters (YouTube's limit, but
+  this should land well under 500 in practice).
+- TAGS: 8-15 comma-separated search tags specific to this video's actual
+  content (real terms someone would search, e.g. "python list copy",
+  "shallow copy bug", not generic filler like "video, youtube, shorts").
+  Combined length under 500 characters (YouTube's hard limit on the
+  combined tags field).
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+TITLE: <title, under 100 characters>
+DESCRIPTION: <2-4 line description, real line breaks between lines, ending with a #Shorts + topical hashtags line>
+TAGS: <comma-separated tags, under 500 characters combined>

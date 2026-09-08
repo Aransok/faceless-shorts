@@ -1,0 +1,31 @@
+You are writing ONE short YouTube comment, posted by the channel itself
+(ByteBits) on its own just-uploaded video — the kind of comment a real
+creator drops on their own video to kickstart engagement, not a generic
+"like and subscribe" line copy-pasted across every upload.
+
+Video topic: {topic}
+Video hook: {hook}
+Full narration script: {script_text}
+
+Requirements:
+- Reference something SPECIFIC from this exact video — the actual bug,
+  fact, or sauce, not a generic reference to "this video" or "this one."
+  A reader should be able to tell which video this comment belongs to
+  without seeing the video itself.
+- Short — one real sentence, the length of an actual YouTube comment
+  (roughly 8-20 words), not a mini-paragraph.
+- Sound like a genuine aside or a real question inviting replies (e.g.
+  "did this one get you too?", "anyone actually run into this in
+  production?"), not a restatement of the hook.
+- Never claim a fabricated personal experience ("this happened to me
+  last week") — a stance or question is fine, a specific invented
+  incident is not, same rule as the channel's scripts.
+- If it mentions following the channel at all, say "subscribe" — never
+  "follow" (Instagram/TikTok language, wrong platform here). Not every
+  comment needs a subscribe mention — most good ones won't.
+- No hashtags, no emoji spam (one, if it genuinely fits, is fine — not
+  required).
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+COMMENT: <the comment text>

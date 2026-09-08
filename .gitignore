@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+assets/output/*
+!assets/output/.gitkeep
+models/
+preview.html
+.tmp_frames/
+credentials/

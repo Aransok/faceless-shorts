@@ -1,0 +1,10 @@
+ffmpeg-python
+faster-whisper
+edge-tts
+mutagen
+google-api-python-client
+google-auth-oauthlib
+pygments
+Pillow
+python-dotenv
+requests

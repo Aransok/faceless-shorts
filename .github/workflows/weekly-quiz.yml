@@ -1,0 +1,81 @@
+name: Quiz Longform (2x/week)
+
+# The quiz longform track — separate, lower-frequency content track from
+# the daily Shorts pipeline (see ROADMAP.md's quiz track section). Runs
+# twice a week (Wed + Sat) — changed from the original 1x/week (owner
+# confirmed 2026-09-07); if this ever needs to change again, update both
+# the cron below AND this file's `name:` so the two never silently drift
+# apart. Same CI-specific behavior as daily-shorts.yml:
+# REQUIRE_REVIEW=false + UPLOAD_VISIBILITY=scheduled, so it uploads and
+# schedules a public release automatically rather than stopping at
+# awaiting_review.
+
+on:
+  schedule:
+    - cron: "0 15 * * 3,6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-quiz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run weekly quiz
+        env:
+          LLM_BACKEND: claude_code
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          TTS_BACKEND: edge_tts
+          FACTS_VISUAL_SOURCE: stock
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          REQUIRE_REVIEW: "false"
+          UPLOAD_VISIBILITY: scheduled
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python scripts/run_weekly_quiz.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "faceless-shorts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.db data/videos.json
+          if git diff --cached --quiet; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          git commit -m "Update state.db [skip ci]"
+
+          # A concurrent push (another run, or a manual push) landing on
+          # main mid-job rejects this push with a stale-parent error --
+          # this already happened once for real and silently dropped a
+          # completed upload's state.db record (see ROADMAP.md). Rebase
+          # onto whatever's actually on main and retry instead of losing
+          # the commit when the runner is torn down.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed state on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt/3) -- rebasing onto latest main"
+            git pull --rebase
+          done
+
+          echo "state push failed after 3 attempts"
+          exit 1

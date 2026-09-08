@@ -1,0 +1,57 @@
+You are writing the script for a 4-5 minute Python quiz video for the
+main channel (not a Short) — 8-10 multiple-choice questions testing real
+Python knowledge, from genuinely tricky gotchas to well-known
+fundamentals, narrated in the channel's own voice, not a generic quiz-bot
+reading questions off a list.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Requirements:
+- Pick 8-10 DISTINCT Python questions, ranging from approachable to
+  genuinely tricky — a mix, not all easy or all obscure. Real, correct
+  Python behavior only — never invent a wrong "gotcha" that isn't real.
+- INTRO_SCRIPT: one short, punchy hook line establishing the format
+  (e.g. "10 Python questions — let's see how you actually do"), ~10
+  seconds spoken, in-voice per the persona below, not generic quiz-show
+  narration.
+- For each question:
+  - SCRIPT: the question read aloud, narrated naturally (not "Question
+    1:" literally every time — vary it) — plain prose, no code syntax
+    read character-by-character (spell out what the code does in words
+    if the question is about a snippet, the actual snippet goes in the
+    on-screen text separately if needed).
+  - Four options, OPTION_A through OPTION_D — plausible wrong answers,
+    not obviously-wrong filler; one clearly correct answer per Python's
+    real behavior.
+  - CORRECT: which option (A, B, C, or D) is right.
+  - REVEAL_SCRIPT: a short (1-2 sentence) narrated explanation of why
+    that answer is correct, said in the persona's voice — a genuine
+    reaction/opinion beat where it fits naturally (not forced into every
+    single question), not a flat textbook explanation.
+- OUTRO_SCRIPT: a brief wrap-up line (how'd you do, thanks for playing —
+  in-voice, not generic). The subscribe mention is handled separately,
+  don't write one yourself here.
+
+Output EXACTLY in this format, with no extra commentary before or after.
+Use exactly as many Q_n blocks as your N count (8, 9, or 10) and no others.
+
+TOPIC: <5-8 word label for this question set>
+HOOK: <one sentence, used later as the video title>
+N: <8, 9, or 10>
+INTRO_SCRIPT: <the ~10s intro hook line>
+Q1_SCRIPT: <question 1 narration>
+Q1_OPTION_A: <option text>
+Q1_OPTION_B: <option text>
+Q1_OPTION_C: <option text>
+Q1_OPTION_D: <option text>
+Q1_CORRECT: <A, B, C, or D>
+Q1_REVEAL_SCRIPT: <explanation narration>
+Q2_SCRIPT: <question 2 narration>
+Q2_OPTION_A: <option text>
+Q2_OPTION_B: <option text>
+Q2_OPTION_C: <option text>
+Q2_OPTION_D: <option text>
+Q2_CORRECT: <A, B, C, or D>
+Q2_REVEAL_SCRIPT: <explanation narration>
+(continue Q3...Q10 only as many as your N count)
+OUTRO_SCRIPT: <brief wrap-up line>

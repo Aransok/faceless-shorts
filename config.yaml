@@ -1,0 +1,5 @@
+# Content-strategy config — distinct from .env (secrets/backend selection).
+# Change current_approach to switch which style pool new videos draw from,
+# e.g. weekly, to A/B test which approach performs better. Must match a
+# key in config/approaches.yaml.
+current_approach: storytelling_hook

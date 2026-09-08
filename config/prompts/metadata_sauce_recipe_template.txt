@@ -1,0 +1,64 @@
+You are writing the YouTube Shorts title, description, and tags for a
+"Sauce Secrets" video that has already been scripted, voiced, and
+rendered. Your job is to make it findable and clickable — AND to give
+viewers the actual written recipes in the description, since the spoken
+narration goes by too fast to follow while cooking.
+
+Video template: {template}
+Topic: {topic}
+Hook: {hook}
+Full narration script: {script_text}
+
+The three sauces, in order, as spoken in the video:
+{sauce_scripts}
+
+Requirements:
+- TITLE: under 100 characters (YouTube's hard limit), written to make
+  someone stop scrolling. Lead with the hook or the most surprising
+  concrete detail, not a generic label like "3 Sauces You Need to Know".
+  Put the strongest real search term EARLY in the title — someone
+  searching "quick chimichurri recipe" should see that phrase (or close
+  to it) near the front. Do not put hashtags in the title.
+- DESCRIPTION, in this exact structure:
+  1. First line restates the hook in different words AND works real
+     search terms in naturally (this is what shows before "...more" gets
+     clicked, and it's what search weights most heavily).
+  2. Then, for EACH of the three sauces, a short written recipe block
+     reformatted from that sauce's narration above into a real
+     ingredient list + method — not a verbatim copy of the spoken lines,
+     but faithful to the same quantities and technique actually said (no
+     inventing new quantities or steps that weren't in the narration).
+     Format each block like:
+     🥣 <Sauce name>
+     Ingredients: <comma-separated list with real quantities>
+     Method: <1-2 short sentences, real technique verbs>
+     Leave a blank line between each of the three blocks.
+  3. Then a one-line call-to-action mentioning the channel by name:
+     ByteBits. Always say "subscribe" — NEVER "follow" (this is YouTube,
+     not Instagram/TikTok). Do not invent channel facts (upload schedule,
+     follower counts, other video references) that aren't true.
+  4. Finish with ONE final line of hashtags:
+     - EXACTLY 8 hashtags total, in this order:
+       1. "#Shorts" — REQUIRED, always first. Videos uploaded through the
+          API are not reliably classified as a Short without it, even
+          when the file is already vertical and under 60 seconds.
+       2. 2-3 broad category tags (e.g. #Cooking, #Recipes, #SauceSecrets)
+          — these CAN repeat across videos, they're the category.
+       3. 4-5 tags specific to THIS video's exact three sauces (e.g.
+          #Chimichurri #GarlicButterSauce #TomatoSauce) — not a generic
+          block reused across videos.
+     - NEVER exceed 15 hashtags total — this is YouTube's hard cap, and
+       going over it silently discards EVERY hashtag, not just the
+       extras past 15. Exactly 8 is the target.
+  Keep the whole description under 5000 characters (YouTube's limit) —
+  three recipe blocks plus the rest should comfortably land under 1200.
+- TAGS: 8-15 comma-separated search tags specific to this video's actual
+  three sauces (real terms someone would search, e.g. "chimichurri
+  recipe", "garlic butter sauce", "quick tomato sauce"), not generic
+  filler like "video, youtube, shorts".
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+TITLE: <title, under 100 characters>
+DESCRIPTION: <full description as structured above, real line breaks between lines and blocks, ending with a #Shorts + topical hashtags line>
+TAGS: <comma-separated tags, under 500 characters combined>

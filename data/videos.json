@@ -1,0 +1,143 @@
+[
+  {
+    "video_id": "a427424a-ed8d-4d04-a691-25b5dc4ce697",
+    "youtube_video_id": "yWEeCpuOxTk",
+    "uploaded_at": "2026-09-06T10:24:04+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook"
+  },
+  {
+    "video_id": "987a1713-7d66-46eb-85af-e8a018dcd3d5",
+    "youtube_video_id": "LMpgVnT6rNk",
+    "uploaded_at": "2026-09-06T12:38:57+00:00",
+    "template": "programming",
+    "approach": null
+  },
+  {
+    "video_id": "a38fd2f0-1cbf-48a6-b226-628ddff8b2d5",
+    "youtube_video_id": "PyoaSQ7FAuU",
+    "uploaded_at": "2026-09-06T12:47:07.297295+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook"
+  },
+  {
+    "video_id": "17d3f309-4290-4e0a-9648-23a47065c6ff",
+    "youtube_video_id": "dG91LxVNq3Q",
+    "uploaded_at": "2026-09-06T13:02:38.770091+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-06T16:58:56.188944+00:00"
+  },
+  {
+    "video_id": "92f5b37e-747b-4e69-9921-753af41ec6f9",
+    "youtube_video_id": "MtXmjK__ntk",
+    "uploaded_at": "2026-09-06T16:39:09.887277+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-06T20:05:39.875539+00:00"
+  },
+  {
+    "video_id": "baa77497-ae30-41a0-9bee-55f482ca17c0",
+    "youtube_video_id": "prmgmoSS0uE",
+    "uploaded_at": "2026-09-06T16:47:01.760620+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-06T23:15:04.758237+00:00"
+  },
+  {
+    "video_id": "fd8d1828-ecb3-482a-a1d2-e1303bd62f72",
+    "youtube_video_id": "IrhvdYxsbJc",
+    "uploaded_at": "2026-09-06T16:51:59.566929+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-07T02:13:17.769169+00:00"
+  },
+  {
+    "video_id": "5298209a-b245-4895-ac97-0c3f29e97603",
+    "youtube_video_id": "TBNpDJkWqYU",
+    "uploaded_at": "2026-09-06T16:59:35.456248+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-07T04:23:29.811058+00:00"
+  },
+  {
+    "video_id": "8175b856-ff44-444d-a584-90861cb2c80b",
+    "youtube_video_id": "WvHEFSHJ1y0",
+    "uploaded_at": "2026-09-06T17:04:09.759751+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-07T08:15:59.537896+00:00"
+  },
+  {
+    "video_id": "27a5cf88-5516-4fa2-a330-272989055325",
+    "youtube_video_id": "uUPuqP7stVE",
+    "uploaded_at": "2026-09-07T11:35:38+00:00",
+    "template": "quiz_longform",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-07T15:11:56+00:00"
+  },
+  {
+    "video_id": "e41e32fb-4d3e-42e7-acae-0c8aff050528",
+    "youtube_video_id": "XuN_b5Mni8M",
+    "uploaded_at": "2026-09-07T12:09:24.581078+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-07T19:05:35.425197+00:00"
+  },
+  {
+    "video_id": "4409e89e-05d5-4dc8-b1c3-a8eb6cd77958",
+    "youtube_video_id": "1yo4mcCzOac",
+    "uploaded_at": "2026-09-07T13:03:11.764025+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-07T21:46:52.177210+00:00"
+  },
+  {
+    "video_id": "d1b15405-5656-4019-9f4d-e185d92e1b19",
+    "youtube_video_id": "O2JByeWdkzg",
+    "uploaded_at": "2026-09-07T13:13:04.802975+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-08T01:12:15.460172+00:00"
+  },
+  {
+    "video_id": "cc77a982-8799-415c-9c9d-defaf869bf50",
+    "youtube_video_id": "JNUC7AgLMw4",
+    "uploaded_at": "2026-09-07T13:21:41.122152+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-08T03:27:05.457996+00:00"
+  },
+  {
+    "video_id": "3fd766e7-b1c4-4851-91f2-707ed7579141",
+    "youtube_video_id": "Y4yt80btVp0",
+    "uploaded_at": "2026-09-07T18:33:06.564332+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-08T06:52:44.777609+00:00"
+  },
+  {
+    "video_id": "693031ca-812b-4940-b92c-53a1fd47039e",
+    "youtube_video_id": "lKUaYSZgL6I",
+    "uploaded_at": "2026-09-07T18:40:31.314961+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-08T10:20:25.061198+00:00"
+  },
+  {
+    "video_id": "52610d8f-a638-4ce0-ae06-6692bd9da8b0",
+    "youtube_video_id": "oc2C2YSfHkY",
+    "uploaded_at": "2026-09-07T18:44:31.982604+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-08T13:29:47.051573+00:00"
+  },
+  {
+    "video_id": "0c69642d-25e5-429b-9f6a-ce7413f5350e",
+    "youtube_video_id": "qXjURyw-dyQ",
+    "uploaded_at": "2026-09-07T18:51:54.592325+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-08T15:50:02.285904+00:00"
+  }
+]

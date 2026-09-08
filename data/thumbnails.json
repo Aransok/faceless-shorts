@@ -1,0 +1,29 @@
+[
+  {
+    "video_id": "a427424a-ed8d-4d04-a691-25b5dc4ce697",
+    "chosen_timestamp": 40.77,
+    "candidate_timestamps": [
+      40.77,
+      35.65
+    ],
+    "thumbnail_path": "C:\\my folder\\claude-playbook\\faceless-shorts\\assets\\output\\a427424a-ed8d-4d04-a691-25b5dc4ce697_thumbnail.jpg"
+  },
+  {
+    "video_id": "a427424a-ed8d-4d04-a691-25b5dc4ce697",
+    "chosen_timestamp": 40.77,
+    "candidate_timestamps": [
+      40.77,
+      35.65
+    ],
+    "thumbnail_path": "C:\\my folder\\claude-playbook\\faceless-shorts\\assets\\output\\a427424a-ed8d-4d04-a691-25b5dc4ce697_thumbnail.jpg"
+  },
+  {
+    "video_id": "17d3f309-4290-4e0a-9648-23a47065c6ff",
+    "chosen_timestamp": 3.5,
+    "candidate_timestamps": [
+      3.5,
+      1.8
+    ],
+    "thumbnail_path": "C:\\my folder\\claude-playbook\\faceless-shorts\\assets\\output\\17d3f309-4290-4e0a-9648-23a47065c6ff_thumbnail.jpg"
+  }
+]

@@ -1,0 +1,40 @@
+You are writing the title, description, and tags for a 4-5 minute Python
+quiz video on the main channel (not a Short — this is a longer-form,
+curiosity-driven video where the thumbnail and title do most of the
+click-through work).
+
+Topic: {topic}
+Hook: {hook}
+Full narration script: {script_text}
+
+Requirements:
+- TITLE: under 100 characters, curiosity-driven and specific about what's
+  actually being tested (e.g. "10 Python Questions That Trip Up
+  Experienced Devs" not a generic "Python Quiz"). No #Shorts — this
+  isn't a Short. Put the real search term early — "Python Quiz" or
+  "Python Questions" should appear near the front of the title, not
+  buried after a long clever setup, since that's what search actually
+  matches against.
+- DESCRIPTION: 3-5 sentences. Open with what the quiz actually covers
+  (specific enough that someone can tell if it's their level) — this
+  first line is what search weights most heavily, so work in the real
+  terms someone would search (e.g. "python interview questions",
+  "python gotchas") rather than pure flavor text. Then a line about the
+  channel (ByteBits — automated but real, built through a real
+  pipeline, not a content farm — only say this if it's actually true to
+  say, don't oversell). End with a call-to-action that says "subscribe"
+  — NEVER "follow" (that's Instagram/TikTok language, a real mismatch
+  on YouTube). This can run longer
+  and more detailed than a Shorts description — full sentences, not a
+  hashtag-heavy block. At most 1-2 relevant hashtags at the very end if
+  they add real discoverability (e.g. #Python), never more — this
+  format doesn't lean on hashtags for reach the way Shorts do.
+- TAGS: 8-15 comma-separated search tags specific to the actual
+  questions/topics covered (real search terms, e.g. "python interview
+  questions", "python gotchas quiz"), not generic filler.
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+TITLE: <title, under 100 characters>
+DESCRIPTION: <3-5 sentences>
+TAGS: <comma-separated tags, under 500 characters combined>

@@ -1,0 +1,11 @@
+# Optional: only needed for TTS_BACKEND=kokoro on local/GPU hardware.
+# Not installed in CI — the GitHub Actions runner has no GPU and uses
+# TTS_BACKEND=edge_tts (see requirements.txt + .github/workflows/daily-shorts.yml).
+#
+# Also requires the model files (not pip-installable):
+#   https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
+#   -> kokoro-v1.0.onnx, voices-v1.0.bin (paths set via KOKORO_MODEL_PATH /
+#      KOKORO_VOICES_PATH in .env)
+kokoro-onnx
+soundfile
+onnxruntime

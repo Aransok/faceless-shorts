@@ -1,0 +1,92 @@
+name: Daily Shorts
+
+# Runs the full pipeline (script -> voice -> visuals -> assemble ->
+# captions -> metadata -> upload) end to end, so it doesn't depend on the
+# owner's laptop being on. See SPEC.md's "Scheduling & execution" and
+# ROADMAP.md Phase 9/10.
+#
+# REQUIRE_REVIEW=false here is intentional and CI-specific: with no
+# interactive terminal to run scripts/review.py, videos upload straight
+# through as UPLOAD_VISIBILITY=private instead of stopping at
+# awaiting_review — the owner reviews on YouTube itself and flips a video
+# public from YouTube Studio once satisfied. Local/manual runs keep
+# REQUIRE_REVIEW=true in .env for the interactive review queue.
+
+on:
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Number of new videos to generate"
+        required: false
+        default: "5"
+
+permissions:
+  contents: write
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run daily pipeline
+        env:
+          LLM_BACKEND: claude_code
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          TTS_BACKEND: edge_tts
+          FACTS_VISUAL_SOURCE: stock
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          REQUIRE_REVIEW: "false"
+          UPLOAD_VISIBILITY: scheduled
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python scripts/run_daily.py --count "${{ github.event.inputs.count || '5' }}"
+
+      # assets/output/* is gitignored (rendered audio/video never gets
+      # committed — the runner's filesystem is thrown away after the job
+      # ends regardless). Only state.db and the upload-tracking log are
+      # small enough, and worth persisting, to commit back.
+      - name: Commit updated state
+        run: |
+          git config user.name "faceless-shorts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.db data/videos.json
+          if git diff --cached --quiet; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          git commit -m "Update state.db [skip ci]"
+
+          # A concurrent push (another run, or a manual push) landing on
+          # main mid-job rejects this push with a stale-parent error --
+          # this already happened once for real and silently dropped a
+          # completed upload's state.db record (see ROADMAP.md). Rebase
+          # onto whatever's actually on main and retry instead of losing
+          # the commit when the runner is torn down.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed state on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt/3) -- rebasing onto latest main"
+            git pull --rebase
+          done
+
+          echo "state push failed after 3 attempts"
+          exit 1
