@@ -474,7 +474,78 @@ items 4-5 not started.
      more exist. Same rotation mechanism, window=1.
    - Verified: real rendered grid of all 5 themes against actual code,
      real rendered CTA badges for all 3 variants, both viewed directly.
-4. Niche separation and the "Higher or Lower" format: not started.
+4. Niche separation and the "Higher or Lower" format: not started as a
+   quiz-format add-on -- superseded by the Phase 16 game-night track,
+   which subsumes "Higher or Lower" as one of five round modules.
+
+## Phase 15 — CTA comment fix + cheap signal collection (2026-09-08) — DONE
+
+Two owner-scoped items: fix a real comment-posting bug (hypothesis
+tested before any fix), then cheap data/branding additions explicitly
+scoped to *not* include scoring/weighting/prompt-injection yet.
+
+1. **CTA auto-comment 403, root cause confirmed by test, not guessed** --
+   hypothesis was "does `commentThreads.insert` fire before the video is
+   actually public?" Tested directly: posted a real comment against an
+   already-public video (succeeded instantly), confirming the identical
+   call fails only while the video is still private. `upload()` now only
+   attempts an immediate comment when `visibility == "public"`;
+   `post_pending_cta_comments()` (new, hourly workflow) batches
+   `videos().list` against uploaded-but-uncommented rows and posts once
+   they're really public. Bounded to
+   `CTA_COMMENT_CATCHUP_MAX_AGE_DAYS = 3` to avoid a retroactive burst
+   across the 19 pre-existing uploaded videos on first run. Live
+   diagnostic comment posted then deleted (`comments().delete()`) to
+   avoid a real visible side effect from the test itself.
+2. **Genome tag capture (data collection only, no scoring)** --
+   `generate_metadata()` now writes `genome_hook_style`,
+   `genome_concept_type`, `genome_item_count`, `genome_visual_density`
+   per video. Nothing reads these yet.
+3. **Real analytics sync** -- `pipeline/stats.py`'s `sync_analytics()`
+   pulls real views/likes/comment_count for uploaded videos in a
+   48h-14d age window, daily cron. Verified against a real video (146
+   views / 7 likes written for real).
+4. **Episode counter badge** -- "EP N" rendered top-right in the
+   programming code panel's title bar, from
+   `count_uploaded("programming") + 1` (real upload count, not a
+   manually tracked value). Verified via a real rendered frame (EP 11)
+   before committing.
+5. **New CTA variant** -- `save_for_later_early`, fires at 15% into the
+   video (earlier than the other 3) since "save this" only makes sense
+   before a viewer might swipe away.
+6. **Code-panel retyping fix (the bigger structural one)** -- was
+   clearing and retyping the *entire* panel on every step, even lines
+   unchanged since the previous step. Now diffs each step's lines
+   against the previous step's (`difflib`, on the same plain text
+   `_layout_lines()` renders from, so diffing and rendering can't
+   disagree) and only clears/retypes lines that actually changed; a
+   border flash is the sole "something changed" cue (the old two-stage
+   fade-to-blank transition was removed entirely). Verified by
+   re-rendering the real "Java Integer Cache" script end-to-end and
+   confirming at both real transition points (t~=22.3-23.0s and
+   t~=42.3s) that only the actually-differing lines animate.
+7. **Self-caught production risk, fixed structurally** -- 4 new
+   state.db columns landed in code but the migrated `state.db` binary
+   was never re-committed; an unrelated `git checkout -- state.db`
+   cleanup silently reverted the local copy too, reproducing a real
+   `sqlite3.OperationalError: no such column` crash that would have hit
+   the already-scheduled hourly comment-catchup workflow on its next
+   run. Fixed both the immediate data (`state.db` re-migrated and
+   committed) and the root cause: `init_db()` now runs unconditionally
+   at `pipeline/state.py` import time instead of only from that
+   module's own `__main__` block, so a schema change in code can never
+   again ship without actually being applied.
+
+Explicitly deferred by the owner until there's real signal (40-50+
+videos): performance scoring, exploit/explore weighting, few-shot
+prompt injection of "winning" scripts, Related Video API linking.
+
+## Phase 16 — Game-night production line (2026-09-08) — PLANNING
+
+Owner commitment: 2 game-night videos/week (Tue/Fri) + 1 quiz/week.
+Plan for items 1-2 (5 game modules + shared infra) presented before any
+render code, per explicit request. See plan delivered in-session;
+build not yet started.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
