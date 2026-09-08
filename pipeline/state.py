@@ -186,6 +186,22 @@ def init_db(db_path: Path = DB_PATH) -> None:
         )
 
 
+# Real bug this fixes: init_db() was only ever invoked from this module's
+# own __main__ block -- no pipeline entrypoint (orchestrator.py, any
+# script) called it automatically. A schema migration (new columns)
+# landing in this file's code was NOT the same as it actually being
+# applied to the real, committed state.db -- confirmed for real: a
+# commit added columns here, but the committed state.db binary was never
+# re-migrated, and the very next real write against one of those columns
+# (the new hourly CTA-comment catch-up job) would have crashed in
+# production with "no such column". Safe to call unconditionally --
+# CREATE TABLE IF NOT EXISTS plus per-column existence checks, same as
+# always. Running it once per process, at import time, means a new
+# column landing in this file is self-applying from here on, never again
+# a separate step someone has to remember.
+init_db()
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
