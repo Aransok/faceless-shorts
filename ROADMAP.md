@@ -685,6 +685,75 @@ quiz_longform may not be the right visual language for this format at
 all. Don't rebuild anything else in Phase 16 until this is actually
 diagnosed with the owner.
 
+## Phase 17 — Narration authenticity & anti-hallucination system (2026-09-08) — IN PROGRESS
+
+Owner-provided spec (full text in session transcript) for making narration
+read as deliberately written by a knowledgeable human editor, not
+generic-content-mill output. Owner scoped this explicitly: replace/rewrite
+the existing persona system (not layer on top of it), add a real
+post-generation review/reject pipeline stage (not prompt-only), and apply
+to programming/facts/sauce_recipe (quiz_longform/game_night out of
+scope — game_night is separately blocked, see Phase 16 below).
+
+1. **`config/persona.md` rewritten** — kept what already worked (tone,
+   sentence-rhythm variety, subscribe-not-follow, banned-phrase list,
+   concrete-detail rule) and folded in the new stricter rules: an explicit
+   Notice/Explain/Connect/Remove editorial thinking process, an
+   anti-hallucination rule (adapted from the owner's spec — this pipeline
+   has no separate research/grounding step feeding these templates, so
+   "don't invent a plausible-sounding fact" replaces "not supported by
+   supplied source material," same intent), the visual-complementarity
+   rule, the topic-swap test, and a stronger no-fabricated-personal-
+   experience rule (kept the existing stance-vs-event distinction, since
+   it already correctly allowed "I ran into something weird here" while
+   banning a claimed specific memory — the new spec's stricter examples
+   were folded into that existing test rather than replacing it).
+2. **Per-template editorial identity split** — `persona_pet_peeves_dev.md`
+   (shared programming/facts/quiz_longform/game_night) split into
+   `persona_pet_peeves_programming.md` and `persona_pet_peeves_facts.md`,
+   each now carrying a distinct "editorial identity" section (Programming
+   Narrator vs. Facts Narrator, per the owner's spec) on top of the
+   existing recurring-opinions pet-peeves list, which was kept rather than
+   rewritten (still accurate, still template-appropriate).
+   `persona_pet_peeves_sauce_recipe.md` got the same identity-section
+   treatment; quiz_longform/game_night still map to the original
+   `persona_pet_peeves_dev.md`, untouched — out of scope, and game_night
+   specifically is still blocked pending the owner's diagnosis of the
+   Phase 16 test episode. `pipeline/persona.py`'s `_PET_PEEVES_FILE`
+   mapping updated accordingly.
+3. **New review/reject pipeline stage** — `pipeline/review_script.py`
+   (`review_script()`) sends the plain narration (hook + beat scripts
+   only, no field labels/code/keywords — those would confuse a reviewer
+   checking for authentic-sounding narration) to a new prompt,
+   `config/prompts/script_reviewer_template.txt`, adapted from the
+   owner's spec. `pipeline/plan.py`'s `_generate_reviewed()` wires this
+   into `plan()`: generate, review, and if `REWRITE_REQUIRED`, feed the
+   reviewer's own feedback back into a rewrite prompt (up to
+   `REVIEW_MAX_REWRITES = 2` attempts) before raising — caught by
+   `orchestrator.run_daily()`'s existing try/except around `plan()`, same
+   fail-soft handling as a malformed-output parse error, so one
+   template's slot failing doesn't take down the run. Verdict parsing
+   takes the LAST `APPROVED`/`REWRITE_REQUIRED` match, not the first —
+   deliberately reusing the exact lesson Phase 16's `verify_claim()`
+   learned the hard way (a model that reasons out loud can emit a draft
+   verdict its own follow-up reasoning reverses).
+4. **Tests** — `tests/test_review_script.py` and `tests/test_plan.py`
+   cover the pure logic (verdict parsing including the last-match case,
+   narration extraction excludes code/keywords, rewrite-prompt
+   construction, the generate/review/rewrite loop with a mocked
+   `call_llm`/`review_script`) per `CLAUDE.md`'s testing rule — no real
+   LLM calls in the test suite itself. All passing.
+5. **Real end-to-end verification** — in progress: a real `plan('facts')`
+   run through the actual `claude` CLI backend (confirmed reachable in
+   this environment, ~4.5s for a trivial round-trip call) to see a real
+   script pass or get rewritten by the review pass, not just the mocked
+   unit tests. Test video to be removed from `state.db` after inspection,
+   same pattern as every other real-LLM verification in this project.
+
+Not yet done: real verification for `programming` and `sauce_recipe`
+specifically (only `facts` tested so far), and no real render/upload —
+this phase only touches script generation (Phase 1), nothing downstream.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

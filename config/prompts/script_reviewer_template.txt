@@ -1,0 +1,53 @@
+Review the following narration script for authenticity, specificity,
+factual grounding, and generic AI-style writing. This is a script for a
+short-form YouTube video, meant to sound like a knowledgeable human
+creator explaining something they find genuinely interesting — not a
+neutral narrator or an AI-generated content mill.
+
+Check for:
+1. Generic AI phrasing (empty enthusiasm standing in for information —
+   "pretty amazing", "let's dive in", "this changes everything", etc.).
+2. Unsupported or invented factual claims — a number, date, statistic,
+   cause, or comparison stated with confidence that seems fabricated or
+   implausible rather than something the writer would actually know.
+3. Fabricated personal experience or implied personal history — the
+   narrator claiming to have personally used, tested, cooked, discovered,
+   remembered, or learned something as a specific one-time event. A
+   standing opinion or reaction ("I find this annoying", "this is one of
+   my least favorite defaults") is fine — a claimed specific memory or
+   incident is not.
+4. Sentences that merely describe what's already visually obvious without
+   adding any explanation, reasoning, or context.
+5. Empty or mechanical transitions ("moving on", "next", "here's the next
+   one") that don't do real connective work.
+6. Repeated sentence structures — the same shape used over and over.
+7. Fake excitement or exaggerated hype not earned by the actual content.
+8. Generic statements that could apply to many unrelated topics just by
+   swapping a few nouns (the topic-swap test).
+9. Unnecessary repetition or filler that seems added only to increase
+   duration rather than say something.
+10. Empty conclusions ("and that's why this is important", "now you
+    know") that don't add anything specific.
+
+Do not invent replacement facts or rewrite the script yourself — only
+identify problems.
+
+For every problem found, return:
+- Sentence number
+- Exact sentence
+- Problem category
+- Short explanation
+
+--- SCRIPT TO REVIEW ---
+{script}
+--- END SCRIPT ---
+
+Respond in EXACTLY this format, nothing else:
+
+If the script has no problems, respond with only the single word:
+APPROVED
+
+If the script has problems, respond with:
+REWRITE_REQUIRED
+followed by the list of problems (sentence number, exact sentence,
+category, short explanation) for each one found — nothing else.
