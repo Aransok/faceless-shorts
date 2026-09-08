@@ -74,6 +74,29 @@ def _fix_follow_language(description: str) -> str:
     return description
 
 
+# Real, observed failure (not hypothetical): a real CI run's description
+# contained a genuine em-dash (U+2014) and YouTube's upload API rejected
+# the whole video with reason "invalidDescription" over it. Confirmed
+# directly against the real failed row: the stored string round-trips
+# cleanly through UTF-8 encode/decode with zero control characters, so
+# it's not corrupted at rest -- the em-dash itself, once serialized
+# through the upload HTTP request pipeline (google-api-python-client /
+# whatever's underneath it on this specific CI environment), is what
+# YouTube's API is rejecting. Matches this project's own already-
+# documented risk class (see docker-and-deployment.md): smart typography
+# breaking generated content that flows through a tool whose encoding
+# handling you don't fully control -- a generated PDF and a PowerShell
+# script hit the identical failure mode earlier in this project, for
+# what's very likely a related underlying cause. Same fix: replace with
+# plain ASCII rather than trust every consumer down the line to handle
+# U+2014 correctly.
+_SMART_DASH_PATTERN = re.compile(r"\s*[–—]\s*")  # en dash, em dash (+ any surrounding whitespace)
+
+
+def _fix_smart_typography(text: str) -> str:
+    return _SMART_DASH_PATTERN.sub(" - ", text)
+
+
 def _cap_hashtags(description: str) -> str:
     matches = list(_HASHTAG_PATTERN.finditer(description))
     if len(matches) <= HASHTAG_MAX_COUNT:
@@ -87,6 +110,9 @@ def _cap_hashtags(description: str) -> str:
 
 
 def _enforce_limits(title: str, description: str, tags: str) -> tuple[str, str, str]:
+    title = _fix_smart_typography(title)
+    description = _fix_smart_typography(description)
+    tags = _fix_smart_typography(tags)
     if len(title) > TITLE_MAX_CHARS:
         title = title[:TITLE_MAX_CHARS].rsplit(" ", 1)[0].rstrip()
     description = _fix_follow_language(description)
