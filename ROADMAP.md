@@ -653,6 +653,38 @@ folding in the Wed->Sat quiz-day move -- Saturday chosen for more even
 weekly spacing against Tue/Fri: gaps of 3/1/3 days vs. Wednesday's
 1/2/4).
 
+**Real owner feedback after watching item 4's test episode (2026-09-08),
+STATUS: NOT RESOLVED -- read before touching this again.** Reaction: "too
+fast", "the ai plays by himself", "we dont need captions on longterm",
+"i dont like it at all". Three concrete fixes shipped and re-verified by
+re-rendering:
+1. Dropped the entire simulated contestant/lives/points system (was the
+   "AI plays by himself" complaint) -- every round now just presents its
+   content and reveals the real answer, no invented win/loss judgment,
+   no HUD, no red/green coloring (one neutral highlight color instead).
+2. Turned off burned-in captions for game_night entirely (matches
+   quiz_longform's existing behavior).
+3. Added a minimum real hold duration for gameplay/reveal/countdown
+   beats (padded with silence when the driving narration line is
+   shorter) -- the actual mechanism behind "too fast": a visual card the
+   viewer needs seconds to read was sometimes on screen for well under a
+   second.
+
+Owner watched this second pass and said it's **still bad** -- session
+ended on session-limit pressure before getting specifics on what's still
+wrong. Do NOT assume the above 3 fixes were the wrong ones or start
+guessing at a 4th round of changes -- get the owner's specific reaction
+to this second test episode first. Real possibilities not yet
+investigated: the new min-hold durations may still not be long enough
+(or too long/inconsistent); the per-round visual designs themselves
+(chip rows, before/after table, versus cards) may just not be
+compelling regardless of pacing; 5 rounds x ~115s may be the wrong
+format shape entirely (too long, too short, wrong round count); the
+whole "steps table + PIL card renderer" approach inherited from
+quiz_longform may not be the right visual language for this format at
+all. Don't rebuild anything else in Phase 16 until this is actually
+diagnosed with the owner.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
