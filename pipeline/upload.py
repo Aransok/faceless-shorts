@@ -22,7 +22,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 from pipeline.plan import call_llm
-from pipeline.state import get_video, list_by_status, update_video
+from pipeline.state import get_video, list_by_status, list_uploaded_without_cta_comment, update_video
 from pipeline.thumbnails import upload_thumbnail
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -202,10 +202,19 @@ def upload(video_id: str) -> str:
         # the whole upload() call.
         print(f"warning: thumbnail upload failed for {video_id}: {exc}")
 
-    try:
-        post_cta_comment(video, youtube_video_id, youtube)
-    except Exception as exc:
-        print(f"warning: CTA comment post failed for {video_id}: {exc}")
+    # Only attempt this immediately when the video is ALREADY public
+    # (visibility == "public", not "scheduled"/"private") -- confirmed for
+    # real that commentThreads.insert always fails on a still-private
+    # video (identical call succeeds instantly once a video is actually
+    # public), so trying it right after a scheduled upload was a
+    # guaranteed, wasted failure every single time. The scheduled/private
+    # case is caught later by post_pending_cta_comments().
+    if visibility == "public":
+        try:
+            post_cta_comment(video, youtube_video_id, youtube)
+            update_video(video_id, cta_comment_posted=1)
+        except Exception as exc:
+            print(f"warning: CTA comment post failed for {video_id}: {exc}")
 
     return youtube_video_id
 
@@ -266,6 +275,45 @@ def post_cta_comment(video: dict, youtube_video_id: str, youtube) -> None:
         }
     }
     youtube.commentThreads().insert(part="snippet", body=body).execute()
+
+
+def post_pending_cta_comments() -> None:
+    """Catch-up pass: for every uploaded video whose CTA comment hasn't
+    posted yet, re-checks its REAL current privacyStatus (not our own
+    stored schedule -- that's an estimate, this is the source of truth)
+    and posts once it's actually public. Meant to run on its own schedule
+    (see .github/workflows/post-pending-comments.yml), separate from the
+    upload run itself, since a scheduled video can take hours to go
+    public after upload() already returned.
+    """
+    pending = list_uploaded_without_cta_comment()
+    if not pending:
+        print("no pending CTA comments")
+        return
+
+    creds = _load_credentials()
+    youtube = build("youtube", "v3", credentials=creds)
+
+    by_yt_id = {v["youtube_video_id"]: v for v in pending}
+    yt_ids = list(by_yt_id)
+    live_status: dict[str, str] = {}
+    for i in range(0, len(yt_ids), 50):
+        batch = yt_ids[i : i + 50]
+        resp = youtube.videos().list(part="status", id=",".join(batch)).execute()
+        for item in resp.get("items", []):
+            live_status[item["id"]] = item["status"]["privacyStatus"]
+
+    for yt_id, video in by_yt_id.items():
+        status = live_status.get(yt_id)
+        if status != "public":
+            print(f"still {status!r}, not yet public: {video['id']} ({yt_id})")
+            continue
+        try:
+            post_cta_comment(video, yt_id, youtube)
+            update_video(video["id"], cta_comment_posted=1)
+            print(f"posted CTA comment: {video['id']} ({yt_id})")
+        except Exception as exc:
+            print(f"warning: CTA comment post failed for {video['id']} ({yt_id}): {exc}")
 
 
 if __name__ == "__main__":
