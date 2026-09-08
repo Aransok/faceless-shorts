@@ -291,7 +291,7 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(scratch_path), str(output_path))
 
-    update_video(video_id, status="assembled", video_path=str(output_path))
+    update_video(video_id, status="assembled", video_path=str(output_path), cta_overlay_variant=cta_variant["name"])
     return str(output_path)
 
 

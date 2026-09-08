@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent.parent / "state.db"
@@ -47,6 +47,10 @@ _COLUMNS = (
     "error_message",
     "approach",
     "cta_angle",
+    "hook_opener_used",
+    "code_theme",
+    "cta_overlay_variant",
+    "cta_comment_posted",
     "created_at",
     "updated_at",
 )
@@ -96,6 +100,25 @@ def init_db(db_path: Path = DB_PATH) -> None:
             conn.execute("ALTER TABLE videos ADD COLUMN approach TEXT")
         if "cta_angle" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN cta_angle TEXT")
+        # Per-video attribution for the rotation systems -- the rotation
+        # log (data/phrase_usage.json) only tracks recency for picking,
+        # not which video got which pick. Not analyzed yet (not enough
+        # volume), just captured now so the data exists once there is.
+        if "hook_opener_used" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN hook_opener_used TEXT")
+        if "code_theme" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN code_theme TEXT")
+        if "cta_overlay_variant" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN cta_overlay_variant TEXT")
+        # Real bug fix, not analytics: post_cta_comment() fires immediately
+        # after upload while the video is still private (UPLOAD_VISIBILITY
+        # =scheduled), which YouTube's API always rejects -- confirmed by
+        # testing the identical call against an already-public video,
+        # which succeeded instantly. This flag lets a later catch-up pass
+        # find already-uploaded videos that still need their comment
+        # posted once they've actually gone public.
+        if "cta_comment_posted" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN cta_comment_posted INTEGER")
 
         # video_steps: both templates break a video into narrated beats so
         # the visual can change exactly when the narration describing that
@@ -206,6 +229,41 @@ def list_by_status(status: str, db_path: Path = DB_PATH) -> list[dict]:
     with _connect(db_path) as conn:
         rows = conn.execute(
             "SELECT * FROM videos WHERE status = ? ORDER BY created_at", (status,)
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+# Videos older than this never get a catch-up comment. Without a bound,
+# this column being brand-new means EVERY already-uploaded video in
+# state.db (19 of them, most already public for days) would all get a
+# comment in one burst the first time this ever runs -- a real, visibly
+# odd side effect (a wave of comments appearing at once on old videos),
+# not just a bug-fix. 3 days comfortably covers the real case (a
+# scheduled video going public a few hours after upload) without
+# reaching back into the whole history.
+CTA_COMMENT_CATCHUP_MAX_AGE_DAYS = 3
+
+
+def list_uploaded_without_cta_comment(db_path: Path = DB_PATH) -> list[dict]:
+    """Uploaded videos that haven't had their CTA comment posted yet --
+    the real fix for post_cta_comment() firing while a scheduled video is
+    still private (YouTube rejects that every time): a separate catch-up
+    pass re-checks these against the video's real, current privacyStatus
+    and posts once it's actually public. See upload.py's
+    post_pending_cta_comments(). Bounded to recent uploads only -- see
+    CTA_COMMENT_CATCHUP_MAX_AGE_DAYS.
+    """
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=CTA_COMMENT_CATCHUP_MAX_AGE_DAYS)).isoformat()
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM videos
+            WHERE status = 'uploaded' AND youtube_video_id IS NOT NULL
+              AND (cta_comment_posted IS NULL OR cta_comment_posted = 0)
+              AND created_at >= ?
+            ORDER BY created_at
+            """,
+            (cutoff,),
         ).fetchall()
     return [dict(row) for row in rows]
 

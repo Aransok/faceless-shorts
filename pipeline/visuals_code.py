@@ -376,12 +376,14 @@ def _render_step_frame(
     return frame
 
 
-def render_multi_step(steps: list[dict], output_path: Path, language: str | None) -> Path:
+def render_multi_step(steps: list[dict], output_path: Path, language: str | None) -> tuple[Path, str]:
     """steps: ordered list of {"code_snippet", "output_text", "duration"}.
     Each step's duration comes from its already-synthesized narration audio
     (see voice.py's _voice_steps) — the visual switches to the next step
     exactly when that audio segment starts, so the concatenated result is
     frame-accurate against the concatenated narration, not approximate.
+    Returns (output_path, theme_name) -- the caller persists theme_name for
+    per-video attribution (see state.py's code_theme column).
     """
     theme = pick_code_theme()
     step_lines = [_flatten_tokens(s["code_snippet"] or "", language, theme) for s in steps]
@@ -578,7 +580,7 @@ def render_multi_step(steps: list[dict], output_path: Path, language: str | None
         if result.returncode != 0:
             raise RuntimeError(f"ffmpeg failed (exit {result.returncode}): {result.stderr}")
 
-    return output_path
+    return output_path, theme["name"]
 
 
 def visuals_code(video_id: str) -> str:
@@ -602,9 +604,9 @@ def visuals_code(video_id: str) -> str:
         )
 
     output_path = OUTPUT_DIR / f"{video_id}_code.mp4"
-    render_multi_step(steps, output_path, language=video["language"])
+    _, theme_name = render_multi_step(steps, output_path, language=video["language"])
 
-    update_video(video_id, status="visuals_ready", video_path=str(output_path))
+    update_video(video_id, status="visuals_ready", video_path=str(output_path), code_theme=theme_name)
     return str(output_path)
 
 

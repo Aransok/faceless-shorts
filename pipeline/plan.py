@@ -193,6 +193,7 @@ def plan(template: str) -> str:
             hook=parsed["hook"],
             approach=style["approach"],
             cta_angle=cta_angle["name"],
+            hook_opener_used=style["hook_opener"],
         )
         create_video_steps(video_id, parsed["steps"])
     else:
@@ -206,6 +207,7 @@ def plan(template: str) -> str:
             hook=parsed["hook"],
             approach=style["approach"],
             cta_angle=cta_angle["name"],
+            hook_opener_used=style["hook_opener"],
         )
         create_video_steps(video_id, parsed["facts"])
 
