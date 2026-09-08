@@ -117,28 +117,53 @@ def verify_claim(claim: str) -> dict:
     go out" actually means in code, not just in the prompt.
     """
     prompt = (
-        "You are a strict fact-checker. You will be given ONE factual "
-        "claim, with no other context. Your only job is to judge whether "
-        "it is actually true.\n\n"
+        "You are a fact-checker for a casual trivia game show. You will "
+        "be given ONE factual claim, with no other context. Your job is "
+        "to judge whether it is SUBSTANTIVELY true -- would a viewer be "
+        "meaningfully misled by it, for a casual higher/lower or above/"
+        "below comparison?\n\n"
+        "Treat reasonable rounding and normal source-to-source variation "
+        "as CONFIRMED, not REJECTED. If the claim says a value is "
+        "\"approximately X\" and the real figure is close to X (a "
+        "different commonly-cited source, a rounder or more precise "
+        "figure, a recent vs. older survey), that is the SAME claim for "
+        "this purpose -- confirm it. Only REJECT if the claim is "
+        "actually wrong in a way that would flip a real comparison or "
+        "threshold: wrong order of magnitude, wrong direction, a "
+        "fabricated or incorrect fact, or a number well outside any "
+        "commonly-cited range for that subject.\n\n"
         f"CLAIM: {claim}\n\n"
         "Respond in EXACTLY this format, nothing else:\n"
         "VERDICT: CONFIRMED\n"
-        "(if the claim is accurate as stated)\n\n"
+        "(if the claim is substantively accurate, even if not exact to "
+        "the decimal)\n\n"
         "or:\n"
         "VERDICT: REJECTED\n"
         "CORRECTED: <the accurate version, if you are confident of one -- "
         "omit this line if you are not confident>\n\n"
-        "Be conservative: if you are not highly confident the claim is "
-        "true, REJECT it rather than guessing CONFIRMED."
+        "Be reasonable, not pedantic: minor rounding or a commonly-cited "
+        "range is fine. Only reject a claim that would actually mislead "
+        "someone about the real-world comparison."
     )
     raw = call_llm(prompt)
-    verdict_match = _VERDICT_PATTERN.search(raw)
-    if not verdict_match:
+    # Despite "respond in EXACTLY this format, nothing else", the model
+    # sometimes reasons out loud and self-corrects mid-response (observed
+    # for real: a REJECTED verdict followed by reasoning that concludes
+    # the claim is actually fine, ending in a second, final CONFIRMED).
+    # .search() would grab the FIRST verdict and silently get this
+    # backwards -- take the LAST one, which is the model's actual settled
+    # answer, not the strict-format instruction alone (code enforcing
+    # what the prompt only asked for, per this project's own rule for
+    # exactly this failure mode).
+    verdict_matches = list(_VERDICT_PATTERN.finditer(raw))
+    if not verdict_matches:
         # No parseable verdict at all -- treat as REJECTED rather than
         # silently letting an unparseable response count as confirmed.
         return {"verdict": "REJECTED", "corrected": None, "raw": raw}
 
-    verdict = verdict_match.group(1).upper()
-    corrected_match = _CORRECTED_PATTERN.search(raw)
-    corrected = corrected_match.group(1).strip() if corrected_match else None
+    verdict = verdict_matches[-1].group(1).upper()
+    corrected = None
+    if verdict == "REJECTED":
+        corrected_matches = list(_CORRECTED_PATTERN.finditer(raw))
+        corrected = corrected_matches[-1].group(1).strip() if corrected_matches else None
     return {"verdict": verdict, "corrected": corrected, "raw": raw}

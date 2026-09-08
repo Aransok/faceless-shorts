@@ -11,16 +11,20 @@ Requirements:
   mainstream subject, not obscure or ambiguous.
 - Pick a THRESHOLD_VALUE reasonably close to the real ACTUAL_VALUE (same
   unit) so the prediction is genuinely uncertain, not a trivial guess.
-- ACTUAL_VALUE and THRESHOLD_VALUE must be a plain number only (no units,
-  no commas, no text) — the unit goes in the UNIT field separately.
-  ACTUAL_VALUE must be real, correct, current fact — never invent or
-  approximate it.
+- ACTUAL_VALUE and THRESHOLD_VALUE must be a plain, sensibly-rounded
+  number only (no units, no commas, no text) — the unit goes in the UNIT
+  field separately. ACTUAL_VALUE must be a real, correct fact — never
+  invented — but round it to a sensible level for the kind of figure it
+  is (e.g. nearest whole unit for a large number), not a fabricated
+  decimal-level precision that isn't actually meaningful or citable.
 - INTRO_SCRIPT: one short line introducing the subject.
 - RULE_SCRIPT: states the threshold value and what's being predicted.
 - GAMEPLAY_SCRIPT: asks the viewer to predict above or below the
   threshold — do not reveal the actual value here.
-- REVEAL_SCRIPT: states the real actual value plainly. Do not say who
-  guessed right — the video determines that separately.
+- REVEAL_SCRIPT: states the real actual value, phrased with
+  "approximately"/"around"/"roughly" rather than asserting exact
+  precision. Do not say who guessed right — the video determines that
+  separately.
 
 Output EXACTLY in this format, with no extra commentary before or after:
 

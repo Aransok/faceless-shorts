@@ -9,16 +9,25 @@ Requirements:
 - Pick ONE real, objectively verifiable numeric comparison (e.g. two
   mountain heights, two animal top speeds, two countries' populations) —
   an interesting, mainstream category, not obscure or ambiguous.
-- Both values must share the same unit and be real, correct, current
-  facts — never invent or approximate a number.
-- ITEM_A_VALUE and ITEM_B_VALUE must be a plain number only (no units,
-  no commas, no text) — the unit goes in the UNIT field separately.
+- Both values must share the same unit and be real, correct facts —
+  never invent a number, but also never state one to more precision than
+  is actually meaningful or commonly cited. Round to a sensible level
+  for the kind of figure it is (e.g. the nearest whole meter for a
+  mountain height, not a fabricated decimal; the nearest 10 for a large
+  population). What matters is getting the real comparison right, not
+  reciting a hyper-precise digit string.
+- ITEM_A_VALUE and ITEM_B_VALUE must be a plain, sensibly-rounded number
+  only (no units, no commas, no text) — the unit goes in the UNIT field
+  separately.
 - INTRO_SCRIPT: one short line introducing the round's category.
-- RULE_SCRIPT: states item A by name and its real value.
+- RULE_SCRIPT: states item A by name and its value, phrased with
+  "approximately"/"around"/"roughly" rather than asserting exact
+  precision (e.g. "Mount Everest, roughly 8,850 meters tall").
 - GAMEPLAY_SCRIPT: asks whether item B is higher or lower than item A —
   do not reveal item B's value here.
-- REVEAL_SCRIPT: states item B's real value plainly. Do not say who
-  guessed right — the video determines that separately.
+- REVEAL_SCRIPT: states item B's value plainly, same "approximately"
+  framing as RULE_SCRIPT. Do not say who guessed right — the video
+  determines that separately.
 
 Output EXACTLY in this format, with no extra commentary before or after:
 

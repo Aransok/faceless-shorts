@@ -62,8 +62,8 @@ def generate_round(session: GameSession, avoid_topics: list[str], round_index: i
     for attempt in range(1, VERIFY_MAX_ATTEMPTS + 1):
         candidate = _generate_content(avoid_topics)
         claim = (
-            f"{candidate['ITEM_A_NAME']} is {candidate['item_a_value']} {candidate['UNIT']}, "
-            f"and {candidate['ITEM_B_NAME']} is {candidate['item_b_value']} {candidate['UNIT']}."
+            f"{candidate['ITEM_A_NAME']} is approximately {candidate['item_a_value']} {candidate['UNIT']}, "
+            f"and {candidate['ITEM_B_NAME']} is approximately {candidate['item_b_value']} {candidate['UNIT']}."
         )
         result = verify_claim(claim)
         if result["verdict"] == "CONFIRMED":

@@ -563,17 +563,34 @@ Items 1-3 done, verified with REAL LLM calls (not mocked):
   8849m -- CONFIRMED) and a real known-false one (Everest 3000m --
   REJECTED, with a real correct correction offered back). Real cost:
   ~4-5s per call (a real `claude` CLI subprocess).
-- **Real signal worth flagging**: in the one full real
-  `plan_game_night()` run so far, BOTH LLM-content rounds
-  (higher_or_lower, prediction) hit `RoundVerificationFailed` after 3
-  real attempts each (the verifier rejected borderline-precise but
-  arguably-fine claims, e.g. "Everest is 8849.0m" for being falsely
-  precise) and were substituted per the owner's fallback rule (item 3)
-  rather than failing the episode. The fallback worked exactly as
-  designed, but a 100% substitution rate for the two content-generated
-  modules in one real run is a signal the verifier prompt may be tuned
-  stricter than useful -- not fixed yet, flagged for a decision once
-  there's more than one real run's worth of data.
+- **False-precision rejection, found and fixed for real.** The initial
+  100% substitution rate for higher_or_lower/prediction (both fell back
+  in the first real run) turned out to be two separate real bugs, not
+  one calibration issue:
+  1. `verify_claim()`'s prompt was genuinely too strict (rejecting
+     accurate-but-precisely-stated values like "8849.0m" over rounding).
+     Relaxed to explicitly confirm reasonable rounding/source variation,
+     and both generation prompts now ask for sensibly-rounded values
+     with "approximately"/"roughly" narration instead of fabricated
+     decimal precision.
+  2. **A real parsing bug**, found while checking *why* two still-correct
+     claims (Great Wall length, Eiffel Tower steps) kept getting
+     rejected after the prompt fix: the model sometimes reasons out loud
+     despite the "respond in EXACTLY this format" instruction, emitting
+     a first `VERDICT: REJECTED` that its own follow-up reasoning then
+     reverses to a final `VERDICT: CONFIRMED` -- and `_VERDICT_PATTERN
+     .search()` was grabbing the FIRST match, silently taking the
+     model's abandoned draft answer instead of its real one. Fixed by
+     taking the LAST verdict match instead (the model's settled answer),
+     with `corrected` only read back when that final verdict is
+     REJECTED. Confirmed via the raw model output for both cases before
+     believing the diagnosis, not guessed.
+  Re-verified with 3 full real `plan_game_night()` runs after both
+  fixes: 6/6 higher_or_lower/prediction slots surfaced as themselves
+  (zero fallback substitutions), vs. 2/2 substituted before. Content
+  spot-checked and reads naturally with the new rounded framing (e.g.
+  "roughly 110 kilometers an hour," "approximately 1,454 feet"). All 3
+  test videos removed from state.db after inspection.
 - **`pipeline/plan_game.py`** -- assembles one episode: picks rounds,
   threads one `GameSession` through them, folds in a rotated (not
   LLM-generated) intro/outro line, substitutes on verification failure.
