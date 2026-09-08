@@ -1,7 +1,10 @@
 """Stage 1 for the game-night longform track (Phase 16) -- assembles one
 episode from a real, no-adjacent-repeat sequence of the 5 round modules
-(pipeline/games/), carrying one GameSession's lives/points across all of
-them. Deliberately no LLM call for the episode-level glue narration
+(pipeline/games/). No session/scoring threaded through -- an earlier
+version simulated a "contestant" winning/losing points and lives, cut
+after a real rendered test episode read as a fake AI playing the game by
+itself. Every round now just presents its content and reveals the real
+answer. Deliberately no LLM call for the episode-level glue narration
 (intro/outro) -- only the two content modules that need real facts
 (higher_or_lower, prediction) call the LLM; the shared framing text is
 plain, rotated via the same pick_rotating() mechanism as everything else
@@ -14,7 +17,7 @@ from __future__ import annotations
 import json
 
 from pipeline.games import higher_or_lower, memory, prediction, risk_or_safe, what_changed
-from pipeline.games.base import FALLBACK_ROUND_TYPES, GameSession, RoundVerificationFailed, select_rounds
+from pipeline.games.base import FALLBACK_ROUND_TYPES, RoundVerificationFailed, select_rounds
 from pipeline.rotation import pick_rotating
 from pipeline.state import create_video, create_video_steps, get_video, get_video_steps, update_video
 
@@ -53,9 +56,7 @@ def _round_topic(round_type: str, beats: list[dict]) -> str | None:
     return None
 
 
-def _generate_one_round(
-    round_type: str, session: GameSession, avoid_topics: list[str], round_index: int, previous_type: str | None
-) -> tuple[str, list[dict], GameSession]:
+def _generate_one_round(round_type: str, avoid_topics: list[str], round_index: int, previous_type: str | None) -> tuple[str, list[dict]]:
     """Runs round_type's generate_round(). If verify_claim() rejects every
     retry (RoundVerificationFailed -- see base.py), substitutes a
     FALLBACK_ROUND_TYPES module instead of failing the whole episode --
@@ -65,27 +66,23 @@ def _generate_one_round(
     """
     module = _MODULES[round_type]
     try:
-        beats, session = module.generate_round(session, avoid_topics, round_index)
-        return round_type, beats, session
+        return round_type, module.generate_round(avoid_topics, round_index)
     except RoundVerificationFailed as exc:
         print(f"[plan_game] {round_type} round {round_index} failed verification, substituting: {exc}")
         candidates = [t for t in FALLBACK_ROUND_TYPES if t != previous_type] or list(FALLBACK_ROUND_TYPES)
         fallback_type = candidates[0]
-        fallback_module = _MODULES[fallback_type]
-        beats, session = fallback_module.generate_round(session, avoid_topics, round_index)
-        return fallback_type, beats, session
+        return fallback_type, _MODULES[fallback_type].generate_round(avoid_topics, round_index)
 
 
 def plan_game_night(round_count: int = DEFAULT_ROUND_COUNT) -> str:
     round_types = select_rounds(round_count)
-    session = GameSession()
     avoid_topics: list[str] = []
     all_beats: list[dict] = []
     actual_round_types: list[str] = []
 
     previous_type = None
     for i, round_type in enumerate(round_types, start=1):
-        actual_type, beats, session = _generate_one_round(round_type, session, avoid_topics, i, previous_type)
+        actual_type, beats = _generate_one_round(round_type, avoid_topics, i, previous_type)
         all_beats.extend(beats)
         actual_round_types.append(actual_type)
         topic = _round_topic(actual_type, beats)
@@ -98,15 +95,10 @@ def plan_game_night(round_count: int = DEFAULT_ROUND_COUNT) -> str:
 
     intro_step = {"script_text": intro_line, "round_type": None, "round_index": 0, "beat_type": "intro"}
     outro_step = {
-        "script_text": (
-            f"Final score: {session.points} points, {max(session.lives, 0)} "
-            f"{'life' if session.lives == 1 else 'lives'} left. {outro_line}"
-        ),
+        "script_text": outro_line,
         "round_type": None,
         "round_index": len(round_types) + 1,
-        "beat_type": "score",
-        "lives_after": session.lives,
-        "points_after": session.points,
+        "beat_type": "outro",
     }
 
     steps = [intro_step, *all_beats, outro_step]

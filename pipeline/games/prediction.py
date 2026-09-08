@@ -1,26 +1,23 @@
 """Prediction round: LLM proposes a real stat plus a nearby threshold,
 verify_claim() confirms the real value independently before it ships.
-Above/below the threshold is a plain numeric comparison in code, and the
-"contestant" guess is a real weighted-random draw seeded by how close the
-actual value is to the threshold (closer = harder call = lower real pass
-odds). Shares verify_claim() with higher_or_lower.py -- see base.py.
+Above/below the threshold is a plain numeric comparison in code. No
+simulated win/loss: this presents the challenge and reveals the real
+value, nothing more. Shares verify_claim() with higher_or_lower.py --
+see base.py.
 """
 
 from __future__ import annotations
 
-import random
 import re
 from pathlib import Path
 
-from pipeline.games.base import GameSession, RoundVerificationFailed, VERIFY_MAX_ATTEMPTS, make_beat, verify_claim
+from pipeline.games.base import RoundVerificationFailed, VERIFY_MAX_ATTEMPTS, make_beat, verify_claim
 from pipeline.persona import persona_guidance_block
 from pipeline.plan import call_llm
 
 ROUND_TYPE = "prediction"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "game_prediction.txt"
-
-POINTS = 20
 
 _FIELD_NAMES = (
     "SUBJECT_NAME", "ACTUAL_VALUE", "THRESHOLD_VALUE", "UNIT",
@@ -56,7 +53,7 @@ def _generate_content(avoid_topics: list[str]) -> dict:
     return _parse_response(raw)
 
 
-def generate_round(session: GameSession, avoid_topics: list[str], round_index: int) -> tuple[list[dict], GameSession]:
+def generate_round(avoid_topics: list[str], round_index: int) -> list[dict]:
     content = None
     for attempt in range(1, VERIFY_MAX_ATTEMPTS + 1):
         candidate = _generate_content(avoid_topics)
@@ -72,39 +69,19 @@ def generate_round(session: GameSession, avoid_topics: list[str], round_index: i
     actual_value, threshold_value = content["actual_value"], content["threshold_value"]
     correct_answer = "above" if actual_value > threshold_value else "below"
 
-    spread = abs(actual_value - threshold_value) / max(abs(actual_value), abs(threshold_value), 1e-9)
-    pass_probability = min(0.85, max(0.3, spread))
-    passed = random.random() < pass_probability
-
     round_data = {
         "subject_name": content["SUBJECT_NAME"],
         "actual_value": actual_value,
         "threshold_value": threshold_value,
         "unit": content["UNIT"],
         "correct_answer": correct_answer,
-        "passed": passed,
     }
 
-    beats = [
-        make_beat(ROUND_TYPE, round_index, "intro", content["INTRO_SCRIPT"], session),
-        make_beat(ROUND_TYPE, round_index, "rule", content["RULE_SCRIPT"], session, round_data),
-        make_beat(ROUND_TYPE, round_index, "countdown", "Above, or below?", session),
-        make_beat(ROUND_TYPE, round_index, "gameplay", content["GAMEPLAY_SCRIPT"], session, round_data),
-        make_beat(ROUND_TYPE, round_index, "suspense", "Let's find out...", session),
-        make_beat(
-            ROUND_TYPE, round_index, "reveal",
-            content["REVEAL_SCRIPT"] + (" Correct call." if passed else " Wrong call."),
-            session, round_data,
-        ),
+    return [
+        make_beat(ROUND_TYPE, round_index, "intro", content["INTRO_SCRIPT"]),
+        make_beat(ROUND_TYPE, round_index, "rule", content["RULE_SCRIPT"], round_data),
+        make_beat(ROUND_TYPE, round_index, "countdown", "Above, or below?"),
+        make_beat(ROUND_TYPE, round_index, "gameplay", content["GAMEPLAY_SCRIPT"], round_data),
+        make_beat(ROUND_TYPE, round_index, "suspense", "Let's find out..."),
+        make_beat(ROUND_TYPE, round_index, "reveal", content["REVEAL_SCRIPT"], round_data),
     ]
-
-    session.apply_round_result(passed, POINTS)
-    session.round_types_used.append(ROUND_TYPE)
-    beats.append(
-        make_beat(
-            ROUND_TYPE, round_index, "score",
-            f"{'+' + str(POINTS) + ' points' if passed else 'Lost a life'}.",
-            session, round_data,
-        )
-    )
-    return beats, session

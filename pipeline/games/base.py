@@ -1,7 +1,15 @@
-"""Shared game-night infrastructure: session/scoring, the round-selector,
-the beat schema every module writes into, and the fact-verification
-helper used by the two LLM-content modules (higher_or_lower,
-prediction). See ROADMAP.md Phase 16.
+"""Shared game-night infrastructure: the round-selector, the beat schema
+every module writes into, and the fact-verification helper used by the
+two LLM-content modules (higher_or_lower, prediction). See ROADMAP.md
+Phase 16.
+
+No session/scoring here -- an earlier version simulated a "contestant"
+guessing each round and won/lost lives and points against that simulated
+outcome. Cut entirely after watching a real rendered test episode: it
+read as a fake AI playing the game by itself, disconnected from the
+actual viewer. Every round now just presents its real content, holds for
+suspense, and reveals the real answer/outcome -- no invented judgment of
+whether anyone "won."
 """
 
 from __future__ import annotations
@@ -9,7 +17,6 @@ from __future__ import annotations
 import json
 import random
 import re
-from dataclasses import dataclass, field
 
 from pipeline.plan import call_llm
 
@@ -24,9 +31,8 @@ VERIFIED_CONTENT_ROUND_TYPES = ("higher_or_lower", "prediction")
 # verify) rather than failing episode generation outright.
 FALLBACK_ROUND_TYPES = ("memory", "what_changed")
 
-BEAT_TYPES = ("intro", "rule", "countdown", "gameplay", "suspense", "reveal", "score")
+BEAT_TYPES = ("intro", "rule", "countdown", "gameplay", "suspense", "reveal")
 
-STARTING_LIVES = 3
 VERIFY_MAX_ATTEMPTS = 3
 
 _VERDICT_PATTERN = re.compile(r"VERDICT:\s*(CONFIRMED|REJECTED)", re.IGNORECASE)
@@ -39,25 +45,6 @@ class RoundVerificationFailed(Exception):
     substitutes a FALLBACK_ROUND_TYPES module for that slot rather than
     failing episode generation outright -- owner's explicit call.
     """
-
-
-@dataclass
-class GameSession:
-    """Real narrative state carried across an episode's rounds -- lives
-    and points are computed once at plan time from each round's actual
-    algorithmic outcome, then stored on the steps (lives_after/
-    points_after), not re-derived at render time.
-    """
-
-    lives: int = STARTING_LIVES
-    points: int = 0
-    round_types_used: list[str] = field(default_factory=list)
-
-    def apply_round_result(self, passed: bool, points_delta: int) -> None:
-        if passed:
-            self.points += points_delta
-        else:
-            self.lives -= 1
 
 
 def select_rounds(count: int, pool: tuple[str, ...] = ROUND_TYPES) -> list[str]:
@@ -85,16 +72,10 @@ def make_beat(
     round_index: int,
     beat_type: str,
     script_text: str,
-    session: GameSession,
     round_data: dict | None = None,
 ) -> dict:
     """One video_steps row for the shared render timing contract (intro ->
-    rule -> countdown -> gameplay -> suspense -> reveal -> score). Session
-    values are snapshotted as of THIS beat -- every beat up through
-    "reveal" carries the pre-round lives/points; "score" is the one beat
-    whose lives_after/points_after actually differ, since it's the beat
-    that exists to display the change.
-    """
+    rule -> countdown -> gameplay -> suspense -> reveal)."""
     if beat_type not in BEAT_TYPES:
         raise ValueError(f"beat_type must be one of {BEAT_TYPES}, got {beat_type!r}")
     return {
@@ -103,8 +84,6 @@ def make_beat(
         "round_index": round_index,
         "beat_type": beat_type,
         "round_data_json": json.dumps(round_data) if round_data is not None else None,
-        "lives_after": session.lives,
-        "points_after": session.points,
     }
 
 

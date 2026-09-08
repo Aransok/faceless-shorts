@@ -196,16 +196,13 @@ def init_db(db_path: Path = DB_PATH) -> None:
         if "correct_index" not in existing_step_cols:
             conn.execute("ALTER TABLE video_steps ADD COLUMN correct_index INTEGER")
         # game_night: each round emits a fixed beat sequence (intro, rule,
-        # countdown, gameplay, suspense, reveal, score) -- round_type/
-        # round_index/beat_type identify which round and which beat within
-        # it; round_data_json carries whatever structured content that
-        # round needs (comparison values, memory sequence, scene
-        # attributes, risk odds -- shape varies per round_type, same
-        # "generalized JSON payload" pattern as quiz's options column, just
-        # not fixed to one shape since 5 different modules share this
-        # table). lives_after/points_after are the session's real state as
-        # of this beat -- computed once at plan time and stored, not
-        # re-derived at render time (see CLAUDE.md's data-storage rule).
+        # countdown, gameplay, suspense, reveal) -- round_type/round_index/
+        # beat_type identify which round and which beat within it;
+        # round_data_json carries whatever structured content that round
+        # needs (comparison values, memory sequence, scene attributes, risk
+        # odds -- shape varies per round_type, same "generalized JSON
+        # payload" pattern as quiz's options column, just not fixed to one
+        # shape since 5 different modules share this table).
         if "round_type" not in existing_step_cols:
             conn.execute("ALTER TABLE video_steps ADD COLUMN round_type TEXT")
         if "round_index" not in existing_step_cols:
@@ -214,10 +211,15 @@ def init_db(db_path: Path = DB_PATH) -> None:
             conn.execute("ALTER TABLE video_steps ADD COLUMN beat_type TEXT")
         if "round_data_json" not in existing_step_cols:
             conn.execute("ALTER TABLE video_steps ADD COLUMN round_data_json TEXT")
-        if "lives_after" not in existing_step_cols:
-            conn.execute("ALTER TABLE video_steps ADD COLUMN lives_after INTEGER")
-        if "points_after" not in existing_step_cols:
-            conn.execute("ALTER TABLE video_steps ADD COLUMN points_after INTEGER")
+        # lives_after/points_after (a simulated per-round score) existed
+        # briefly and never shipped -- dropped after a real rendered test
+        # episode made clear the whole "contestant" scoring concept didn't
+        # work (read as a fake AI playing the game by itself). Drop them
+        # for any db that picked up the columns during that window.
+        if "lives_after" in existing_step_cols:
+            conn.execute("ALTER TABLE video_steps DROP COLUMN lives_after")
+        if "points_after" in existing_step_cols:
+            conn.execute("ALTER TABLE video_steps DROP COLUMN points_after")
 
         # channel_stats: latest real subscriber/view counts, written by the
         # (future) weekly stats job once Phase 8 is live — never fabricated.
@@ -358,7 +360,7 @@ def list_uploaded_without_cta_comment(db_path: Path = DB_PATH) -> list[dict]:
 _STEP_COLUMNS = (
     "script_text", "code_snippet", "output_text", "keywords", "audio_path", "duration",
     "card_type", "options", "correct_index",
-    "round_type", "round_index", "beat_type", "round_data_json", "lives_after", "points_after",
+    "round_type", "round_index", "beat_type", "round_data_json",
 )
 
 
@@ -371,15 +373,15 @@ def create_video_steps(video_id: str, steps: list[dict], db_path: Path = DB_PATH
                 INSERT INTO video_steps
                     (video_id, step_index, script_text, code_snippet, output_text, keywords,
                      card_type, options, correct_index,
-                     round_type, round_index, beat_type, round_data_json, lives_after, points_after)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     round_type, round_index, beat_type, round_data_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     video_id, i, step["script_text"], step.get("code_snippet"),
                     step.get("output_text"), step.get("keywords"),
                     step.get("card_type"), step.get("options"), step.get("correct_index"),
                     step.get("round_type"), step.get("round_index"), step.get("beat_type"),
-                    step.get("round_data_json"), step.get("lives_after"), step.get("points_after"),
+                    step.get("round_data_json"),
                 ),
             )
 

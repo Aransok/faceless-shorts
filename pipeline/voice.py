@@ -56,6 +56,17 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 BEAT_PAUSE_SECONDS = 3.5
 _PAUSED_TEMPLATES = {"facts", "sauce_recipe"}
 
+# game_night: gameplay/reveal/countdown beats show a real on-screen card
+# the viewer needs actual time to read (a sequence of icons, a versus
+# card, an attribute table) -- but the narration line driving that beat's
+# duration is often much shorter (e.g. "It hits!" is well under a
+# second). A real watched test episode came out far too fast because of
+# exactly this -- the visual was already gone before it could be read.
+# Fix: pad each of these beats' own audio up to a floor (only the real
+# shortfall, not a flat add-on) so the visual holds long enough
+# regardless of how brief the line is.
+GAME_NIGHT_MIN_BEAT_SECONDS = {"countdown": 1.5, "gameplay": 3.5, "reveal": 4.0}
+
 
 def _pad_with_silence(path: Path, seconds: float) -> None:
     ffmpeg_path = shutil.which("ffmpeg")
@@ -224,6 +235,7 @@ def _voice_steps(video_id: str, backend: str, template: str) -> str:
     steps = get_video_steps(video_id)
     _, ext = _BACKENDS[backend]
     add_pause = template in _PAUSED_TEMPLATES
+    is_game_night = template == "game_night"
 
     step_paths = []
     for i, step in enumerate(steps):
@@ -232,6 +244,11 @@ def _voice_steps(video_id: str, backend: str, template: str) -> str:
         if add_pause and i < len(steps) - 1:
             _pad_with_silence(step_path, BEAT_PAUSE_SECONDS)
         duration = audio_duration_seconds(step_path)
+        if is_game_night:
+            floor = GAME_NIGHT_MIN_BEAT_SECONDS.get(step["beat_type"])
+            if floor is not None and duration < floor:
+                _pad_with_silence(step_path, floor - duration)
+                duration = floor
         update_video_step(video_id, step["step_index"], audio_path=str(step_path), duration=duration)
         step_paths.append(step_path)
 

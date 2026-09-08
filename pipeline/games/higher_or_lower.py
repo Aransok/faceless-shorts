@@ -1,27 +1,23 @@
 """Higher or Lower round: LLM proposes a real numeric comparison pair,
 verify_claim() confirms it independently before it's allowed to ship.
-The LLM never decides who's "right" -- once the pair is verified, the
-higher/lower answer is a plain numeric comparison in code, and the
-"contestant" guess is a real weighted-random draw seeded by how close the
-two values are (closer values = harder call = lower real pass odds).
-See base.py for the shared session/beat contract and verify_claim().
+The LLM never decides the answer -- once the pair is verified, higher/
+lower is a plain numeric comparison in code. No simulated win/loss: this
+presents the challenge and reveals the real values, nothing more. See
+base.py for the shared beat contract and verify_claim().
 """
 
 from __future__ import annotations
 
-import random
 import re
 from pathlib import Path
 
-from pipeline.games.base import GameSession, RoundVerificationFailed, VERIFY_MAX_ATTEMPTS, make_beat, verify_claim
+from pipeline.games.base import RoundVerificationFailed, VERIFY_MAX_ATTEMPTS, make_beat, verify_claim
 from pipeline.persona import persona_guidance_block
 from pipeline.plan import call_llm
 
 ROUND_TYPE = "higher_or_lower"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "game_higher_or_lower.txt"
-
-POINTS = 20
 
 _FIELD_NAMES = (
     "CATEGORY", "ITEM_A_NAME", "ITEM_A_VALUE", "ITEM_B_NAME", "ITEM_B_VALUE", "UNIT",
@@ -57,7 +53,7 @@ def _generate_content(avoid_topics: list[str]) -> dict:
     return _parse_response(raw)
 
 
-def generate_round(session: GameSession, avoid_topics: list[str], round_index: int) -> tuple[list[dict], GameSession]:
+def generate_round(avoid_topics: list[str], round_index: int) -> list[dict]:
     content = None
     for attempt in range(1, VERIFY_MAX_ATTEMPTS + 1):
         candidate = _generate_content(avoid_topics)
@@ -76,12 +72,6 @@ def generate_round(session: GameSession, avoid_topics: list[str], round_index: i
     item_a_value, item_b_value = content["item_a_value"], content["item_b_value"]
     correct_answer = "higher" if item_b_value > item_a_value else "lower"
 
-    # Real difficulty from the real values -- closer together (relative to
-    # the larger of the two) is a harder call, so lower pass odds.
-    spread = abs(item_b_value - item_a_value) / max(abs(item_a_value), abs(item_b_value), 1e-9)
-    pass_probability = min(0.85, max(0.3, spread))
-    passed = random.random() < pass_probability
-
     round_data = {
         "category": content["CATEGORY"],
         "item_a_name": content["ITEM_A_NAME"],
@@ -90,29 +80,13 @@ def generate_round(session: GameSession, avoid_topics: list[str], round_index: i
         "item_b_value": item_b_value,
         "unit": content["UNIT"],
         "correct_answer": correct_answer,
-        "passed": passed,
     }
 
-    beats = [
-        make_beat(ROUND_TYPE, round_index, "intro", content["INTRO_SCRIPT"], session),
-        make_beat(ROUND_TYPE, round_index, "rule", content["RULE_SCRIPT"], session, round_data),
-        make_beat(ROUND_TYPE, round_index, "countdown", "Higher, or lower?", session),
-        make_beat(ROUND_TYPE, round_index, "gameplay", content["GAMEPLAY_SCRIPT"], session, round_data),
-        make_beat(ROUND_TYPE, round_index, "suspense", "Let's find out...", session),
-        make_beat(
-            ROUND_TYPE, round_index, "reveal",
-            content["REVEAL_SCRIPT"] + (" Correct call." if passed else " Wrong call."),
-            session, round_data,
-        ),
+    return [
+        make_beat(ROUND_TYPE, round_index, "intro", content["INTRO_SCRIPT"]),
+        make_beat(ROUND_TYPE, round_index, "rule", content["RULE_SCRIPT"], round_data),
+        make_beat(ROUND_TYPE, round_index, "countdown", "Higher, or lower?"),
+        make_beat(ROUND_TYPE, round_index, "gameplay", content["GAMEPLAY_SCRIPT"], round_data),
+        make_beat(ROUND_TYPE, round_index, "suspense", "Let's find out..."),
+        make_beat(ROUND_TYPE, round_index, "reveal", content["REVEAL_SCRIPT"], round_data),
     ]
-
-    session.apply_round_result(passed, POINTS)
-    session.round_types_used.append(ROUND_TYPE)
-    beats.append(
-        make_beat(
-            ROUND_TYPE, round_index, "score",
-            f"{'+' + str(POINTS) + ' points' if passed else 'Lost a life'}.",
-            session, round_data,
-        )
-    )
-    return beats, session

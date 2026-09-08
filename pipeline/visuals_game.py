@@ -1,11 +1,17 @@
 """Visuals for the game-night longform track (Phase 16) -- horizontal
 1920x1080, same panel/border chrome as visuals_quiz.py for brand
 consistency (reused via render_text.py, not re-implemented). Every beat
-(intro/rule/countdown/gameplay/suspense/reveal/score) renders from real,
-already-decided data -- round_data_json, lives_after, points_after --
-nothing here re-derives a game outcome, it only draws what
-pipeline/games/ and plan_game.py already computed. See ROADMAP.md
-Phase 16.
+(intro/rule/countdown/gameplay/suspense/reveal) renders from real,
+already-decided data -- round_data_json -- nothing here re-derives a
+game outcome, it only draws what pipeline/games/ and plan_game.py
+already computed.
+
+No lives/points HUD and no win/loss (green/red) coloring -- an earlier
+version had both, simulating a "contestant" who won or lost each round.
+Cut after watching a real rendered test episode: it read as a fake AI
+playing the game by itself. Every reveal now uses one neutral highlight
+color -- it's just marking "this is the real answer", not judging
+anyone. See ROADMAP.md Phase 16.
 """
 
 from __future__ import annotations
@@ -44,7 +50,6 @@ SAFE_MARGIN_FRACTION = 0.05
 
 PANEL_BOX = (PANEL_MARGIN_X, TOP_MARGIN, WIDTH - PANEL_MARGIN_X, HEIGHT - CAPTION_SAFE_HEIGHT)
 
-HUD_FONT_SIZE = 32
 ROUND_LABEL_FONT_SIZE = 28
 TEXT_FONT_SIZE = 54
 MIN_TEXT_FONT_SIZE = 28
@@ -53,18 +58,16 @@ MIN_VALUE_FONT_SIZE = 32
 NAME_FONT_SIZE = 40
 MIN_NAME_FONT_SIZE = 24
 CHIP_FONT_SIZE = 32
-OUTCOME_FONT_SIZE = 44
 
 TEXT_COLOR = (242, 242, 234)
 DIM_TEXT = (147, 148, 138)
-HUD_LIVES_COLOR = (240, 120, 120)
-HUD_POINTS_COLOR = (240, 200, 100)
-PASS_BG = (34, 122, 90)
-PASS_TEXT = (232, 255, 244)
-FAIL_BG = (122, 40, 40)
-FAIL_TEXT = (255, 232, 232)
 CARD_BG = (39, 40, 34)
 CARD_BG_DIM = (30, 31, 27)
+# The one "this is the real answer" highlight -- a muted brand-teal tint,
+# deliberately not red/green, since nothing here is being judged right
+# or wrong.
+REVEAL_BG = (24, 74, 68)
+REVEAL_TEXT = (198, 245, 235)
 
 ROUND_LABELS = {
     "higher_or_lower": "HIGHER OR LOWER",
@@ -98,22 +101,6 @@ def _render_base_panel() -> Image.Image:
     return frame
 
 
-def _draw_hud(draw: ImageDraw.ImageDraw, lives: int | None, points: int | None) -> None:
-    """Top-left, inside the panel -- real session state as of this beat
-    (lives_after/points_after are pre-round values for every beat except
-    "score", per make_beat()'s own contract)."""
-    if lives is None or points is None:
-        return
-    x0, y0, _, _ = PANEL_BOX
-    font = _font(FONT_BOLD_PATH, HUD_FONT_SIZE)
-    text_y = y0 + PANEL_PADDING - 6
-    lives_text = f"{max(lives, 0)} {'LIFE' if lives == 1 else 'LIVES'}"
-    draw.text((x0 + PANEL_PADDING, text_y), lives_text, font=font, fill=HUD_LIVES_COLOR)
-    lives_w = draw.textlength(lives_text, font=font)
-    points_text = f"{points} PTS"
-    draw.text((x0 + PANEL_PADDING + lives_w + 40, text_y), points_text, font=font, fill=HUD_POINTS_COLOR)
-
-
 def _draw_round_label(draw: ImageDraw.ImageDraw, round_type: str | None) -> None:
     """Top-right, inside the panel -- which round this is, so a viewer
     scrubbing the video can tell rounds apart at a glance."""
@@ -127,19 +114,18 @@ def _draw_round_label(draw: ImageDraw.ImageDraw, round_type: str | None) -> None
 
 
 def _content_area() -> tuple[int, int, int, int]:
-    """The panel area below the HUD/round-label row, where beat-specific
+    """The panel area below the round-label row, where beat-specific
     content actually draws."""
     x0, y0, x1, y1 = PANEL_BOX
-    content_top = y0 + PANEL_PADDING + 70
+    content_top = y0 + PANEL_PADDING + 50
     return x0 + PANEL_PADDING, content_top, x1 - PANEL_PADDING, y1 - PANEL_PADDING
 
 
-def _render_text_beat(script_text: str, round_type: str | None, lives: int | None, points: int | None) -> Image.Image:
-    """intro/rule/countdown/suspense/score beats -- a centered text card,
+def _render_text_beat(script_text: str, round_type: str | None) -> Image.Image:
+    """intro/rule/countdown/suspense/outro beats -- a centered text card,
     same shape as visuals_quiz.py's intro/outro card."""
     frame = _render_base_panel()
     draw = ImageDraw.Draw(frame)
-    _draw_hud(draw, lives, points)
     _draw_round_label(draw, round_type)
 
     cx0, cy0, cx1, cy1 = _content_area()
@@ -173,10 +159,9 @@ def _chip_row(
         x += w + gap
 
 
-def _render_memory_beat(round_data: dict, revealed: bool, round_type: str, lives, points) -> Image.Image:
+def _render_memory_beat(round_data: dict, revealed: bool, round_type: str) -> Image.Image:
     frame = _render_base_panel()
     draw = ImageDraw.Draw(frame)
-    _draw_hud(draw, lives, points)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
     cy_mid = (cy0 + cy1) // 2
@@ -191,18 +176,15 @@ def _render_memory_beat(round_data: dict, revealed: bool, round_type: str, lives
     if not revealed:
         target_entries = [(f"{target_label}  ?", CARD_BG, TEXT_COLOR)]
     else:
-        passed = round_data["passed"]
-        bg, text_color = (PASS_BG, PASS_TEXT) if passed else (FAIL_BG, FAIL_TEXT)
         answer = round_data["correct_answer"].upper()
-        target_entries = [(f"{target_label}  -  {answer}", bg, text_color)]
+        target_entries = [(f"{target_label}  -  {answer}", REVEAL_BG, REVEAL_TEXT)]
     _chip_row(draw, cy_mid + 60, target_entries, target_font, pad_x=40, pad_y=26)
     return frame
 
 
-def _render_what_changed_beat(round_data: dict, revealed: bool, round_type: str, lives, points) -> Image.Image:
+def _render_what_changed_beat(round_data: dict, revealed: bool, round_type: str) -> Image.Image:
     frame = _render_base_panel()
     draw = ImageDraw.Draw(frame)
-    _draw_hud(draw, lives, points)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
 
@@ -229,32 +211,34 @@ def _render_what_changed_beat(round_data: dict, revealed: bool, round_type: str,
     for i, attr in enumerate(attr_names):
         y = row_top + i * (row_h + row_gap)
         is_changed_row = revealed and attr == changed
-        bg = (PASS_BG if round_data["passed"] else FAIL_BG) if is_changed_row else CARD_BG_DIM
-        text_color = (PASS_TEXT if round_data["passed"] else FAIL_TEXT) if is_changed_row else TEXT_COLOR
+        bg = REVEAL_BG if is_changed_row else CARD_BG_DIM
+        text_color = REVEAL_TEXT if is_changed_row else TEXT_COLOR
         label = attr.replace("_", " ").upper()
 
-        draw.rounded_rectangle([col_a_x, y, col_a_x + col_w, y + row_h], radius=12, fill=bg if is_changed_row else CARD_BG_DIM)
+        draw.rounded_rectangle([col_a_x, y, col_a_x + col_w, y + row_h], radius=12, fill=bg)
         draw.text((col_a_x + 20, y + (row_h - CHIP_FONT_SIZE) / 2 - 6), f"{label}: {before[attr]}", font=row_font, fill=text_color)
 
         after_visible = revealed or attr != changed
-        after_bg = bg if is_changed_row else CARD_BG_DIM
-        draw.rounded_rectangle([col_b_x, y, col_b_x + col_w, y + row_h], radius=12, fill=after_bg)
         after_value = after[attr] if after_visible else "?"
+        draw.rounded_rectangle([col_b_x, y, col_b_x + col_w, y + row_h], radius=12, fill=bg)
         draw.text((col_b_x + 20, y + (row_h - CHIP_FONT_SIZE) / 2 - 6), f"{label}: {after_value}", font=row_font, fill=text_color)
     return frame
 
 
-def _render_risk_or_safe_beat(round_data: dict, revealed: bool, round_type: str, lives, points) -> Image.Image:
+def _render_risk_or_safe_beat(round_data: dict, revealed: bool, round_type: str) -> Image.Image:
+    """SAFE is a static reference card (its value is already known, never
+    revealed). RISKY is the only card with a real outcome to reveal --
+    highlighted neutrally once the real weighted draw is known, labeled
+    with what actually happened (HIT/MISS), not a win/loss judgment of
+    anyone."""
     frame = _render_base_panel()
     draw = ImageDraw.Draw(frame)
-    _draw_hud(draw, lives, points)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
     cy_mid = (cy0 + cy1) // 2
 
-    took_risk = round_data["took_risk"]
-    passed = round_data["passed"]
     win_pct = round(round_data["risk_win_probability"] * 100)
+    risk_hits = round_data["risk_hits"]
 
     card_font = _font(FONT_BOLD_PATH, NAME_FONT_SIZE)
     sub_font = _font(FONT_PATH, CHIP_FONT_SIZE)
@@ -265,25 +249,23 @@ def _render_risk_or_safe_beat(round_data: dict, revealed: bool, round_type: str,
     x_risky = x_safe + card_w + gap
     y = cy_mid - card_h / 2
 
-    def draw_card(x, title, subtitle, chosen):
-        bg = CARD_BG
-        if revealed and chosen:
-            bg = PASS_BG if passed else FAIL_BG
-        elif chosen:
-            bg = (52, 54, 46)  # chosen-but-not-yet-revealed: a lighter neutral highlight
+    def draw_card(x, title, subtitle, bg):
         draw.rounded_rectangle([x, y, x + card_w, y + card_h], radius=18, fill=bg)
         tw = draw.textlength(title, font=card_font)
         draw.text((x + card_w / 2 - tw / 2, y + 40), title, font=card_font, fill=TEXT_COLOR)
         sw = draw.textlength(subtitle, font=sub_font)
         draw.text((x + card_w / 2 - sw / 2, y + 120), subtitle, font=sub_font, fill=DIM_TEXT)
 
-    draw_card(x_safe, "SAFE", f"+{round_data['safe_points']} guaranteed", chosen=not took_risk)
-    draw_card(x_risky, "RISKY", f"{win_pct}% for +{round_data['risk_win_points']}", chosen=took_risk)
+    draw_card(x_safe, "SAFE", f"+{round_data['safe_points']} guaranteed", CARD_BG)
+    risky_subtitle = f"{win_pct}% for +{round_data['risk_win_points']}"
+    if revealed:
+        risky_subtitle = f"{risky_subtitle} -- {'HIT' if risk_hits else 'MISS'}"
+    draw_card(x_risky, "RISKY", risky_subtitle, REVEAL_BG if revealed else CARD_BG)
     return frame
 
 
 def _render_comparison_beat(
-    round_data: dict, revealed: bool, round_type: str, lives, points, item_a_key: str, item_b_key: str,
+    round_data: dict, revealed: bool, round_type: str,
     a_name_field: str, b_name_field: str, a_value_field: str, b_value_field: str, unit_field: str, question_label: str,
 ) -> Image.Image:
     """Shared layout for higher_or_lower and prediction -- both are a
@@ -291,7 +273,6 @@ def _render_comparison_beat(
     field names in round_data."""
     frame = _render_base_panel()
     draw = ImageDraw.Draw(frame)
-    _draw_hud(draw, lives, points)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
     cy_mid = (cy0 + cy1) // 2
@@ -325,12 +306,10 @@ def _render_comparison_beat(
         centered_fit(round_data[b_name_field], x_b + card_w / 2, y + 40, NAME_FONT_SIZE, MIN_NAME_FONT_SIZE, TEXT_COLOR)
         centered_fit("?", x_b + card_w / 2, y + 120, VALUE_FONT_SIZE, MIN_VALUE_FONT_SIZE, TEXT_COLOR)
     else:
-        passed = round_data["passed"]
-        bg, text_color = (PASS_BG, PASS_TEXT) if passed else (FAIL_BG, FAIL_TEXT)
-        draw.rounded_rectangle([x_b, y, x_b + card_w, y + card_h], radius=18, fill=bg)
-        centered_fit(round_data[b_name_field], x_b + card_w / 2, y + 40, NAME_FONT_SIZE, MIN_NAME_FONT_SIZE, text_color)
+        draw.rounded_rectangle([x_b, y, x_b + card_w, y + card_h], radius=18, fill=REVEAL_BG)
+        centered_fit(round_data[b_name_field], x_b + card_w / 2, y + 40, NAME_FONT_SIZE, MIN_NAME_FONT_SIZE, REVEAL_TEXT)
         val_text = f"~{round_data[b_value_field]:g} {unit}"
-        centered_fit(val_text, x_b + card_w / 2, y + 120, VALUE_FONT_SIZE, MIN_VALUE_FONT_SIZE, text_color)
+        centered_fit(val_text, x_b + card_w / 2, y + 120, VALUE_FONT_SIZE, MIN_VALUE_FONT_SIZE, REVEAL_TEXT)
 
     label = question_label if not revealed else round_data["correct_answer"].upper()
     lw = draw.textlength(label, font=label_font)
@@ -338,25 +317,23 @@ def _render_comparison_beat(
     return frame
 
 
-def _render_higher_or_lower_beat(round_data, revealed, round_type, lives, points):
+def _render_higher_or_lower_beat(round_data, revealed, round_type):
     return _render_comparison_beat(
-        round_data, revealed, round_type, lives, points,
-        item_a_key="item_a", item_b_key="item_b",
+        round_data, revealed, round_type,
         a_name_field="item_a_name", b_name_field="item_b_name",
         a_value_field="item_a_value", b_value_field="item_b_value",
         unit_field="unit", question_label="HIGHER OR LOWER?",
     )
 
 
-def _render_prediction_beat(round_data, revealed, round_type, lives, points):
+def _render_prediction_beat(round_data, revealed, round_type):
     data = dict(round_data)
     data["item_a_name"] = "THRESHOLD"
     data["item_a_value"] = data["threshold_value"]
     data["item_b_name"] = data["subject_name"]
     data["item_b_value"] = data["actual_value"]
     return _render_comparison_beat(
-        data, revealed, round_type, lives, points,
-        item_a_key="item_a", item_b_key="item_b",
+        data, revealed, round_type,
         a_name_field="item_a_name", b_name_field="item_b_name",
         a_value_field="item_a_value", b_value_field="item_b_value",
         unit_field="unit", question_label="ABOVE OR BELOW?",
@@ -375,14 +352,13 @@ _GAMEPLAY_RENDERERS = {
 def _render_beat_frame(step: dict) -> Image.Image:
     round_type = step["round_type"]
     beat_type = step["beat_type"]
-    lives, points = step["lives_after"], step["points_after"]
     round_data = json.loads(step["round_data_json"]) if step["round_data_json"] else None
 
     if beat_type in ("gameplay", "reveal") and round_type in _GAMEPLAY_RENDERERS and round_data:
         revealed = beat_type == "reveal"
-        return _GAMEPLAY_RENDERERS[round_type](round_data, revealed, round_type, lives, points)
+        return _GAMEPLAY_RENDERERS[round_type](round_data, revealed, round_type)
 
-    return _render_text_beat(step["script_text"], round_type, lives, points)
+    return _render_text_beat(step["script_text"], round_type)
 
 
 def render_game_video(steps: list[dict], output_path: Path) -> Path:

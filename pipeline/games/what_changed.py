@@ -1,16 +1,15 @@
 """What Changed round: fully algorithmic, no LLM content. A scene is
 defined as a small set of attributes; exactly one attribute is mutated
-for the "after" version. Difficulty (and real pass odds) is driven by
-the actual total attribute count -- more attributes to scan, harder to
-spot the one that moved. See base.py for the shared session/beat
-contract.
+for the "after" version. The reveal states which attribute actually
+changed -- no simulated win/loss, just the real answer. See base.py for
+the shared beat contract.
 """
 
 from __future__ import annotations
 
 import random
 
-from pipeline.games.base import GameSession, make_beat
+from pipeline.games.base import make_beat
 
 ROUND_TYPE = "what_changed"
 
@@ -47,19 +46,14 @@ SCENE_TEMPLATES = (
     },
 )
 
-_ATTRIBUTE_COUNT_CHOICES = (4,)  # every template above has 4 -- kept explicit for the difficulty table below
-POINTS_BY_ATTRIBUTE_COUNT = {4: 15}
-_PASS_PROBABILITY_BY_ATTRIBUTE_COUNT = {4: 0.55}
-
 
 def _label(attr_name: str) -> str:
     return attr_name.replace("_", " ")
 
 
-def generate_round(session: GameSession, avoid_topics: list[str], round_index: int) -> tuple[list[dict], GameSession]:
+def generate_round(avoid_topics: list[str], round_index: int) -> list[dict]:
     template = random.choice(SCENE_TEMPLATES)
     attribute_names = list(template["attributes"])
-    attribute_count = len(attribute_names)
 
     before = {name: random.choice(values) for name, values in template["attributes"].items()}
     changed_attr = random.choice(attribute_names)
@@ -67,46 +61,27 @@ def generate_round(session: GameSession, avoid_topics: list[str], round_index: i
     after = dict(before)
     after[changed_attr] = random.choice(other_values)
 
-    passed = random.random() < _PASS_PROBABILITY_BY_ATTRIBUTE_COUNT[attribute_count]
-    points_delta = POINTS_BY_ATTRIBUTE_COUNT[attribute_count]
-
     round_data = {
-        "subject": template["subject"],
-        "before": before,
-        "after": after,
-        "changed_attribute": changed_attr,
-        "passed": passed,
+        "subject": template["subject"], "before": before, "after": after, "changed_attribute": changed_attr,
     }
 
-    beats = [
-        make_beat(ROUND_TYPE, round_index, "intro", "What Changed round. Two scenes, one difference.", session),
+    return [
+        make_beat(ROUND_TYPE, round_index, "intro", "What Changed round. Two scenes, one difference."),
         make_beat(
             ROUND_TYPE, round_index, "rule",
             f"Here's {template['subject']}. Look carefully.",
-            session, round_data,
+            round_data,
         ),
-        make_beat(ROUND_TYPE, round_index, "countdown", "Study it...", session),
+        make_beat(ROUND_TYPE, round_index, "countdown", "Study it..."),
         make_beat(
             ROUND_TYPE, round_index, "gameplay",
             "Now here's the second version. What changed?",
-            session, round_data,
+            round_data,
         ),
-        make_beat(ROUND_TYPE, round_index, "suspense", "Let's compare...", session),
+        make_beat(ROUND_TYPE, round_index, "suspense", "Let's compare..."),
         make_beat(
             ROUND_TYPE, round_index, "reveal",
-            f"It was the {_label(changed_attr)} -- {before[changed_attr]} became {after[changed_attr]}. "
-            + ("Spotted it." if passed else "Missed that one."),
-            session, round_data,
+            f"It was the {_label(changed_attr)} -- {before[changed_attr]} became {after[changed_attr]}.",
+            round_data,
         ),
     ]
-
-    session.apply_round_result(passed, points_delta)
-    session.round_types_used.append(ROUND_TYPE)
-    beats.append(
-        make_beat(
-            ROUND_TYPE, round_index, "score",
-            f"{'+' + str(points_delta) + ' points' if passed else 'Lost a life'}.",
-            session, round_data,
-        )
-    )
-    return beats, session

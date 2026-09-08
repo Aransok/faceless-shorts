@@ -267,12 +267,15 @@ def captions(video_id: str) -> str:
     if not video["video_path"]:
         raise ValueError(f"video {video_id} has no video_path — run assemble() first")
 
-    if video["template"] == "quiz_longform":
-        # Not needed for this format — the on-screen question/option text
-        # already carries the content. Still advances through the same
-        # "captioned" status name so the rest of the pipeline (metadata's
-        # list_by_status("captioned"), the orchestrator) doesn't need a
-        # special case for this template.
+    if video["template"] in ("quiz_longform", "game_night"):
+        # Not needed for these formats — the on-screen question/option
+        # (quiz) or round card (game_night) text already carries the
+        # content. game_night specifically: owner watched a real rendered
+        # episode and didn't want captions on this longform format at all.
+        # Still advances through the same "captioned" status name so the
+        # rest of the pipeline (metadata's list_by_status("captioned"),
+        # the orchestrator) doesn't need a special case for either
+        # template.
         output_path = OUTPUT_DIR / f"{video_id}_final.mp4"
         shutil.copy(video["video_path"], output_path)
         update_video(video_id, status="captioned", final_path=str(output_path))
