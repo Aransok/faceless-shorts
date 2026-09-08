@@ -41,10 +41,13 @@ MUSIC_GAIN_MIN, MUSIC_GAIN_MAX = 0.02, 1.5
 CTA_FADE_IN = 0.5
 CTA_FADE_OUT = 0.5
 
-# 3 real variants (position, timing, phrasing) instead of one fixed badge
+# 4 real variants (position, timing, phrasing) instead of one fixed badge
 # on every video. y_fraction/start_fraction are both measured against the
 # same safe band captions.py/visuals_code.py already established (clear
 # of the top branding strip and the caption zone) -- see brand.py.
+# save_for_later_early fires near the start (0.15) rather than mid/late
+# like the other three -- "save this" only makes sense as a nudge before
+# the viewer might swipe away, not after they've already watched most of it.
 CTA_VARIANTS = [
     {
         "name": "corner_badge_late",
@@ -65,6 +68,13 @@ CTA_VARIANTS = [
         "text": "SUBSCRIBE — MORE TOMORROW",
         "y_fraction": 0.50,
         "start_fraction": 0.85,
+        "hold": 2.0,
+    },
+    {
+        "name": "save_for_later_early",
+        "text": "SAVE THIS FOR LATER",
+        "y_fraction": 0.12,
+        "start_fraction": 0.15,
         "hold": 2.0,
     },
 ]
