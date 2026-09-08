@@ -743,16 +743,76 @@ scope — game_night is separately blocked, see Phase 16 below).
    construction, the generate/review/rewrite loop with a mocked
    `call_llm`/`review_script`) per `CLAUDE.md`'s testing rule — no real
    LLM calls in the test suite itself. All passing.
-5. **Real end-to-end verification** — in progress: a real `plan('facts')`
-   run through the actual `claude` CLI backend (confirmed reachable in
-   this environment, ~4.5s for a trivial round-trip call) to see a real
-   script pass or get rewritten by the review pass, not just the mocked
-   unit tests. Test video to be removed from `state.db` after inspection,
-   same pattern as every other real-LLM verification in this project.
+5. **Real end-to-end verification — two real bugs found and fixed along
+   the way, not just threshold-tuned.** Ran `plan('facts')` and
+   `plan('programming')` for real against the actual `claude_code`
+   backend (confirmed reachable in this environment), five real runs
+   total before landing on a config that converges:
+   - Runs 1-2 (`facts`, `programming`, `REVIEW_MAX_REWRITES = 2`): both
+     exhausted the budget and were still rejected. Feedback each round
+     was legitimate (a CTA line interrupting narration, repeated
+     sentence shapes, a near-verbatim repeated phrase, a stock hook
+     phrase) — not overly strict nitpicking. Presented to the owner
+     rather than guessing; chose to raise the budget over loosening the
+     anti-hallucination rule.
+   - Run 3 (`facts`, budget raised to 4): still rejected, but every
+     single one of the 3 real failures so far had independently flagged
+     the CTA line specifically. Traced this to a real bug, not a
+     threshold problem: `pipeline/cta.py`'s own `direct_ask`/
+     `mid_script_aside` angle instructions modeled the exact "subscribe
+     if [vague thing]" pattern `persona.md`'s new rules ban — the LLM
+     was faithfully following `cta.py`'s own example straight into a
+     rejection. Fixed `cta.py`'s instructions and examples to drop the
+     vague-conditional shape and require the CTA line meet the same
+     authenticity bar as the rest of the script.
+   - Run 4 (`facts`, budget 4, CTA fixed): the CTA complaint was gone
+     (confirming that fix), but still rejected on a new issue — vague
+     mechanical transitions between the three facts ("doing something
+     similar", "has one too") plus a repeated comparison stated twice.
+     Presented to the owner again: this read as the Facts Narrator's
+     "real connecting theme" bar being reasonable but the reviewer's
+     "no mechanical transitions" criterion being too strict for a tight
+     30-40-word-per-fact rapid format, where a full transition can't
+     always spell out the parallel. Owner chose to ease that specific
+     rule rather than raise the budget further. Reworded criterion 5 in
+     `config/prompts/script_reviewer_template.txt` to flag only literal
+     placeholder transitions ("moving on", "next", "number two"), not a
+     short plain connective phrase — and added the matching guidance to
+     `persona_pet_peeves_facts.md` so generation and review agree on the
+     same bar (the exact CTA mismatch, fixed for the same reason).
+   - Run 5 (`facts`, after the transition-rule fix): **approved on the
+     first draft, no rewrite needed** — a real connecting theme (units
+     of measurement literally born from manual labor: an acre, one
+     horsepower, a knot), a genuine stance-based reaction ("Very
+     scientific, I know."), and a specific, on-topic CTA.
+   - Run 6 (`programming`, same fixed config): **also approved on the
+     first draft** — banker's rounding in Python's `round()`, a real,
+     accurate explanation of *why* (avoids upward bias in repeated
+     rounding), CTA specific to the video's own theme ("Subscribe for
+     more defaults languages don't call out clearly").
 
-Not yet done: real verification for `programming` and `sauce_recipe`
-specifically (only `facts` tested so far), and no real render/upload —
+   All 6 test videos removed from `state.db` and `data/phrase_usage.json`
+   reverted after each run; `state.db`'s own binary diff afterward was
+   pure SQLite page churn against the already-committed baseline, same
+   as Phase 16's precedent — discarded rather than committed.
+
+Not yet done: real verification for `sauce_recipe` specifically. Attempted
+twice — both attempts hit `call_llm`'s pre-existing 120s subprocess
+timeout (`TimeoutExpired`) before a response came back at all, never
+reaching the review step. This looks like this session's `claude` CLI
+subprocess getting slower after ~9 real calls already made during this
+verification pass, not a problem with the new review/persona code (that
+same timeout is pre-existing, unrelated code, and `facts`/`programming`
+both returned well under it earlier in the same session). Didn't keep
+retrying at real API cost chasing what looks environmental — worth a
+fresh real run for `sauce_recipe` before trusting it fully, ideally in a
+new session/less-loaded environment. No real render/upload either way —
 this phase only touches script generation (Phase 1), nothing downstream.
+Also worth watching in production generally: the review pass adds real
+LLM-call cost/time per video (worst case 5 generation + 5 review calls
+at the current budget of 4), and `facts`/`programming` both needed real
+prompt-level fixes (not just threshold tuning) before reliably
+converging — `sauce_recipe` may have its own equivalent gap, unchecked.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM

@@ -18,8 +18,15 @@ Check for:
    incident is not.
 4. Sentences that merely describe what's already visually obvious without
    adding any explanation, reasoning, or context.
-5. Empty or mechanical transitions ("moving on", "next", "here's the next
-   one") that don't do real connective work.
+5. Mechanical PLACEHOLDER transitions only — flag a transition ONLY if
+   it's a literal placeholder with zero connective content ("moving on",
+   "next", "here's the next one", "number two"). Do NOT flag a short,
+   plain connective phrase between rapid-fire items (e.g. "it's not the
+   only one", "the same pattern shows up elsewhere", "has one too") just
+   because it's brief or doesn't fully spell out the parallel — a tight
+   30-40-word-per-item format can't always unpack the full connection at
+   every transition, and that's fine as long as the video establishes
+   its real theme at least once (usually up front).
 6. Repeated sentence structures — the same shape used over and over.
 7. Fake excitement or exaggerated hype not earned by the actual content.
 8. Generic statements that could apply to many unrelated topics just by

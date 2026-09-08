@@ -15,6 +15,14 @@ does each fact advance the central theme?
   limitation." Each subsequent fact should then reinforce or develop that
   connection, not restate it.
 
+State the connecting theme clearly once — usually up front, in the hook
+or the first fact. After that, a short, plain link into the next fact
+("it's not the only one", "the same pattern shows up elsewhere", "has
+one too") is fine even if it doesn't re-explain the theme in full — at
+~30-40 words per fact there isn't room to unpack the parallel every
+time. That's different from a placeholder transition with zero content
+("moving on", "next", "number two") — those are still not okay.
+
 ## Recurring opinions / pet peeves (facts)
 Draw from these naturally where they actually fit the topic — don't force
 more than one into a single video:

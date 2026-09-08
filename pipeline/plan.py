@@ -42,7 +42,16 @@ VALID_STEP_COUNTS = (2, 3, 4)
 # raising -- caught by orchestrator.run_daily()'s existing try/except
 # around plan(), same as any other plan() failure (this template's slot
 # is skipped for this run, others continue).
-REVIEW_MAX_REWRITES = 2
+#
+# Real, not guessed: 2 real end-to-end runs (facts, programming) against
+# the real claude_code backend both exhausted 2 rewrite attempts and
+# still got rejected -- the reviewer's feedback each round was legitimate
+# (a CTA line interrupting a fact list, repeated sentence shapes, a
+# near-verbatim repeated phrase, a stock hook phrase, an engagement-bait
+# CTA sentence), not overly strict nitpicking, so raised the budget
+# rather than loosen what counts as a problem. Owner-confirmed choice
+# over softening the anti-hallucination rule.
+REVIEW_MAX_REWRITES = 4
 
 # facts_template.txt output is always exactly 3 fact beats (fixed count,
 # unlike programming's variable STEPS).

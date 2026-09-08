@@ -15,8 +15,10 @@ CTA_ANGLES = [
         "name": "direct_ask",
         "instruction": (
             "Include one brief, low-key subscribe mention somewhere "
-            "in the script — a direct, casual ask (e.g. \"subscribe if "
-            "you want more of these\"), not an urgency-based push."
+            "in the script — plain and direct (e.g. \"subscribe for more "
+            "of this\"), not an urgency-based push and not a vague "
+            "conditional tail like \"if you like this stuff\" or \"if "
+            "that bugs you too\" standing in for an actual reason."
         ),
     },
     {
@@ -33,7 +35,9 @@ CTA_ANGLES = [
         "instruction": (
             "Include one brief, low-key subscribe mention as a "
             "casual mid-script aside — dropped naturally in the middle of "
-            "the narration, not saved for the very end."
+            "the narration, not saved for the very end. It still needs a "
+            "real reason to be there (tie it to what you just said), not "
+            "a vague conditional like \"if you're into this\" bolted on."
         ),
     },
 ]
@@ -69,6 +73,11 @@ def cta_guidance_block(angle: dict, milestone_line: str | None = None) -> str:
         "- Always say \"subscribe\", never \"follow\" — this is YouTube, "
         "not Instagram/TikTok, and \"follow\" reads as a platform "
         "mismatch to anyone who notices.\n"
+        "- This line follows the exact same authenticity bar as the rest "
+        "of the script (see the channel persona above) — it is not "
+        "exempt. No generic filler, no vague conditional (\"if you like "
+        "this stuff\", \"if that bugs you too\") standing in for a real "
+        "connection to THIS video's actual content.\n"
     )
     if milestone_line:
         block += f"- Real milestone to mention: {milestone_line}\n"
