@@ -14,11 +14,13 @@ from pipeline.assemble import assemble
 from pipeline.captions import captions
 from pipeline.metadata import generate_metadata
 from pipeline.plan import plan
+from pipeline.plan_game import plan_game_night
 from pipeline.plan_quiz import plan_quiz
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
 from pipeline.visuals_code import visuals_code
 from pipeline.visuals_facts import visuals_facts
+from pipeline.visuals_game import visuals_game
 from pipeline.visuals_quiz import visuals_quiz
 from pipeline.voice import voice
 
@@ -69,6 +71,8 @@ def _advance_one_stage(video_id: str) -> str:
             visuals_code(video_id)
         elif template == "quiz_longform":
             visuals_quiz(video_id)
+        elif template == "game_night":
+            visuals_game(video_id)
         else:
             visuals_facts(video_id)
     elif status == "visuals_ready":

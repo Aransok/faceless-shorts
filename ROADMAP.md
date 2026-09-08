@@ -606,10 +606,52 @@ Items 1-3 done, verified with REAL LLM calls (not mocked):
   change). `pipeline/persona.py` maps `game_night` to the existing dev
   pet-peeves file (no game-night-specific opinions yet).
 
-Not started: item 4's actual rendered test episode (needs
-`visuals_game.py` -- real render code, still deliberately not written
-per the owner's original gate) and item 5 (new GH Actions workflow(s),
-folding in the Wed->Sat quiz-day move).
+**Item 4 done -- real rendered test episode, verified.**
+`pipeline/visuals_game.py` (1920x1080, same brand panel/border chrome as
+visuals_quiz.py, reused via the new `pipeline/render_text.py` extraction
+rather than a third copy of the same fitting logic) renders every beat
+type: a generic centered-text card for intro/rule/countdown/suspense/
+score, and a bespoke gameplay/reveal visual per round type (chip rows for
+memory, a before/after attribute table for what_changed, two choice
+cards for risk_or_safe, a shared versus-card layout for
+higher_or_lower/prediction) -- plus a persistent lives/points HUD and
+round-type label drawn from the beat's own stored, real session values,
+never re-derived.
+
+**Real bug caught and fixed during first-render testing**: the
+higher_or_lower/prediction versus cards centered subject names at a
+fixed font size with no width fit -- fine for short placeholder names in
+early testing, but a real LLM-generated name ("Empire State Building
+height") rendered past the card edge. Fixed by routing both cards'
+name/value text through `fit_single_line` (shrink-then-ellipsis) before
+centering, same primitive already proven in visuals_quiz.py. Re-verified
+with deliberately long real names (Burj Khalifa/One World Trade Center)
+before trusting it.
+
+Also closed the exact `MUSIC_TEMPLATES` gap this project already knows
+the shape of (sauce_recipe shipped without it, found and fixed in Phase
+14) -- added `game_night` up front this time instead of waiting to
+rediscover the same omission.
+
+**Full pipeline run, real and end-to-end**: `plan_game_night()` ->
+`voice()` -> `visuals_game()` -> `assemble()` -> `captions()` ->
+`generate_metadata()`, stopping safely at `awaiting_review`
+(`REQUIRE_REVIEW=true`, confirmed before running -- no upload attempted).
+~169s render time after planning. Real output inspected at 6 timestamps
+across the full 120s video: HUD/round-label/CTA-overlay/burned-in
+captions all render correctly and simultaneously with no collisions;
+session math (lives/points) matches the narration and the on-screen
+reveal cards at every checked point; the real round sequence for this
+episode was memory/prediction/risk_or_safe/higher_or_lower/what_changed
+-- all 5 types, zero repeats, confirming the round-selector's variety
+rule on real generated content, not just the earlier synthetic trials.
+Test video sent to the owner directly, then fully removed from state.db
+and assets/output afterward.
+
+Not started: item 5 (new GH Actions workflow(s) for Tue/Fri game night,
+folding in the Wed->Sat quiz-day move -- Saturday chosen for more even
+weekly spacing against Tue/Fri: gaps of 3/1/3 days vs. Wednesday's
+1/2/4).
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
