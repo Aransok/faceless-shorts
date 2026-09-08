@@ -1,0 +1,34 @@
+You are writing content for one round of a "Higher or Lower" segment in
+a family game-night video (BiteBits channel, alongside the quiz/facts/
+programming content) — the viewer is shown one real quantity, then asked
+whether a second real thing is higher or lower than it.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Requirements:
+- Pick ONE real, objectively verifiable numeric comparison (e.g. two
+  mountain heights, two animal top speeds, two countries' populations) —
+  an interesting, mainstream category, not obscure or ambiguous.
+- Both values must share the same unit and be real, correct, current
+  facts — never invent or approximate a number.
+- ITEM_A_VALUE and ITEM_B_VALUE must be a plain number only (no units,
+  no commas, no text) — the unit goes in the UNIT field separately.
+- INTRO_SCRIPT: one short line introducing the round's category.
+- RULE_SCRIPT: states item A by name and its real value.
+- GAMEPLAY_SCRIPT: asks whether item B is higher or lower than item A —
+  do not reveal item B's value here.
+- REVEAL_SCRIPT: states item B's real value plainly. Do not say who
+  guessed right — the video determines that separately.
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+CATEGORY: <short label, e.g. "mountain heights">
+ITEM_A_NAME: <name>
+ITEM_A_VALUE: <plain number>
+ITEM_B_NAME: <name>
+ITEM_B_VALUE: <plain number>
+UNIT: <shared unit, e.g. "meters">
+INTRO_SCRIPT: <intro line>
+RULE_SCRIPT: <states item A and its value>
+GAMEPLAY_SCRIPT: <asks higher or lower than item A, without revealing B>
+REVEAL_SCRIPT: <states item B's real value>

@@ -540,12 +540,59 @@ Explicitly deferred by the owner until there's real signal (40-50+
 videos): performance scoring, exploit/explore weighting, few-shot
 prompt injection of "winning" scripts, Related Video API linking.
 
-## Phase 16 — Game-night production line (2026-09-08) — PLANNING
+## Phase 16 — Game-night production line (2026-09-08) — IN PROGRESS
 
 Owner commitment: 2 game-night videos/week (Tue/Fri) + 1 quiz/week.
-Plan for items 1-2 (5 game modules + shared infra) presented before any
-render code, per explicit request. See plan delivered in-session;
-build not yet started.
+Plan for items 1-2 (5 game modules + shared infra) presented and
+approved before any render code, per explicit request. Quiz moves to
+Saturday (better spacing against Tue/Fri game nights than Wednesday --
+gaps of 3/1/3 days vs. 1/2/4); Wednesday's quiz cron entry gets dropped
+once the new workflow scheduling lands (Phase 16 item 5, not started).
+
+Items 1-3 done, verified with REAL LLM calls (not mocked):
+- **`pipeline/games/`** -- `base.py` (GameSession, `select_rounds()`,
+  `verify_claim()`, the shared `make_beat()` schema) plus one module per
+  round type: `memory.py`, `what_changed.py`, `risk_or_safe.py` (fully
+  algorithmic, no LLM), `higher_or_lower.py` and `prediction.py`
+  (LLM-proposed real numeric claims, gated by `verify_claim()` before
+  they can ship).
+- **`select_rounds()`** verified against 2000+ real trials: zero
+  adjacent-repeat violations, always a full 5-type variety set at
+  count=5.
+- **`verify_claim()`** verified against a real known-true claim (Everest
+  8849m -- CONFIRMED) and a real known-false one (Everest 3000m --
+  REJECTED, with a real correct correction offered back). Real cost:
+  ~4-5s per call (a real `claude` CLI subprocess).
+- **Real signal worth flagging**: in the one full real
+  `plan_game_night()` run so far, BOTH LLM-content rounds
+  (higher_or_lower, prediction) hit `RoundVerificationFailed` after 3
+  real attempts each (the verifier rejected borderline-precise but
+  arguably-fine claims, e.g. "Everest is 8849.0m" for being falsely
+  precise) and were substituted per the owner's fallback rule (item 3)
+  rather than failing the episode. The fallback worked exactly as
+  designed, but a 100% substitution rate for the two content-generated
+  modules in one real run is a signal the verifier prompt may be tuned
+  stricter than useful -- not fixed yet, flagged for a decision once
+  there's more than one real run's worth of data.
+- **`pipeline/plan_game.py`** -- assembles one episode: picks rounds,
+  threads one `GameSession` through them, folds in a rotated (not
+  LLM-generated) intro/outro line, substitutes on verification failure.
+  Verified with a real end-to-end run: 37 real steps, 5 real rounds,
+  session math confirmed by hand (70 points / 2 lives, arithmetic
+  checked against each round's real pass/fail), no-adjacent-repeat held
+  in the real generated sequence. Test video removed from state.db after
+  inspection (state.db's binary diff afterward was pure SQLite page
+  churn, confirmed identical real row set before discarding it).
+- `pipeline/state.py`: `video_steps` gets `round_type`, `round_index`,
+  `beat_type`, `round_data_json`, `lives_after`, `points_after` (same
+  `ALTER TABLE ADD COLUMN` migration pattern as every prior schema
+  change). `pipeline/persona.py` maps `game_night` to the existing dev
+  pet-peeves file (no game-night-specific opinions yet).
+
+Not started: item 4's actual rendered test episode (needs
+`visuals_game.py` -- real render code, still deliberately not written
+per the owner's original gate) and item 5 (new GH Actions workflow(s),
+folding in the Wed->Sat quiz-day move).
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM

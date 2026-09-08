@@ -1,0 +1,34 @@
+You are writing content for one round of a "Prediction" segment in a
+family game-night video (BiteBits channel) — the viewer is told a real
+threshold value, then asked to predict whether a real quantity landed
+above or below it, before the real value is revealed.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Requirements:
+- Pick ONE real, objectively verifiable numeric fact (e.g. a movie's box
+  office, a bridge's length, an animal's lifespan) — an interesting,
+  mainstream subject, not obscure or ambiguous.
+- Pick a THRESHOLD_VALUE reasonably close to the real ACTUAL_VALUE (same
+  unit) so the prediction is genuinely uncertain, not a trivial guess.
+- ACTUAL_VALUE and THRESHOLD_VALUE must be a plain number only (no units,
+  no commas, no text) — the unit goes in the UNIT field separately.
+  ACTUAL_VALUE must be real, correct, current fact — never invent or
+  approximate it.
+- INTRO_SCRIPT: one short line introducing the subject.
+- RULE_SCRIPT: states the threshold value and what's being predicted.
+- GAMEPLAY_SCRIPT: asks the viewer to predict above or below the
+  threshold — do not reveal the actual value here.
+- REVEAL_SCRIPT: states the real actual value plainly. Do not say who
+  guessed right — the video determines that separately.
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+SUBJECT_NAME: <short label, e.g. "Titanic's real box office">
+ACTUAL_VALUE: <plain number>
+THRESHOLD_VALUE: <plain number>
+UNIT: <unit, e.g. "million dollars">
+INTRO_SCRIPT: <intro line>
+RULE_SCRIPT: <states the threshold and what's being predicted>
+GAMEPLAY_SCRIPT: <asks above or below, without revealing the actual value>
+REVEAL_SCRIPT: <states the real actual value>
