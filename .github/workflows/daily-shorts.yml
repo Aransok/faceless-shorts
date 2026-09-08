@@ -14,7 +14,15 @@ name: Daily Shorts
 
 on:
   schedule:
-    - cron: "0 14 * * *"
+    # :07 past the hour, not :00 -- GitHub's own docs warn that scheduled
+    # workflows are most likely to be delayed "at the start of every
+    # hour" since that's when the global queue is busiest across every
+    # repo on GitHub. Confirmed for real: this cron sat 7+ minutes past
+    # its nominal 14:00 UTC fire time with zero run, on a brand-new repo
+    # with no other explanation (Actions enabled, workflow registered
+    # well before the slot, YAML valid). Off-the-hour minutes queue
+    # behind far less contention.
+    - cron: "7 14 * * *"
   workflow_dispatch:
     inputs:
       count:

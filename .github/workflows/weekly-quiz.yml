@@ -12,7 +12,10 @@ name: Quiz Longform (2x/week)
 
 on:
   schedule:
-    - cron: "0 15 * * 3,6"
+    # :07 past the hour, not :00 -- see daily-shorts.yml's comment for
+    # why (GitHub's documented top-of-hour scheduling congestion,
+    # confirmed for real on this repo).
+    - cron: "7 15 * * 3,6"
   workflow_dispatch:
 
 permissions:

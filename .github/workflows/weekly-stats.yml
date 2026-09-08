@@ -8,7 +8,10 @@ name: Weekly Stats Report
 
 on:
   schedule:
-    - cron: "0 8 * * 1"
+    # :07 past the hour, not :00 -- see daily-shorts.yml's comment for
+    # why (GitHub's documented top-of-hour scheduling congestion,
+    # confirmed for real on this repo).
+    - cron: "7 8 * * 1"
   workflow_dispatch:
 
 permissions:
