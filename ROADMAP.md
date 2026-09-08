@@ -685,7 +685,7 @@ quiz_longform may not be the right visual language for this format at
 all. Don't rebuild anything else in Phase 16 until this is actually
 diagnosed with the owner.
 
-## Phase 17 — Narration authenticity & anti-hallucination system (2026-09-08) — IN PROGRESS
+## Phase 17 — Narration authenticity & anti-hallucination system (2026-09-08) — DONE
 
 Owner-provided spec (full text in session transcript) for making narration
 read as deliberately written by a knowledgeable human editor, not
@@ -796,23 +796,51 @@ scope — game_night is separately blocked, see Phase 16 below).
    pure SQLite page churn against the already-committed baseline, same
    as Phase 16's precedent — discarded rather than committed.
 
-Not yet done: real verification for `sauce_recipe` specifically. Attempted
-twice — both attempts hit `call_llm`'s pre-existing 120s subprocess
-timeout (`TimeoutExpired`) before a response came back at all, never
-reaching the review step. This looks like this session's `claude` CLI
-subprocess getting slower after ~9 real calls already made during this
-verification pass, not a problem with the new review/persona code (that
-same timeout is pre-existing, unrelated code, and `facts`/`programming`
-both returned well under it earlier in the same session). Didn't keep
-retrying at real API cost chasing what looks environmental — worth a
-fresh real run for `sauce_recipe` before trusting it fully, ideally in a
-new session/less-loaded environment. No real render/upload either way —
-this phase only touches script generation (Phase 1), nothing downstream.
-Also worth watching in production generally: the review pass adds real
-LLM-call cost/time per video (worst case 5 generation + 5 review calls
-at the current budget of 4), and `facts`/`programming` both needed real
-prompt-level fixes (not just threshold tuning) before reliably
-converging — `sauce_recipe` may have its own equivalent gap, unchecked.
+6. **`sauce_recipe` verification — a third instance of the same bug
+   class, in a different system.** First two attempts hit `call_llm`'s
+   pre-existing 120s subprocess timeout before a response came back at
+   all (environmental — this session's `claude` CLI subprocess slowing
+   down after ~9 real calls already made during this verification pass;
+   unrelated to any code here, and it cleared up on retry). The third
+   attempt reached real review and got rejected on one line: "Here's the
+   detail that makes this whole thing make sense: ..." — flagged as
+   empty-hype generic phrasing. That exact string, word for word, is a
+   literal entry in `config/approaches.yaml`'s `storytelling_hook.
+   hook_openers` pool (the currently-active approach per `config.yaml`),
+   fed straight into every template's prompt by `pipeline/approaches.py`'s
+   `style_guidance_block()` and — confirmed by checking the actual text
+   of the earlier `programming` failure in item 5 above — the LLM copies
+   these near-verbatim rather than just drawing inspiration from them.
+   The exact same root cause as the `cta.py` bug (item 5, run 3), just a
+   different injection point, and the pool's own header comment already
+   documented this failure MODE happening once before for a different
+   rule (a fabricated-personal-experience phrase, fixed in Phase 13) —
+   the new stricter anti-filler rules just reopened it with a fresh set
+   of phrases. Audited all 18 `storytelling_hook.hook_openers` entries
+   against `persona.md`'s new rules: kept the 4 that promise something
+   real (an explanation, a corrected misconception), rewrote the other
+   14 that were empty-hype/vague-escalation shapes ("buckle up", "stay
+   with me", "sounds fake ... doesn't", "gets weirder the longer you sit
+   with it", "stranger than the fact itself", vague "twist"). Re-verified
+   for real immediately after: **`sauce_recipe` approved on the first
+   draft** — a real connecting theme (three sauces sharing one
+   fat-to-acid ratio), real technique and quantities, a CTA specific to
+   the video's own content. `fast_cuts`/`deadpan_facts` pools have the
+   same class of entries and were NOT audited (not the active approach,
+   so not currently reachable) — flagged here so the same bug doesn't
+   quietly resurface if `config.yaml`'s `current_approach` ever switches
+   to one of them.
+
+All 7 real test videos across this verification pass removed from
+`state.db` after inspection, `data/phrase_usage.json` reverted each
+time, `state.db`'s own binary diff confirmed as pure SQLite page churn
+against the committed baseline and discarded rather than committed —
+same pattern as Phase 16's precedent. No real render/upload attempted
+either way — this phase only touches script generation (Phase 1),
+nothing downstream. Worth watching in production: the review pass adds
+real LLM-call cost/time per video (worst case 5 generation + 5 review
+calls at the current budget of 4), though every template that's been
+exercised for real now converges on the first draft with no rewrite.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
