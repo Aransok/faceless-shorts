@@ -284,6 +284,19 @@ def list_by_status(status: str, db_path: Path = DB_PATH) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def count_uploaded(template: str, db_path: Path = DB_PATH) -> int:
+    """Real count of already-uploaded videos for this template -- used
+    for the episode counter badge (visuals_code.py). Counts only
+    status='uploaded' (not failed/rejected/still-in-flight attempts) so
+    the number a viewer sees matches what's actually live.
+    """
+    with _connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS c FROM videos WHERE template = ? AND status = 'uploaded'", (template,)
+        ).fetchone()
+    return row["c"]
+
+
 # Videos older than this never get a catch-up comment. Without a bound,
 # this column being brand-new means EVERY already-uploaded video in
 # state.db (19 of them, most already public for days) would all get a

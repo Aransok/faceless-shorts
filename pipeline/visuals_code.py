@@ -29,7 +29,7 @@ from pipeline.brand import (
     paste_gradient_rounded_rect,
 )
 from pipeline.rotation import pick_rotating
-from pipeline.state import get_video, get_video_steps, list_by_status, update_video
+from pipeline.state import count_uploaded, get_video, get_video_steps, list_by_status, update_video
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "assets" / "output"
@@ -405,6 +405,29 @@ def _render_step_frame(
         tab_label, font=output_font, fill=TAB_TEXT_COLOR,
     )
 
+    # Series-branding episode badge, right-aligned in the title bar
+    # (mirroring the brand mark + tab on the left) -- a real running
+    # count of prior uploaded programming videos, not a placeholder.
+    # Themed to match the current code theme rather than a fixed color,
+    # same reasoning as everything else in the panel's chrome.
+    episode_number = layout.get("episode_number")
+    if episode_number is not None:
+        ep_label = f"EP {episode_number}"
+        ep_bbox = draw.textbbox((0, 0), ep_label, font=output_font)
+        ep_text_w, ep_text_h = ep_bbox[2] - ep_bbox[0], ep_bbox[3] - ep_bbox[1]
+        ep_pad_x, ep_h = 14, 30
+        ep_x1 = panel_x + panel_w - PANEL_PADDING
+        ep_x0 = ep_x1 - (ep_text_w + 2 * ep_pad_x)
+        ep_y0 = panel_y + (TITLEBAR_HEIGHT - ep_h) // 2
+        draw.rounded_rectangle(
+            [ep_x0, ep_y0, ep_x1, ep_y0 + ep_h],
+            radius=8, fill=theme["frame_bg"],
+        )
+        draw.text(
+            (ep_x0 + ep_pad_x - ep_bbox[0], ep_y0 + (ep_h - ep_text_h) / 2 - ep_bbox[1]),
+            ep_label, font=output_font, fill=theme["output_text_color"],
+        )
+
     text_x0 = panel_x + PANEL_PADDING
     text_y0 = panel_y + TITLEBAR_HEIGHT + PANEL_PADDING // 2
     _draw_code(draw, lines, line_reveal_counts, font, char_width, line_height, text_x0, text_y0, show_cursor)
@@ -431,12 +454,18 @@ def _render_step_frame(
     return frame
 
 
-def render_multi_step(steps: list[dict], output_path: Path, language: str | None) -> tuple[Path, str]:
+def render_multi_step(
+    steps: list[dict], output_path: Path, language: str | None, episode_number: int | None = None
+) -> tuple[Path, str]:
     """steps: ordered list of {"code_snippet", "output_text", "duration"}.
     Each step's duration comes from its already-synthesized narration audio
     (see voice.py's _voice_steps) — the visual switches to the next step
     exactly when that audio segment starts, so the concatenated result is
     frame-accurate against the concatenated narration, not approximate.
+    episode_number: real running count of prior uploaded programming
+    videos + 1 (see state.py's count_uploaded) -- renders as a small
+    series-branding badge in the title bar. None skips the badge (e.g.
+    a throwaway test render with no real video_id behind it).
     Returns (output_path, theme_name) -- the caller persists theme_name for
     per-video attribution (see state.py's code_theme column).
     """
@@ -513,6 +542,7 @@ def render_multi_step(steps: list[dict], output_path: Path, language: str | None
         "has_output_area": has_output_area,
         "tab_label": TAB_LABELS.get(language, DEFAULT_TAB_LABEL),
         "theme": theme,
+        "episode_number": episode_number,
     }
 
     # Diff each step's code against the PREVIOUS step's (real fix, not
@@ -622,8 +652,12 @@ def visuals_code(video_id: str) -> str:
             "each step's visual duration comes from its own synthesized audio"
         )
 
+    # This video will BE the next episode once it's actually uploaded --
+    # +1 on top of the real count of already-uploaded ones.
+    episode_number = count_uploaded("programming") + 1
+
     output_path = OUTPUT_DIR / f"{video_id}_code.mp4"
-    _, theme_name = render_multi_step(steps, output_path, language=video["language"])
+    _, theme_name = render_multi_step(steps, output_path, language=video["language"], episode_number=episode_number)
 
     update_video(video_id, status="visuals_ready", video_path=str(output_path), code_theme=theme_name)
     return str(output_path)
