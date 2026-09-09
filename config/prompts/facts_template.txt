@@ -39,32 +39,61 @@ Requirements:
   so aim for the lower half (closer to 110-125 total) if you want to
   land comfortably under 55 seconds. Conversational pace, no filler, no
   "did you know" openers, no numbering out loud ("fact one...").
-- For each fact, also give 2-3 concrete, visually-searchable KEYWORDS —
-  things a stock-footage search would actually find (a subject, a place,
-  an action), not abstract ideas. These drive the background footage for
-  that specific fact, so they need to match THAT fact's actual visual
-  subject, not the video's theme as a whole and not an incidental word
-  from the script.
+- For each fact, act as the visual director, not just a keyword
+  extractor. The viewer wants to see the actual interesting thing being
+  described, not generic footage that merely relates to the topic. For
+  each fact, give:
+  - SUBJECT: the exact primary subject in 2-5 words — the specific
+    object, animal, place, invention, food, or thing the fact is
+    actually about (e.g. "Oxford Electric Bell", not "science" or
+    "electricity").
+  - EXACT_QUERIES: 2-3 comma-separated search queries most likely to
+    find footage of the SUBJECT itself, or as close to it as a stock
+    library could realistically have (e.g. "Oxford electric bell",
+    "vintage electric bell apparatus").
+  - REPRESENTATION_QUERIES: 2-3 comma-separated queries for an
+    accurate stand-in if the exact subject isn't findable — the same
+    TYPE of thing, not a broader category (e.g. "antique brass bell
+    mechanism", "Victorian scientific instrument").
+  - CONCEPT_QUERIES: 0-2 comma-separated queries for a visual
+    explanation of the mechanism/process/scale involved, if the fact is
+    about HOW something works rather than a physical object (e.g.
+    "electric circuit demonstration"). Leave empty (just write "none")
+    if the fact doesn't need this.
   - If the fact's core idea is a number, a word, a statistic, or another
     non-visual abstraction (like "the word 'set' has 400+ meanings" or "a
-    speeding fine cost $103,000"), do NOT use the abstraction itself as a
-    keyword ("counting", "one hundred", "money") — pick the concrete
-    real-world subject the fact is actually ABOUT instead (a dictionary,
-    a courtroom, the specific animal/place/object involved).
-  - BAD keywords (too abstract for a stock search, or drift toward a
-    generic word in the sentence instead of the fact's real subject):
-    "surprising", "history", "nature", "counting", "one hundred", "money"
-  - GOOD keywords (concrete, findable, tied to the actual subject):
-    "octopus swimming", "strawberry field", "ancient egyptian tomb",
-    "dictionary pages closeup", "courtroom gavel"
+    speeding fine cost $103,000"), the SUBJECT and queries should target
+    the concrete real-world thing the fact is actually ABOUT (a
+    dictionary, a courtroom, the specific animal/place/object involved),
+    never the abstraction itself.
+  - Never use broad generic queries as EXACT_QUERIES or
+    REPRESENTATION_QUERIES: "science", "technology", "nature", "history",
+    "interesting", "surprising", "counting", "money" are all too vague to
+    show the actual thing — if a query like that is genuinely the best
+    available, it belongs in CONCEPT_QUERIES or is a sign the SUBJECT
+    needs to be more specific instead.
+  - GOOD example (Oxford Electric Bell fact): SUBJECT "Oxford Electric
+    Bell"; EXACT_QUERIES "Oxford electric bell, historic electric bell
+    apparatus"; REPRESENTATION_QUERIES "antique brass bell mechanism,
+    Victorian scientific instrument"; CONCEPT_QUERIES "electromagnetic
+    bell demonstration".
 
 Output EXACTLY in this format, with no extra commentary before or after:
 
 TOPIC: <5-8 word label covering the set, distinct from the avoid list>
 HOOK: <one sentence — the strongest opinion/gotcha across the three, used later as the video title>
 FACT_1_SCRIPT: <~30-40 word narration for fact 1>
-FACT_1_KEYWORDS: <2-3 comma-separated visual search keywords for fact 1>
+FACT_1_SUBJECT: <exact primary subject, 2-5 words>
+FACT_1_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
+FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
+FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">
 FACT_2_SCRIPT: <~30-40 word narration for fact 2>
-FACT_2_KEYWORDS: <2-3 comma-separated visual search keywords for fact 2>
+FACT_2_SUBJECT: <exact primary subject, 2-5 words>
+FACT_2_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
+FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
+FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">
 FACT_3_SCRIPT: <~30-40 word narration for fact 3>
-FACT_3_KEYWORDS: <2-3 comma-separated visual search keywords for fact 3>
+FACT_3_SUBJECT: <exact primary subject, 2-5 words>
+FACT_3_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
+FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
+FACT_3_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">

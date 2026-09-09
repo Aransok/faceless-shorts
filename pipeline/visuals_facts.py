@@ -65,7 +65,10 @@ def _describe_clip(video: dict) -> str:
     """Pexels doesn't return tags on video search results, but the page
     URL is a human-written slug (e.g. .../close-up-of-dictionary-pages-
     1234567/) — the cheapest real signal available for a human reviewing
-    the query log to sanity-check the match without opening every clip.
+    the query log to sanity-check the match without opening every clip,
+    and (see _score_candidate) the only free signal available to check
+    whether a candidate actually has anything to do with its query
+    before trusting the search tier it came from.
     """
     url = video.get("url", "")
     slug = url.rstrip("/").rsplit("/", 1)[-1]
@@ -73,35 +76,111 @@ def _describe_clip(video: dict) -> str:
     return slug.replace("-", " ") or "(no description available)"
 
 
-def _build_clip_pool(keywords: list[str], api_key: str, min_count: int) -> tuple[list[dict], list[dict]]:
-    """Distinct Pexels video results across a beat's own keywords — enough
-    to cut between real different clips rather than looping one, up to
-    min_count (one per sub-segment; fewer if results genuinely run out).
-    Also returns a log of (query -> clip picked) so a human reviewing the
-    rendered video can catch a keyword/footage mismatch after the fact —
-    see visuals_facts()'s written {video_id}_visual_log.json.
+# Visual Director upgrade (see HANDOFF.md / real viewer feedback: "more
+# of these neat things that exist and yet you show none of them"). The
+# LLM already tiers each beat's queries by how directly they'd show the
+# real subject (see plan.py/_parse_facts_response and the
+# facts_template.txt prompt) -- this is where that tiering actually
+# changes which footage gets selected, instead of collapsing everything
+# into one flat keyword list and taking whatever Pexels returns first.
+MATCH_TYPES = ("exact_subject", "accurate_representation", "concept_explanation", "generic_fallback")
+_TIER_BASE_SCORE = {"exact_subject": 40, "accurate_representation": 30, "concept_explanation": 20, "generic_fallback": 5}
+# A candidate whose description shares zero real words with its own
+# query/subject is a "the search tier lied" case -- e.g. an "exact"
+# query for "Oxford electric bell" that actually returned an unrelated
+# clip Pexels judged loosely similar. Rather than trust the tier label
+# blindly, demote it one level and apply a mismatch penalty (cheap,
+# deterministic, no per-candidate LLM call needed for this).
+_TIER_DEMOTION = {"exact_subject": "accurate_representation", "accurate_representation": "concept_explanation", "concept_explanation": "generic_fallback"}
+_ZERO_OVERLAP_PENALTY = 10
+_STOPWORDS = {"the", "a", "an", "of", "in", "on", "at", "and", "or", "with", "for", "to", "is", "close", "up", "video"}
+MIN_ACCEPTABLE_SCORE = 35  # roughly "accurate_representation with some real overlap" or better
+
+
+def _significant_tokens(text: str) -> set[str]:
+    return {w for w in text.lower().replace("-", " ").split() if w and w not in _STOPWORDS}
+
+
+def _score_candidate(video: dict, query: str, tier: str, subject: str) -> tuple[int, str]:
+    """Deterministic, free (no LLM) relevance score + a possibly-demoted
+    match type -- see MATCH_TYPES/_TIER_DEMOTION above for why this
+    doesn't just trust the search tier a candidate came from."""
+    description = _describe_clip(video)
+    desc_tokens = _significant_tokens(description)
+    query_tokens = _significant_tokens(query) | _significant_tokens(subject)
+    overlap = len(query_tokens & desc_tokens)
+
+    match_type = tier
+    if overlap == 0 and tier in _TIER_DEMOTION:
+        match_type = _TIER_DEMOTION[tier]
+        score = _TIER_BASE_SCORE[match_type] - _ZERO_OVERLAP_PENALTY
+    else:
+        score = _TIER_BASE_SCORE[tier] + min(15, overlap * 5)
+    return max(0, score), match_type
+
+
+def _search_tier(query: str, tier: str, subject: str, api_key: str, seen_ids: set[int]) -> list[dict]:
+    """One tier's worth of scored, deduped candidates for one query."""
+    scored = []
+    for video in _search_pexels_videos(query, api_key, per_page=5):
+        if video["id"] in seen_ids:
+            continue
+        seen_ids.add(video["id"])
+        score, match_type = _score_candidate(video, query, tier, subject)
+        scored.append({"video": video, "query": query, "tier": tier, "match_type": match_type, "score": score})
+    return scored
+
+
+def _build_clip_pool(visual_plan: dict, api_key: str, min_count: int) -> tuple[list[dict], list[dict]]:
+    """Searches the beat's visual plan tier by tier -- exact_subject
+    first, then accurate_representation, then concept_explanation,
+    falling back to a generic search built from the subject alone only
+    if nothing scored acceptably. Stops early once enough
+    MIN_ACCEPTABLE_SCORE-or-better candidates exist, rather than always
+    exhausting every tier. Returns the top-scoring `min_count` candidates
+    (not first-found) plus a log entry per candidate actually searched,
+    for {video_id}_visual_log.json.
     """
-    pool: list[dict] = []
-    log: list[dict] = []
+    subject = visual_plan.get("subject") or ""
+    tiers = [
+        ("exact_subject", visual_plan.get("exact") or []),
+        ("accurate_representation", visual_plan.get("representation") or []),
+        ("concept_explanation", visual_plan.get("concept") or []),
+    ]
+
+    all_scored: list[dict] = []
     seen_ids: set[int] = set()
-    for query in keywords:
-        for video in _search_pexels_videos(query, api_key, per_page=5):
-            if video["id"] in seen_ids:
-                continue
-            seen_ids.add(video["id"])
-            pool.append(video)
-            log.append(
-                {
-                    "query": query,
-                    "clip_id": video["id"],
-                    "clip_description": _describe_clip(video),
-                    "clip_url": video.get("url"),
-                }
-            )
-            if len(pool) >= min_count:
-                return pool, log
-    if not pool:
-        raise RuntimeError(f"no Pexels results for any of: {keywords}")
+    for tier, queries in tiers:
+        for query in queries:
+            all_scored.extend(_search_tier(query, tier, subject, api_key, seen_ids))
+        good_enough = [c for c in all_scored if c["score"] >= MIN_ACCEPTABLE_SCORE]
+        if len(good_enough) >= min_count:
+            break
+
+    if not all_scored and subject:
+        # Nothing at all from the tiered queries (e.g. LLM left a tier
+        # empty and the others returned zero results) -- last-resort
+        # generic search off the subject itself, explicitly logged as
+        # generic_fallback rather than silently reusing a higher label.
+        all_scored.extend(_search_tier(subject, "generic_fallback", subject, api_key, seen_ids))
+
+    if not all_scored:
+        raise RuntimeError(f"no Pexels results for visual plan: {visual_plan}")
+
+    all_scored.sort(key=lambda c: c["score"], reverse=True)
+    selected = all_scored[:min_count]
+    pool = [c["video"] for c in selected]
+    log = [
+        {
+            "query": c["query"],
+            "clip_id": c["video"]["id"],
+            "clip_description": _describe_clip(c["video"]),
+            "clip_url": c["video"].get("url"),
+            "match_type": c["match_type"],
+            "relevance_score": c["score"],
+        }
+        for c in selected
+    ]
     return pool, log
 
 
@@ -186,6 +265,27 @@ def _concat_segments(segment_paths: list[Path], output_path: Path) -> None:
 _STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe")
 
 
+def _parse_beat_visual_plan(raw_keywords: str) -> dict:
+    """beat["keywords"] holds the tiered visual plan as JSON (see
+    plan.py/_parse_facts_response) -- {"subject", "exact",
+    "representation", "concept"}. Falls back to treating it as the old
+    flat comma-separated keyword list (all in the exact_subject tier) for
+    any video planned before this change and still resumable.
+    """
+    try:
+        plan = json.loads(raw_keywords)
+        if isinstance(plan, dict) and "exact" in plan:
+            return plan
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return {
+        "subject": None,
+        "exact": [k.strip() for k in raw_keywords.split(",") if k.strip()],
+        "representation": [],
+        "concept": [],
+    }
+
+
 def visuals_facts(video_id: str) -> str:
     """Despite the name, this renders any template whose video_steps are
     just script_text + keywords per beat, with B-roll matched per beat —
@@ -240,11 +340,11 @@ def visuals_facts(video_id: str) -> str:
             # needed here since there's no crossfade consuming one anymore.
             clip_duration = beat["duration"]
 
-            beat_keywords = [k.strip() for k in beat["keywords"].split(",") if k.strip()]
+            visual_plan = _parse_beat_visual_plan(beat["keywords"])
             beat_frames = _plan_segment_frames(clip_duration)
-            pool, pool_log = _build_clip_pool(beat_keywords, api_key, min_count=len(beat_frames))
+            pool, pool_log = _build_clip_pool(visual_plan, api_key, min_count=len(beat_frames))
             for entry in pool_log:
-                visual_log.append({"beat": beat["step_index"], **entry})
+                visual_log.append({"beat": beat["step_index"], "subject": visual_plan.get("subject"), **entry})
 
             source_paths = []
             for i, clip in enumerate(pool):

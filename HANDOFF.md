@@ -72,3 +72,38 @@ round of guessing fixes.
 - Item 5: new GitHub Actions workflow(s) for Tue/Fri game night +
   moving quiz to Saturday. Waiting on the format actually being good
   before scheduling it for real.
+
+## Also fixed this session: scheduling reliability
+
+`daily-shorts`'s cron sat 7+ minutes past its nominal fire time with
+zero run on the brand-new repo. Real cause: GitHub's own docs say
+scheduled workflows are most likely delayed "at the start of every
+hour" (global queue congestion), and 3 of our 5 crons were scheduled
+exactly on the hour. Moved all three to :07 past the hour. Not a 100%
+guarantee (GitHub never promises exact-time delivery), but removes the
+specific confirmed collision. Manually triggered today's run as a
+safety net regardless.
+
+## Facts/sauce_recipe visual pipeline upgrade (Phase 17, new)
+
+Real viewer complaint: narration describes something genuinely
+interesting, video shows generic vaguely-related stock footage instead
+of the actual thing. Fixed the root cause: the old pipeline generated
+one flat 2-3 keyword list per fact and took Pexels' first results in
+order, no scoring at all.
+
+New behavior: each fact beat now gets a tiered visual plan (exact
+subject → accurate representation → concept/mechanism explanation →
+generic fallback only as a last resort), searched tier by tier, with a
+real relevance-scoring pass that picks the best-matching clip instead
+of the first one found — and a "lie detector" that won't let a clip
+with zero real connection to its subject get labeled an exact match
+just because of which search tier found it.
+
+**Verified with mocked tests only** (`tests/test_visuals_facts.py`,
+9 passing) — deliberately did NOT spend real LLM/Pexels budget on a
+live end-to-end run today, to leave room for the actual scheduled
+pipeline. **Next real check**: watch the next real `daily-shorts` run
+(or trigger one manually) and confirm the visual log
+(`{video_id}_visual_log.json`) shows real exact/representation matches
+for a real fact, not generic fallback everywhere.

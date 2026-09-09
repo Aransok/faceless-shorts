@@ -685,6 +685,52 @@ quiz_longform may not be the right visual language for this format at
 all. Don't rebuild anything else in Phase 16 until this is actually
 diagnosed with the owner.
 
+## Phase 17 — Facts/sauce_recipe Visual Director upgrade (2026-09-09)
+
+Real viewer feedback: "More of these neat things that exist and yet you
+show none of them?" -- the old pipeline flattened each fact into one
+2-3 keyword list, took Pexels' first non-duplicate results in order, no
+scoring, no way to tell an exact match from vaguely-related filler.
+
+Upgrade, folded into the SAME existing script-generation LLM call
+(no new per-beat LLM round-trip -- the model already has full context
+there, cheaper and reuses `plan.py`'s existing call site):
+- `config/prompts/facts_template.txt` + `sauce_recipe_template.txt`
+  (same shared parser, both updated together) now ask for a tiered
+  visual plan per beat instead of flat KEYWORDS: SUBJECT (the exact
+  thing), EXACT_QUERIES, REPRESENTATION_QUERIES, CONCEPT_QUERIES.
+- `plan.py`'s `_parse_facts_response()` stores this as JSON in the
+  existing `keywords` TEXT column -- no schema migration.
+- `visuals_facts.py`: `_build_clip_pool()` now searches tier by tier
+  (exact_subject -> accurate_representation -> concept_explanation),
+  stopping early once enough candidates clear `MIN_ACCEPTABLE_SCORE`,
+  falling back to a generic subject-only search only if every tier
+  comes up empty. `_score_candidate()` is deterministic (tier base +
+  token-overlap bonus, no per-candidate LLM call) and includes a real
+  "lie detector": a candidate with zero real word-overlap with its own
+  query/subject gets demoted a tier rather than trusted blindly just
+  because of which tier searched for it. Final selection is the
+  highest-scoring candidates, not first-found. `_parse_beat_visual_plan()`
+  falls back to the old flat-comma format for any in-flight video
+  planned before this change.
+- `{video_id}_visual_log.json` (existing artifact, no new storage) now
+  also records `match_type` and `relevance_score` per selected clip.
+
+Verified without spending real LLM/API budget (owner had a tight usage
+window before needing today's daily run): `tests/test_visuals_facts.py`
+(new -- stdlib `unittest`, no new dependency, first test file in this
+repo) covers tier-priority scoring, the misleading-footage demotion,
+tier-progression stopping early / falling through, and
+highest-scorer-not-first-found selection, all against mocked Pexels
+responses. `plan.py`'s parser separately verified against synthetic LLM
+output text (real parsing code, no real `claude` CLI call). Not yet
+verified against a real live Pexels search or a real rendered video --
+that's the natural next check once there's session budget to spare.
+
+Programming/quiz_longform/game_night/captions/upload/scheduling
+untouched -- this only touches the facts/sauce_recipe visual-selection
+path.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

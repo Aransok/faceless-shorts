@@ -53,14 +53,23 @@ Requirements:
   so aim for the lower half if you want to land comfortably under 60
   seconds. Conversational pace, no filler, no "did you know" openers, no
   numbering out loud ("sauce one...").
-- For each sauce, also give 2-3 concrete, visually-searchable KEYWORDS —
-  the actual cooking actions in that beat, things a stock-footage search
-  would find (mincing garlic close up, simmering tomato sauce, whisking
-  bowl, pouring cream, plated pasta) — not the sauce's name alone and not
-  an abstract idea.
-  - BAD keywords (too abstract or too generic to find real matching
+- For each sauce, act as the visual director, not just a keyword
+  extractor. The viewer wants to see the actual cooking action or dish
+  being described, not generic kitchen filler. For each sauce, give:
+  - SUBJECT: the sauce/dish and its defining action in 2-5 words (e.g.
+    "simmering tomato sauce", "whisked chimichurri").
+  - EXACT_QUERIES: 2-3 comma-separated queries for the exact cooking
+    action/moment described in THAT beat (e.g. "mincing garlic close
+    up", "pouring cream into pan") — not the sauce's name alone.
+  - REPRESENTATION_QUERIES: 2-3 comma-separated queries for a close
+    stand-in if that exact action isn't findable — same technique or a
+    visually similar dish (e.g. "whisking sauce in pan", "reducing sauce
+    stovetop").
+  - CONCEPT_QUERIES: 0-2 comma-separated queries for a broader
+    supporting shot if needed (e.g. "plated pasta close up"), or "none".
+  - BAD queries (too abstract or too generic to find real matching
     footage): "delicious", "italian food", "cooking", "kitchen"
-  - GOOD keywords (concrete actions/subjects a stock search actually
+  - GOOD queries (concrete actions/subjects a stock search actually
     returns): "mincing garlic close up", "simmering tomato sauce",
     "whisking bowl", "pouring cream into pan", "plating pasta"
 
@@ -72,8 +81,17 @@ content is a sauce, the field name is just plumbing:
 TOPIC: <5-8 word label covering the set, distinct from the avoid list>
 HOOK: <one sentence — the strongest opinion/gotcha across the three, used later as the video title>
 FACT_1_SCRIPT: <~35-45 word spoken narration for sauce 1 — ingredients + method>
-FACT_1_KEYWORDS: <2-3 comma-separated visual search keywords for sauce 1>
+FACT_1_SUBJECT: <sauce/dish + defining action, 2-5 words>
+FACT_1_EXACT_QUERIES: <2-3 comma-separated queries for the exact action in this beat>
+FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries for a close stand-in>
+FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries for a supporting shot, or "none">
 FACT_2_SCRIPT: <~35-45 word spoken narration for sauce 2 — ingredients + method>
-FACT_2_KEYWORDS: <2-3 comma-separated visual search keywords for sauce 2>
+FACT_2_SUBJECT: <sauce/dish + defining action, 2-5 words>
+FACT_2_EXACT_QUERIES: <2-3 comma-separated queries for the exact action in this beat>
+FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries for a close stand-in>
+FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries for a supporting shot, or "none">
 FACT_3_SCRIPT: <~35-45 word spoken narration for sauce 3 — ingredients + method>
-FACT_3_KEYWORDS: <2-3 comma-separated visual search keywords for sauce 3>
+FACT_3_SUBJECT: <sauce/dish + defining action, 2-5 words>
+FACT_3_EXACT_QUERIES: <2-3 comma-separated queries for the exact action in this beat>
+FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries for a close stand-in>
+FACT_3_CONCEPT_QUERIES: <0-2 comma-separated queries for a supporting shot, or "none">

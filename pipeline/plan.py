@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -37,12 +38,14 @@ RECENT_TOPICS_LIMIT = 15
 VALID_STEP_COUNTS = (2, 3, 4)
 
 # facts_template.txt output is always exactly 3 fact beats (fixed count,
-# unlike programming's variable STEPS).
+# unlike programming's variable STEPS). Each beat's visual fields are the
+# tiered exact/representation/concept query lists (Visual Director
+# upgrade) instead of one flat KEYWORDS list -- see
+# visuals_facts.py's _parse_beat_visual_plan().
+_FACT_VISUAL_SUFFIXES = ("SUBJECT", "EXACT_QUERIES", "REPRESENTATION_QUERIES", "CONCEPT_QUERIES")
 _FACTS_FIELD_NAMES = (
     "TOPIC", "HOOK",
-    "FACT_1_SCRIPT", "FACT_1_KEYWORDS",
-    "FACT_2_SCRIPT", "FACT_2_KEYWORDS",
-    "FACT_3_SCRIPT", "FACT_3_KEYWORDS",
+    *(f"FACT_{i}_{suffix}" for i in (1, 2, 3) for suffix in ("SCRIPT", *_FACT_VISUAL_SUFFIXES)),
 )
 _FACTS_FIELD_PATTERN = re.compile(
     r"(?P<label>{names}):\s*(?P<value>.*?)(?=\n(?:{names}):|\Z)".format(
@@ -96,6 +99,15 @@ def call_llm(prompt: str) -> str:
     raise ValueError(f"unknown LLM_BACKEND: {backend!r} (expected 'claude_code' or 'ollama')")
 
 
+def _split_queries(raw: str) -> list[str]:
+    """Comma-split a query field, treating a literal "none" (the prompt's
+    documented way to say "no concept queries needed") as empty rather
+    than a real search term."""
+    if raw.strip().lower() == "none":
+        return []
+    return [q.strip() for q in raw.split(",") if q.strip()]
+
+
 def _parse_facts_response(text: str) -> dict:
     text = text.strip()
     fields = {
@@ -105,8 +117,23 @@ def _parse_facts_response(text: str) -> dict:
     if missing:
         raise ValueError(f"LLM output missing required field(s) {sorted(missing)}:\n{text}")
 
+    # keywords stores the tiered visual plan as JSON (same TEXT column as
+    # the old flat comma list -- no schema migration needed). See
+    # visuals_facts.py's _parse_beat_visual_plan() for the reader side,
+    # which also accepts the old flat-comma format for any in-flight
+    # video that was planned before this change.
     facts = [
-        {"script_text": fields[f"FACT_{i}_SCRIPT"], "keywords": fields[f"FACT_{i}_KEYWORDS"]}
+        {
+            "script_text": fields[f"FACT_{i}_SCRIPT"],
+            "keywords": json.dumps(
+                {
+                    "subject": fields[f"FACT_{i}_SUBJECT"],
+                    "exact": _split_queries(fields[f"FACT_{i}_EXACT_QUERIES"]),
+                    "representation": _split_queries(fields[f"FACT_{i}_REPRESENTATION_QUERIES"]),
+                    "concept": _split_queries(fields[f"FACT_{i}_CONCEPT_QUERIES"]),
+                }
+            ),
+        }
         for i in (1, 2, 3)
     ]
     return {"topic": fields["TOPIC"], "hook": fields["HOOK"], "facts": facts}
