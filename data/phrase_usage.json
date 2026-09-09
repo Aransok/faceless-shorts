@@ -1,12 +1,15 @@
 {
   "hook_openers": [
-    "Here's something that sounds fake but checks out:"
+    "Here's something that sounds fake but checks out:",
+    "I didn't believe this either, until I checked:"
   ],
   "script_structures": [
-    "Lead with a question the story answers by the end."
+    "Lead with a question the story answers by the end.",
+    "Contrast what you'd expect against what actually happened."
   ],
   "phrasing_styles": [
-    "Plainspoken but with real conviction underneath it."
+    "Plainspoken but with real conviction underneath it.",
+    "Slightly conspiratorial, like you're letting them in on something."
   ],
   "game_night_intro": [
     "Alright, it's game night. Let's see how this one goes."

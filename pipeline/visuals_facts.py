@@ -104,18 +104,38 @@ def _significant_tokens(text: str) -> set[str]:
 def _score_candidate(video: dict, query: str, tier: str, subject: str) -> tuple[int, str]:
     """Deterministic, free (no LLM) relevance score + a possibly-demoted
     match type -- see MATCH_TYPES/_TIER_DEMOTION above for why this
-    doesn't just trust the search tier a candidate came from."""
+    doesn't just trust the search tier a candidate came from.
+
+    REAL BUG this fixes, caught on a live test run: a query like "Slinky
+    toy walking down stairs" shares generic scene words ("down",
+    "stairs") with a completely unrelated "person walking down stairs"
+    clip that has nothing to do with a Slinky. Checking overlap against
+    the whole query let that pass as exact_subject. The subject
+    ("Slinky spring toy") is the actual named thing that must appear --
+    checking against the FULL query lets incidental scene-setting words
+    manufacture false overlap. Trust/demotion now requires overlap with
+    the SUBJECT specifically (falls back to query overlap only when no
+    subject is known -- legacy flat-keyword videos with no subject
+    field). Query overlap still contributes to the score itself, just
+    not to whether the tier label is trusted.
+    """
     description = _describe_clip(video)
     desc_tokens = _significant_tokens(description)
-    query_tokens = _significant_tokens(query) | _significant_tokens(subject)
-    overlap = len(query_tokens & desc_tokens)
+    subject_tokens = _significant_tokens(subject)
+    query_tokens = _significant_tokens(query)
+
+    subject_overlap = len(subject_tokens & desc_tokens)
+    query_overlap = len(query_tokens & desc_tokens)
+    # No subject known (legacy data) -- query overlap is the only signal available.
+    trust_overlap = subject_overlap if subject_tokens else query_overlap
 
     match_type = tier
-    if overlap == 0 and tier in _TIER_DEMOTION:
+    if trust_overlap == 0 and tier in _TIER_DEMOTION:
         match_type = _TIER_DEMOTION[tier]
         score = _TIER_BASE_SCORE[match_type] - _ZERO_OVERLAP_PENALTY
     else:
-        score = _TIER_BASE_SCORE[tier] + min(15, overlap * 5)
+        bonus = min(15, subject_overlap * 7 + query_overlap * 3)
+        score = _TIER_BASE_SCORE[tier] + bonus
     return max(0, score), match_type
 
 

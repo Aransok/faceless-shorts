@@ -84,6 +84,19 @@ class TestCandidateScoring(unittest.TestCase):
         self.assertEqual(match_type, "exact_subject")
         self.assertGreaterEqual(score, vf.MIN_ACCEPTABLE_SCORE)
 
+    def test_generic_scene_words_in_query_cannot_manufacture_false_overlap(self):
+        """Real bug, caught on a live test run: query "Slinky toy walking
+        down stairs" shares generic scene words ("down", "stairs") with
+        a completely unrelated "person walking down stairs" clip that
+        has nothing to do with a Slinky. Checking overlap against the
+        whole query let that false match through as exact_subject --
+        must check against the SUBJECT specifically."""
+        video = _fake_video(4, "a woman going down on stairs")
+        score, match_type = vf._score_candidate(
+            video, "Slinky toy walking down stairs", "exact_subject", "Slinky spring toy"
+        )
+        self.assertNotEqual(match_type, "exact_subject")
+
 
 class TestTierProgressionAndRanking(unittest.TestCase):
     def test_stops_early_once_enough_good_candidates_found_in_exact_tier(self):
