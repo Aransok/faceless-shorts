@@ -96,7 +96,13 @@ def _call_claude_code(prompt: str) -> str:
         capture_output=True,
         text=True,
         encoding="utf-8",
-        timeout=120,
+        # 240s, not 120 -- the Phase 17 review/rewrite loop
+        # (_build_rewrite_prompt) concatenates the original prompt +
+        # previous draft + reviewer feedback into one call, real and
+        # meaningfully bigger than a bare generation prompt. Confirmed
+        # for real: a rewrite call hit the old 120s ceiling and raised
+        # subprocess.TimeoutExpired, killing plan() entirely.
+        timeout=240,
         shell=(os.name == "nt"),
     )
     if result.returncode != 0:
