@@ -842,6 +842,84 @@ real LLM-call cost/time per video (worst case 5 generation + 5 review
 calls at the current budget of 4), though every template that's been
 exercised for real now converges on the first draft with no rewrite.
 
+## Phase 18 — CTA rotation overhaul + fact-repeat tracking (2026-09-09) — DONE
+
+Owner-provided spec for a richer CTA system: one goal per video (never
+stack asks), weighted toward comment/subscribe over share/save, 10% of
+videos get no spoken CTA, CTA must never interrupt the video's strongest
+moment, and it must pass the same topic-specificity bar as the rest of
+the script. Bundled with a second, smaller request: track facts/topics
+already used so they don't repeat.
+
+1. **`pipeline/cta.py` rewritten** — `CTA_TYPES` replaces the old 3-angle
+   `CTA_ANGLES` list with 5 weighted types matching the owner's frequency
+   table (comment_question 40 / subscribe_series 25 / save 15 / share 10
+   / none 10). "Like" and "watch another episode" from the spec's goal
+   list aren't separate top-level buckets — a next-episode tease folds
+   into subscribe_series (same "more of this is coming" promise), and
+   Like CTAs are deliberately excluded from the weighted rotation
+   entirely, per the spec's own "use sparingly" rule for likes. Picking
+   deliberately never gives the LLM a literal example phrase to insert —
+   Phase 17's real verification found that a `cta.py` example and several
+   `approaches.yaml` hook_openers got copied near-verbatim and then
+   rejected by the review pass for being generic; every instruction here
+   is abstract, with only a short per-template HINT (see
+   `_TEMPLATE_HINTS`) narrowing what "specific" means for that content
+   type, confirmed for real not to get copied verbatim (see item 3 below).
+   `cta_guidance_block()` now also states the placement rule explicitly
+   (near the end, after the real payoff — never during the hook, an
+   explanation, or a reveal) and the "exactly ONE ask" rule, and handles
+   `none` by explicitly telling the LLM not to include any CTA at all
+   (silently omitting the block risked the LLM adding one out of habit).
+2. **Consecutive-repeat tracking, reusing existing architecture** — CTA
+   type selection avoids repeating the immediately-previous video's type
+   (spec: "not in consecutive videos"), via a new
+   `pipeline/state.py.recent_cta_types()` querying the existing
+   `videos.cta_angle` column (already populated per-video since Phase 1 —
+   no schema change needed) rather than inventing a parallel log file.
+   "Exact wording" tracking (also requested) isn't separately stored —
+   the actually-generated CTA sentence already lives in `script_text`,
+   so a new field would just duplicate it.
+3. **Real end-to-end verification** — `plan('facts')` and
+   `plan('programming')` both approved on the first draft against the
+   real `claude_code` backend. Real CTAs produced: a genuine
+   topic-specific comment question ("Which of these three surprised you
+   most?" after three real named-after-a-person food facts) and a
+   programming one ("Did you spot why that print would crash before the
+   reveal, or would you have made the same mistake?") — visibly informed
+   by, but not copied from, `_TEMPLATE_HINTS`'s abstract hint text,
+   confirming the hint-not-example design choice actually avoided the
+   Phase 17 verbatim-copy failure mode. Both test videos removed from
+   `state.db` after inspection.
+4. **Fact-repeat tracking (the second, smaller request)** —
+   `programming`'s existing `recent_topics()` already covers this (one
+   video = one specific gotcha, so the topic label IS the fact) and
+   needed no change. `facts` had a real gap: `recent_topics()` only
+   compares each video's one connecting-theme label, not its three
+   individual facts, so a specific fact could resurface under a
+   different theme without ever being caught. New
+   `pipeline/state.py.recent_facts()` returns a short (15-word,
+   truncated) summary of each of the last 15 facts-videos' three beats —
+   short on purpose, since the full ~35-word narration x 45 recent facts
+   would bloat the prompt — fed into `facts_template.txt` via a new
+   `{avoid_facts}` placeholder alongside the existing `{avoid_topics}`.
+   `sauce_recipe` was NOT given the same treatment — out of scope, the
+   owner's request named "fact sources and programming" specifically.
+5. **Tests** — `tests/test_cta.py` (weighted-pick distribution sanity
+   check, milestone always wins, never repeats the immediately-previous
+   type, `none` explicitly says no CTA, template hints render without
+   crashing for an unmapped template) and `tests/test_state.py`
+   (`recent_facts` truncation/ordering/template-filtering,
+   `recent_cta_types` ordering) — all against a throwaway temp SQLite
+   file via the existing `db_path` parameter, never the real `state.db`,
+   per `CLAUDE.md`'s testing rule. 23 tests total, all passing.
+
+Not done: `sauce_recipe`/`game_night`/`quiz_longform` weren't given real
+end-to-end CTA verification this pass (only `facts`/`programming`) —
+`game_night` doesn't call `cta.py` at all yet (still blocked on Phase 16
+owner feedback; `_TEMPLATE_HINTS["game_night"]` is there ready for
+whenever it is wired up, but inert until then).
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

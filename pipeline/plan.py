@@ -17,7 +17,16 @@ from pipeline.cta import cta_guidance_block, pick_cta_angle
 from pipeline.milestones import format_milestone_line, get_pending_announcement, mark_milestone_announced
 from pipeline.persona import persona_guidance_block
 from pipeline.review_script import review_script
-from pipeline.state import create_video, create_video_steps, get_video, get_video_steps, recent_topics, update_video
+from pipeline.state import (
+    create_video,
+    create_video_steps,
+    get_video,
+    get_video_steps,
+    recent_cta_types,
+    recent_facts,
+    recent_topics,
+    update_video,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = PROJECT_ROOT / "config" / "prompts"
@@ -240,6 +249,12 @@ def plan(template: str) -> str:
     prompt_body = TEMPLATES[template].read_text(encoding="utf-8")
     avoid = recent_topics(template, limit=RECENT_TOPICS_LIMIT)
     prompt = prompt_body.replace("{avoid_topics}", ", ".join(avoid) if avoid else "(none yet)")
+    if template == "facts":
+        avoid_facts = recent_facts(limit_videos=RECENT_TOPICS_LIMIT)
+        prompt = prompt.replace(
+            "{avoid_facts}",
+            "; ".join(avoid_facts) if avoid_facts else "(none yet)",
+        )
 
     style = pick_style()
     prompt += style_guidance_block(style)
@@ -247,8 +262,9 @@ def plan(template: str) -> str:
 
     pending = get_pending_announcement()
     milestone_line = format_milestone_line(*pending) if pending else None
-    cta_angle = pick_cta_angle(milestone_line)
-    prompt += cta_guidance_block(cta_angle, milestone_line)
+    last_cta_type = next(iter(recent_cta_types(limit=1)), None)
+    cta_angle = pick_cta_angle(milestone_line, last_cta_type=last_cta_type)
+    prompt += cta_guidance_block(cta_angle, template, milestone_line)
 
     parsed = _generate_reviewed(template, prompt)
 
