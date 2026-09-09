@@ -685,7 +685,242 @@ quiz_longform may not be the right visual language for this format at
 all. Don't rebuild anything else in Phase 16 until this is actually
 diagnosed with the owner.
 
-## Phase 17 — Facts/sauce_recipe Visual Director upgrade (2026-09-09)
+## Phase 17 — Narration authenticity & anti-hallucination system (2026-09-08) — DONE
+
+Owner-provided spec (full text in session transcript) for making narration
+read as deliberately written by a knowledgeable human editor, not
+generic-content-mill output. Owner scoped this explicitly: replace/rewrite
+the existing persona system (not layer on top of it), add a real
+post-generation review/reject pipeline stage (not prompt-only), and apply
+to programming/facts/sauce_recipe (quiz_longform/game_night out of
+scope — game_night is separately blocked, see Phase 16 below).
+
+1. **`config/persona.md` rewritten** — kept what already worked (tone,
+   sentence-rhythm variety, subscribe-not-follow, banned-phrase list,
+   concrete-detail rule) and folded in the new stricter rules: an explicit
+   Notice/Explain/Connect/Remove editorial thinking process, an
+   anti-hallucination rule (adapted from the owner's spec — this pipeline
+   has no separate research/grounding step feeding these templates, so
+   "don't invent a plausible-sounding fact" replaces "not supported by
+   supplied source material," same intent), the visual-complementarity
+   rule, the topic-swap test, and a stronger no-fabricated-personal-
+   experience rule (kept the existing stance-vs-event distinction, since
+   it already correctly allowed "I ran into something weird here" while
+   banning a claimed specific memory — the new spec's stricter examples
+   were folded into that existing test rather than replacing it).
+2. **Per-template editorial identity split** — `persona_pet_peeves_dev.md`
+   (shared programming/facts/quiz_longform/game_night) split into
+   `persona_pet_peeves_programming.md` and `persona_pet_peeves_facts.md`,
+   each now carrying a distinct "editorial identity" section (Programming
+   Narrator vs. Facts Narrator, per the owner's spec) on top of the
+   existing recurring-opinions pet-peeves list, which was kept rather than
+   rewritten (still accurate, still template-appropriate).
+   `persona_pet_peeves_sauce_recipe.md` got the same identity-section
+   treatment; quiz_longform/game_night still map to the original
+   `persona_pet_peeves_dev.md`, untouched — out of scope, and game_night
+   specifically is still blocked pending the owner's diagnosis of the
+   Phase 16 test episode. `pipeline/persona.py`'s `_PET_PEEVES_FILE`
+   mapping updated accordingly.
+3. **New review/reject pipeline stage** — `pipeline/review_script.py`
+   (`review_script()`) sends the plain narration (hook + beat scripts
+   only, no field labels/code/keywords — those would confuse a reviewer
+   checking for authentic-sounding narration) to a new prompt,
+   `config/prompts/script_reviewer_template.txt`, adapted from the
+   owner's spec. `pipeline/plan.py`'s `_generate_reviewed()` wires this
+   into `plan()`: generate, review, and if `REWRITE_REQUIRED`, feed the
+   reviewer's own feedback back into a rewrite prompt (up to
+   `REVIEW_MAX_REWRITES = 2` attempts) before raising — caught by
+   `orchestrator.run_daily()`'s existing try/except around `plan()`, same
+   fail-soft handling as a malformed-output parse error, so one
+   template's slot failing doesn't take down the run. Verdict parsing
+   takes the LAST `APPROVED`/`REWRITE_REQUIRED` match, not the first —
+   deliberately reusing the exact lesson Phase 16's `verify_claim()`
+   learned the hard way (a model that reasons out loud can emit a draft
+   verdict its own follow-up reasoning reverses).
+4. **Tests** — `tests/test_review_script.py` and `tests/test_plan.py`
+   cover the pure logic (verdict parsing including the last-match case,
+   narration extraction excludes code/keywords, rewrite-prompt
+   construction, the generate/review/rewrite loop with a mocked
+   `call_llm`/`review_script`) per `CLAUDE.md`'s testing rule — no real
+   LLM calls in the test suite itself. All passing.
+5. **Real end-to-end verification — two real bugs found and fixed along
+   the way, not just threshold-tuned.** Ran `plan('facts')` and
+   `plan('programming')` for real against the actual `claude_code`
+   backend (confirmed reachable in this environment), five real runs
+   total before landing on a config that converges:
+   - Runs 1-2 (`facts`, `programming`, `REVIEW_MAX_REWRITES = 2`): both
+     exhausted the budget and were still rejected. Feedback each round
+     was legitimate (a CTA line interrupting narration, repeated
+     sentence shapes, a near-verbatim repeated phrase, a stock hook
+     phrase) — not overly strict nitpicking. Presented to the owner
+     rather than guessing; chose to raise the budget over loosening the
+     anti-hallucination rule.
+   - Run 3 (`facts`, budget raised to 4): still rejected, but every
+     single one of the 3 real failures so far had independently flagged
+     the CTA line specifically. Traced this to a real bug, not a
+     threshold problem: `pipeline/cta.py`'s own `direct_ask`/
+     `mid_script_aside` angle instructions modeled the exact "subscribe
+     if [vague thing]" pattern `persona.md`'s new rules ban — the LLM
+     was faithfully following `cta.py`'s own example straight into a
+     rejection. Fixed `cta.py`'s instructions and examples to drop the
+     vague-conditional shape and require the CTA line meet the same
+     authenticity bar as the rest of the script.
+   - Run 4 (`facts`, budget 4, CTA fixed): the CTA complaint was gone
+     (confirming that fix), but still rejected on a new issue — vague
+     mechanical transitions between the three facts ("doing something
+     similar", "has one too") plus a repeated comparison stated twice.
+     Presented to the owner again: this read as the Facts Narrator's
+     "real connecting theme" bar being reasonable but the reviewer's
+     "no mechanical transitions" criterion being too strict for a tight
+     30-40-word-per-fact rapid format, where a full transition can't
+     always spell out the parallel. Owner chose to ease that specific
+     rule rather than raise the budget further. Reworded criterion 5 in
+     `config/prompts/script_reviewer_template.txt` to flag only literal
+     placeholder transitions ("moving on", "next", "number two"), not a
+     short plain connective phrase — and added the matching guidance to
+     `persona_pet_peeves_facts.md` so generation and review agree on the
+     same bar (the exact CTA mismatch, fixed for the same reason).
+   - Run 5 (`facts`, after the transition-rule fix): **approved on the
+     first draft, no rewrite needed** — a real connecting theme (units
+     of measurement literally born from manual labor: an acre, one
+     horsepower, a knot), a genuine stance-based reaction ("Very
+     scientific, I know."), and a specific, on-topic CTA.
+   - Run 6 (`programming`, same fixed config): **also approved on the
+     first draft** — banker's rounding in Python's `round()`, a real,
+     accurate explanation of *why* (avoids upward bias in repeated
+     rounding), CTA specific to the video's own theme ("Subscribe for
+     more defaults languages don't call out clearly").
+
+   All 6 test videos removed from `state.db` and `data/phrase_usage.json`
+   reverted after each run; `state.db`'s own binary diff afterward was
+   pure SQLite page churn against the already-committed baseline, same
+   as Phase 16's precedent — discarded rather than committed.
+
+6. **`sauce_recipe` verification — a third instance of the same bug
+   class, in a different system.** First two attempts hit `call_llm`'s
+   pre-existing 120s subprocess timeout before a response came back at
+   all (environmental — this session's `claude` CLI subprocess slowing
+   down after ~9 real calls already made during this verification pass;
+   unrelated to any code here, and it cleared up on retry). The third
+   attempt reached real review and got rejected on one line: "Here's the
+   detail that makes this whole thing make sense: ..." — flagged as
+   empty-hype generic phrasing. That exact string, word for word, is a
+   literal entry in `config/approaches.yaml`'s `storytelling_hook.
+   hook_openers` pool (the currently-active approach per `config.yaml`),
+   fed straight into every template's prompt by `pipeline/approaches.py`'s
+   `style_guidance_block()` and — confirmed by checking the actual text
+   of the earlier `programming` failure in item 5 above — the LLM copies
+   these near-verbatim rather than just drawing inspiration from them.
+   The exact same root cause as the `cta.py` bug (item 5, run 3), just a
+   different injection point, and the pool's own header comment already
+   documented this failure MODE happening once before for a different
+   rule (a fabricated-personal-experience phrase, fixed in Phase 13) —
+   the new stricter anti-filler rules just reopened it with a fresh set
+   of phrases. Audited all 18 `storytelling_hook.hook_openers` entries
+   against `persona.md`'s new rules: kept the 4 that promise something
+   real (an explanation, a corrected misconception), rewrote the other
+   14 that were empty-hype/vague-escalation shapes ("buckle up", "stay
+   with me", "sounds fake ... doesn't", "gets weirder the longer you sit
+   with it", "stranger than the fact itself", vague "twist"). Re-verified
+   for real immediately after: **`sauce_recipe` approved on the first
+   draft** — a real connecting theme (three sauces sharing one
+   fat-to-acid ratio), real technique and quantities, a CTA specific to
+   the video's own content. `fast_cuts`/`deadpan_facts` pools have the
+   same class of entries and were NOT audited (not the active approach,
+   so not currently reachable) — flagged here so the same bug doesn't
+   quietly resurface if `config.yaml`'s `current_approach` ever switches
+   to one of them.
+
+All 7 real test videos across this verification pass removed from
+`state.db` after inspection, `data/phrase_usage.json` reverted each
+time, `state.db`'s own binary diff confirmed as pure SQLite page churn
+against the committed baseline and discarded rather than committed —
+same pattern as Phase 16's precedent. No real render/upload attempted
+either way — this phase only touches script generation (Phase 1),
+nothing downstream. Worth watching in production: the review pass adds
+real LLM-call cost/time per video (worst case 5 generation + 5 review
+calls at the current budget of 4), though every template that's been
+exercised for real now converges on the first draft with no rewrite.
+
+## Phase 18 — CTA rotation overhaul + fact-repeat tracking (2026-09-09) — DONE
+
+Owner-provided spec for a richer CTA system: one goal per video (never
+stack asks), weighted toward comment/subscribe over share/save, 10% of
+videos get no spoken CTA, CTA must never interrupt the video's strongest
+moment, and it must pass the same topic-specificity bar as the rest of
+the script. Bundled with a second, smaller request: track facts/topics
+already used so they don't repeat.
+
+1. **`pipeline/cta.py` rewritten** — `CTA_TYPES` replaces the old 3-angle
+   `CTA_ANGLES` list with 5 weighted types matching the owner's frequency
+   table (comment_question 40 / subscribe_series 25 / save 15 / share 10
+   / none 10). "Like" and "watch another episode" from the spec's goal
+   list aren't separate top-level buckets — a next-episode tease folds
+   into subscribe_series (same "more of this is coming" promise), and
+   Like CTAs are deliberately excluded from the weighted rotation
+   entirely, per the spec's own "use sparingly" rule for likes. Picking
+   deliberately never gives the LLM a literal example phrase to insert —
+   Phase 17's real verification found that a `cta.py` example and several
+   `approaches.yaml` hook_openers got copied near-verbatim and then
+   rejected by the review pass for being generic; every instruction here
+   is abstract, with only a short per-template HINT (see
+   `_TEMPLATE_HINTS`) narrowing what "specific" means for that content
+   type, confirmed for real not to get copied verbatim (see item 3 below).
+   `cta_guidance_block()` now also states the placement rule explicitly
+   (near the end, after the real payoff — never during the hook, an
+   explanation, or a reveal) and the "exactly ONE ask" rule, and handles
+   `none` by explicitly telling the LLM not to include any CTA at all
+   (silently omitting the block risked the LLM adding one out of habit).
+2. **Consecutive-repeat tracking, reusing existing architecture** — CTA
+   type selection avoids repeating the immediately-previous video's type
+   (spec: "not in consecutive videos"), via a new
+   `pipeline/state.py.recent_cta_types()` querying the existing
+   `videos.cta_angle` column (already populated per-video since Phase 1 —
+   no schema change needed) rather than inventing a parallel log file.
+   "Exact wording" tracking (also requested) isn't separately stored —
+   the actually-generated CTA sentence already lives in `script_text`,
+   so a new field would just duplicate it.
+3. **Real end-to-end verification** — `plan('facts')` and
+   `plan('programming')` both approved on the first draft against the
+   real `claude_code` backend. Real CTAs produced: a genuine
+   topic-specific comment question ("Which of these three surprised you
+   most?" after three real named-after-a-person food facts) and a
+   programming one ("Did you spot why that print would crash before the
+   reveal, or would you have made the same mistake?") — visibly informed
+   by, but not copied from, `_TEMPLATE_HINTS`'s abstract hint text,
+   confirming the hint-not-example design choice actually avoided the
+   Phase 17 verbatim-copy failure mode. Both test videos removed from
+   `state.db` after inspection.
+4. **Fact-repeat tracking (the second, smaller request)** —
+   `programming`'s existing `recent_topics()` already covers this (one
+   video = one specific gotcha, so the topic label IS the fact) and
+   needed no change. `facts` had a real gap: `recent_topics()` only
+   compares each video's one connecting-theme label, not its three
+   individual facts, so a specific fact could resurface under a
+   different theme without ever being caught. New
+   `pipeline/state.py.recent_facts()` returns a short (15-word,
+   truncated) summary of each of the last 15 facts-videos' three beats —
+   short on purpose, since the full ~35-word narration x 45 recent facts
+   would bloat the prompt — fed into `facts_template.txt` via a new
+   `{avoid_facts}` placeholder alongside the existing `{avoid_topics}`.
+   `sauce_recipe` was NOT given the same treatment — out of scope, the
+   owner's request named "fact sources and programming" specifically.
+5. **Tests** — `tests/test_cta.py` (weighted-pick distribution sanity
+   check, milestone always wins, never repeats the immediately-previous
+   type, `none` explicitly says no CTA, template hints render without
+   crashing for an unmapped template) and `tests/test_state.py`
+   (`recent_facts` truncation/ordering/template-filtering,
+   `recent_cta_types` ordering) — all against a throwaway temp SQLite
+   file via the existing `db_path` parameter, never the real `state.db`,
+   per `CLAUDE.md`'s testing rule. 23 tests total, all passing.
+
+Not done: `sauce_recipe`/`game_night`/`quiz_longform` weren't given real
+end-to-end CTA verification this pass (only `facts`/`programming`) —
+`game_night` doesn't call `cta.py` at all yet (still blocked on Phase 16
+owner feedback; `_TEMPLATE_HINTS["game_night"]` is there ready for
+whenever it is wired up, but inert until then).
+
+## Phase 19 -- Facts/sauce_recipe Visual Director upgrade (2026-09-09)
 
 Real viewer feedback: "More of these neat things that exist and yet you
 show none of them?" -- the old pipeline flattened each fact into one

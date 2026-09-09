@@ -17,13 +17,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = PROJECT_ROOT / "config"
 PERSONA_PATH = CONFIG_DIR / "persona.md"
 
-# Every template not explicitly listed here falls back to "dev" — the
-# original programming/facts/quiz voice — so a new template added to
-# plan.py without an explicit persona entry fails loudly at prompt-build
+# Every template not explicitly listed here fails loudly at prompt-build
 # time (missing file) instead of silently getting a mismatched persona.
+# programming/facts got their own distinct editorial-identity files
+# (Phase 17 narrator-authenticity rewrite — each reads and explains its
+# subject differently, not just a shared pet-peeves list with a
+# different topic swapped in). quiz_longform/game_night keep the
+# original shared "dev" file — out of scope for that rewrite (quiz isn't
+# built around persona.py's per-beat voice the same way, and game_night
+# is explicitly blocked pending owner feedback, see ROADMAP.md Phase 16).
 _PET_PEEVES_FILE = {
-    "programming": "persona_pet_peeves_dev.md",
-    "facts": "persona_pet_peeves_dev.md",
+    "programming": "persona_pet_peeves_programming.md",
+    "facts": "persona_pet_peeves_facts.md",
     "quiz_longform": "persona_pet_peeves_dev.md",
     "sauce_recipe": "persona_pet_peeves_sauce_recipe.md",
     "game_night": "persona_pet_peeves_dev.md",

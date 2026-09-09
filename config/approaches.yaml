@@ -17,25 +17,37 @@ storytelling_hook:
   # nobody warned me about" was a literal entry here, picked verbatim
   # into a real published script — the persona.md rule alone couldn't
   # override an approach pool directly contradicting it.
+  #
+  # Phase 17 follow-up, also confirmed real (not guessed): after
+  # persona.md's rules got stricter about generic "empty enthusiasm"
+  # phrasing, several entries here were themselves that exact pattern
+  # ("sounds fake right up until it doesn't", "gets weirder the longer
+  # you sit with it", "buckle up", "stay with me", "the detail that makes
+  # this whole thing make sense") — real end-to-end runs got rejected by
+  # the new authenticity review pass on lines picked VERBATIM from this
+  # pool, same failure mode as the fabricated-experience bug above, just
+  # a different rule. Rewrote every entry that promised excitement
+  # without content; kept the ones that promise something real and
+  # specific (an explanation, a corrected misconception).
   hook_openers:
-    - "Here's a story that sounds made up, but isn't:"
-    - "This is the kind of fact that gets weirder the longer you sit with it:"
-    - "This one took me by surprise, and it might take you too:"
     - "There's a real reason this is true, and it's not what you'd guess:"
-    - "I didn't believe this either, until I checked:"
     - "Most people get the story behind this completely wrong:"
-    - "Here's something that sounds fake but checks out:"
-    - "This looks like a myth. It checks out anyway:"
     - "Here's the part of this story most explanations skip:"
-    - "This fact has a twist most people never hear about:"
     - "Nobody explains why this is actually true, so here goes:"
-    - "This is one of those facts that sounds fake right up until it doesn't:"
-    - "Buckle up, because this one's a ride:"
-    - "The real story behind this is stranger than the fact itself:"
-    - "Here's the detail that makes this whole thing make sense:"
-    - "This is a real thing, and it's stranger than it sounds:"
-    - "Stay with me, because this gets good:"
-    - "There's a story behind this, and it's a good one:"
+    - "This one holds up, and the reason why is the actual point:"
+    - "The explanation for this usually gets left out entirely:"
+    - "This is true for a specific, checkable reason, not just 'because':"
+    - "Most versions of this story skip the actual cause:"
+    - "This isn't the explanation most people settle for:"
+    - "The reason this happens rarely makes it into the retelling:"
+    - "This fact is real — the mechanism behind it almost never gets mentioned:"
+    - "Most retellings of this leave out the actual reason it happens:"
+    - "The real cause here gets simplified out of most versions of the story:"
+    - "Here's the reasoning behind this that usually gets cut:"
+    - "This is accurate, and the actual mechanism is worth knowing:"
+    - "What usually gets skipped here is the actual why:"
+    - "The full explanation for this rarely makes the cut:"
+    - "This is real, and the reason is more specific than most people assume:"
   script_structures:
     - "Cold open on the surprising moment, then unpack how we got there."
     - "Set up the ordinary situation, then reveal the twist, then land the payoff."

@@ -15,7 +15,15 @@ from pathlib import Path
 from pipeline.cta import cta_guidance_block, pick_cta_angle
 from pipeline.persona import persona_guidance_block
 from pipeline.plan import call_llm
-from pipeline.state import create_video, create_video_steps, get_video, get_video_steps, recent_topics, update_video
+from pipeline.state import (
+    create_video,
+    create_video_steps,
+    get_video,
+    get_video_steps,
+    recent_cta_types,
+    recent_topics,
+    update_video,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "quiz_template.txt"
@@ -111,8 +119,9 @@ def plan_quiz() -> str:
     prompt = prompt_body.replace("{avoid_topics}", ", ".join(avoid) if avoid else "(none yet)")
     prompt += persona_guidance_block(TEMPLATE)
 
-    cta_angle = pick_cta_angle()
-    prompt += cta_guidance_block(cta_angle) + (
+    last_cta_type = next(iter(recent_cta_types(limit=1)), None)
+    cta_angle = pick_cta_angle(last_cta_type=last_cta_type)
+    prompt += cta_guidance_block(cta_angle, TEMPLATE) + (
         "\nFor this quiz format specifically: fold the CTA into OUTRO_SCRIPT, "
         "not any individual question.\n"
     )

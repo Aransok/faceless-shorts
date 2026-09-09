@@ -17,7 +17,17 @@ from pipeline.approaches import pick_style, style_guidance_block
 from pipeline.cta import cta_guidance_block, pick_cta_angle
 from pipeline.milestones import format_milestone_line, get_pending_announcement, mark_milestone_announced
 from pipeline.persona import persona_guidance_block
-from pipeline.state import create_video, create_video_steps, get_video, get_video_steps, recent_topics, update_video
+from pipeline.review_script import review_script
+from pipeline.state import (
+    create_video,
+    create_video_steps,
+    get_video,
+    get_video_steps,
+    recent_cta_types,
+    recent_facts,
+    recent_topics,
+    update_video,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = PROJECT_ROOT / "config" / "prompts"
@@ -36,6 +46,22 @@ TEMPLATES = {
 
 RECENT_TOPICS_LIMIT = 15
 VALID_STEP_COUNTS = (2, 3, 4)
+
+# Phase 17: authenticity review pass (pipeline/review_script.py). Up to
+# this many rewrite attempts after the first draft before giving up and
+# raising -- caught by orchestrator.run_daily()'s existing try/except
+# around plan(), same as any other plan() failure (this template's slot
+# is skipped for this run, others continue).
+#
+# Real, not guessed: 2 real end-to-end runs (facts, programming) against
+# the real claude_code backend both exhausted 2 rewrite attempts and
+# still got rejected -- the reviewer's feedback each round was legitimate
+# (a CTA line interrupting a fact list, repeated sentence shapes, a
+# near-verbatim repeated phrase, a stock hook phrase, an engagement-bait
+# CTA sentence), not overly strict nitpicking, so raised the budget
+# rather than loosen what counts as a problem. Owner-confirmed choice
+# over softening the anti-hallucination rule.
+REVIEW_MAX_REWRITES = 4
 
 # facts_template.txt output is always exactly 3 fact beats (fixed count,
 # unlike programming's variable STEPS). Each beat's visual fields are the
@@ -188,6 +214,61 @@ def _parse_programming_response(text: str) -> dict:
     }
 
 
+def _parse_response(template: str, raw: str) -> dict:
+    if template == "programming":
+        return _parse_programming_response(raw)
+    return _parse_facts_response(raw)
+
+
+def _extract_narration(template: str, parsed: dict) -> str:
+    """Plain spoken-narration text for the review pass -- hook + each
+    beat's script_text only, no field labels/code/keywords, since those
+    would just confuse a reviewer checking whether narration sounds
+    authentic."""
+    if template == "programming":
+        lines = [parsed["hook"]] + [step["script_text"] for step in parsed["steps"]]
+    else:
+        lines = [parsed["hook"]] + [fact["script_text"] for fact in parsed["facts"]]
+    return "\n".join(lines)
+
+
+def _build_rewrite_prompt(original_prompt: str, previous_raw: str, feedback: str) -> str:
+    return (
+        f"{original_prompt}\n\n"
+        "--- PREVIOUS DRAFT (REJECTED ON AUTHENTICITY REVIEW) ---\n"
+        f"{previous_raw}\n\n"
+        "--- REVIEWER FEEDBACK ---\n"
+        f"{feedback}\n\n"
+        "Rewrite the script from scratch, fixing every problem listed above. "
+        "Output ONLY the corrected script in the exact same field format "
+        "given in the instructions above -- no extra commentary before or after."
+    )
+
+
+def _generate_reviewed(template: str, prompt: str) -> dict:
+    """Generates a script, runs it through the authenticity review pass
+    (pipeline/review_script.py), and rewrites (feeding the reviewer's own
+    feedback back to the LLM) up to REVIEW_MAX_REWRITES times until it's
+    approved. Raises if it's still rejected after the last attempt --
+    caught by the caller's normal fail-soft handling, same as a
+    malformed-output ValueError from the parser."""
+    raw = call_llm(prompt)
+    parsed = _parse_response(template, raw)
+    attempts = 0
+    while True:
+        review = review_script(_extract_narration(template, parsed), call_llm)
+        if review["approved"]:
+            return parsed
+        attempts += 1
+        if attempts > REVIEW_MAX_REWRITES:
+            raise RuntimeError(
+                f"script for template {template!r} failed authenticity review "
+                f"after {REVIEW_MAX_REWRITES} rewrite attempt(s):\n{review['feedback']}"
+            )
+        raw = call_llm(_build_rewrite_prompt(prompt, raw, review["feedback"]))
+        parsed = _parse_response(template, raw)
+
+
 def plan(template: str) -> str:
     if template not in TEMPLATES:
         raise ValueError(f"unknown template: {template!r} (expected {sorted(TEMPLATES)})")
@@ -195,6 +276,12 @@ def plan(template: str) -> str:
     prompt_body = TEMPLATES[template].read_text(encoding="utf-8")
     avoid = recent_topics(template, limit=RECENT_TOPICS_LIMIT)
     prompt = prompt_body.replace("{avoid_topics}", ", ".join(avoid) if avoid else "(none yet)")
+    if template == "facts":
+        avoid_facts = recent_facts(limit_videos=RECENT_TOPICS_LIMIT)
+        prompt = prompt.replace(
+            "{avoid_facts}",
+            "; ".join(avoid_facts) if avoid_facts else "(none yet)",
+        )
 
     style = pick_style()
     prompt += style_guidance_block(style)
@@ -202,13 +289,13 @@ def plan(template: str) -> str:
 
     pending = get_pending_announcement()
     milestone_line = format_milestone_line(*pending) if pending else None
-    cta_angle = pick_cta_angle(milestone_line)
-    prompt += cta_guidance_block(cta_angle, milestone_line)
+    last_cta_type = next(iter(recent_cta_types(limit=1)), None)
+    cta_angle = pick_cta_angle(milestone_line, last_cta_type=last_cta_type)
+    prompt += cta_guidance_block(cta_angle, template, milestone_line)
 
-    raw = call_llm(prompt)
+    parsed = _generate_reviewed(template, prompt)
 
     if template == "programming":
-        parsed = _parse_programming_response(raw)
         video_id = create_video(template, topic=parsed["topic"])
         full_script = " ".join(step["script_text"] for step in parsed["steps"])
         update_video(
@@ -224,7 +311,6 @@ def plan(template: str) -> str:
         )
         create_video_steps(video_id, parsed["steps"])
     else:
-        parsed = _parse_facts_response(raw)
         video_id = create_video(template, topic=parsed["topic"])
         full_script = " ".join(fact["script_text"] for fact in parsed["facts"])
         update_video(

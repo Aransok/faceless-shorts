@@ -421,6 +421,59 @@ def recent_topics(template: str, limit: int = 15, db_path: Path = DB_PATH) -> li
     return [row["topic"] for row in rows]
 
 
+# Phase 17's persona.md/topic-swap fix works at the whole-video level
+# (one topic label per video) -- but "facts" covers THREE distinct facts
+# per video under one connecting theme, so two videos with different
+# themes could still repeat the same individual fact without
+# recent_topics() ever seeing it (it only compares the theme label, not
+# the three facts inside it). This closes that gap: short summaries (not
+# full script_text -- 15 videos x 3 facts of full ~35-word narration
+# would bloat the prompt) of each recent fact, for facts_template.txt's
+# own avoid-list.
+_FACT_SUMMARY_WORDS = 15
+
+
+def recent_facts(limit_videos: int = 15, db_path: Path = DB_PATH) -> list[str]:
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT vs.script_text FROM video_steps vs
+            JOIN videos v ON v.id = vs.video_id
+            WHERE v.template = 'facts'
+            ORDER BY v.created_at DESC, vs.step_index ASC
+            LIMIT ?
+            """,
+            (limit_videos * 3,),
+        ).fetchall()
+    summaries = []
+    for row in rows:
+        words = row["script_text"].split()
+        summary = " ".join(words[:_FACT_SUMMARY_WORDS])
+        if len(words) > _FACT_SUMMARY_WORDS:
+            summary += "..."
+        summaries.append(summary)
+    return summaries
+
+
+def recent_cta_types(limit: int = 1, db_path: Path = DB_PATH) -> list[str]:
+    """Most recent videos' cta_angle values, channel-wide (not scoped to
+    one template) — CTA type consecutiveness is about what a real viewer
+    of the channel would see back to back, which crosses templates since
+    the daily run interleaves them. Default limit=1 matches the "not in
+    CONSECUTIVE videos" rule pipeline/cta.py enforces; a caller wanting a
+    wider look can pass a larger limit."""
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT cta_angle FROM videos
+            WHERE cta_angle IS NOT NULL
+            ORDER BY created_at DESC LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    return [row["cta_angle"] for row in rows]
+
+
 def set_channel_stat(metric: str, value: int, db_path: Path = DB_PATH) -> None:
     """Records the latest real pulled stat (e.g. from the weekly stats job).
     Never called with a guessed/rounded value — see pipeline/milestones.py."""

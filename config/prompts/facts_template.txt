@@ -5,6 +5,9 @@ dive.
 
 Avoid these topics (already covered recently): {avoid_topics}
 
+Avoid these specific facts too (already used, even if under a different
+theme): {avoid_facts}
+
 Requirements:
 - Pick THREE specific, narrow facts that share a real connecting theme or
   angle — not a random grab-bag of unrelated trivia. The connection can be
