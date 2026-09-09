@@ -731,6 +731,46 @@ Programming/quiz_longform/game_night/captions/upload/scheduling
 untouched -- this only touches the facts/sauce_recipe visual-selection
 path.
 
+**Phase 17b -- verified against a real render, found and fixed 2 real
+bugs (2026-09-09).** Generated a real test video (Post-it Notes/Bubble
+Wrap/Slinky) and actually watched it end to end (narration + music +
+CTA + captions, not just the visual log):
+1. **Subject-vs-query overlap bug**: the Slinky beat's "exact" query
+   "Slinky toy walking down stairs" matched a completely unrelated
+   "person walking down stairs" clip and got scored exact_subject,
+   because the overlap check compared against the WHOLE query (which
+   contains generic scene words like "stairs"/"down") instead of the
+   SUBJECT specifically. Fixed: trust/demotion now requires overlap
+   with the subject, not the full query.
+2. **Visual diversity bug**: the Post-it beat correctly selected 3
+   technically-distinct Pexels clip IDs, but all 3 were near-identical
+   "hand placing a sticky note on a plain wall" shots -- different IDs
+   isn't the same as different footage. Root cause: candidates were
+   scored for relevance independently, then top-N taken, with no check
+   for whether the selected SET looked varied. Fixed with a greedy
+   diversity-aware selector (`_select_diverse_set`): pick the strongest
+   candidate, then for each next pick, recompute every remaining
+   candidate's score minus a similarity penalty against everything
+   already selected (fuzzy token-overlap on clip descriptions, catches
+   word-form variants like "sticky"/"sticking" a literal set
+   intersection misses), pick the best, repeat. Penalty capped
+   (MAX_DIVERSITY_PENALTY=30) so a much-more-relevant-but-similar
+   candidate still beats a much-weaker-but-diverse one. Also bumped
+   Pexels `per_page` 5->10 (same API call, more results, zero extra
+   cost) and widened the tier-search stop condition from "exactly
+   min_count good candidates" to "min_count*2 slack" -- diversity
+   selection needs real alternatives to reject a near-duplicate in
+   favor of, not just enough candidates to barely fill the slot.
+
+Re-verified against live Pexels for the exact real failing beats: the
+Slinky fix correctly demotes the stairs mismatch (confirmed via actual
+API call, not just the isolated unit test); the Post-it fix produced a
+genuinely varied real set ("person writing on a sticky note" / "blue
+sticky note on a computer monitor" / "removing sticky note on wall")
+in place of the original three near-identical hand-on-wall shots.
+16 tests total in tests/test_visuals_facts.py (10 from Phase 17a + 6
+new diversity-specific ones), all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

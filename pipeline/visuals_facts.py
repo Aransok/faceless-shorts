@@ -140,9 +140,14 @@ def _score_candidate(video: dict, query: str, tier: str, subject: str) -> tuple[
 
 
 def _search_tier(query: str, tier: str, subject: str, api_key: str, seen_ids: set[int]) -> list[dict]:
-    """One tier's worth of scored, deduped candidates for one query."""
+    """One tier's worth of scored, deduped candidates for one query.
+    per_page=10 (not 5) -- same single API call, just asks Pexels for
+    more results per query, at zero extra API cost -- so the diversity
+    selector below actually has spare candidates to pick a varied SET
+    from instead of being forced to take everything found.
+    """
     scored = []
-    for video in _search_pexels_videos(query, api_key, per_page=5):
+    for video in _search_pexels_videos(query, api_key, per_page=10):
         if video["id"] in seen_ids:
             continue
         seen_ids.add(video["id"])
@@ -151,15 +156,136 @@ def _search_tier(query: str, tier: str, subject: str, api_key: str, seen_ids: se
     return scored
 
 
-def _build_clip_pool(visual_plan: dict, api_key: str, min_count: int) -> tuple[list[dict], list[dict]]:
+# Visual diversity selection (real failure this fixes: a beat selected 3
+# technically-distinct Pexels clips -- 6928978, 32893132, 6177769 -- that
+# were all near-identical "hand placing a sticky note on a plain wall"
+# shots. Different IDs is not the same thing as different footage.
+MAX_DIVERSITY_PENALTY = 30  # capped so a much stronger, similar candidate can still beat a much weaker, diverse one (see tests)
+_FUZZY_PREFIX_LEN = 4  # catches word-form variants a literal set intersection misses: "sticky"/"sticking", "note"/"notes"
+
+
+def _fuzzy_token_overlap(tokens_a: set[str], tokens_b: set[str]) -> int:
+    """Counts tokens that match exactly OR share a >= _FUZZY_PREFIX_LEN
+    character prefix, each token in b used at most once. Plain set
+    intersection missed the real sticky-note case: "hand getting a
+    sticky note" vs "hand sticking notes on white wall" share only
+    "hand" by exact match, even though "sticky"/"sticking" and
+    "note"/"notes" are obviously the same real-world thing.
+    """
+    remaining_b = set(tokens_b)
+    matched = 0
+    for ta in tokens_a:
+        hit = None
+        for tb in remaining_b:
+            if ta == tb or (len(ta) >= _FUZZY_PREFIX_LEN and len(tb) >= _FUZZY_PREFIX_LEN and ta[:_FUZZY_PREFIX_LEN] == tb[:_FUZZY_PREFIX_LEN]):
+                hit = tb
+                break
+        if hit is not None:
+            matched += 1
+            remaining_b.discard(hit)
+    return matched
+
+
+def _text_similarity(description_a: str, description_b: str) -> float:
+    """0.0 (nothing in common) to 1.0 (same real-world shot) -- fuzzy
+    Jaccard over each description's significant tokens. Cheap,
+    deterministic, no LLM call, reuses the same tokenizer already built
+    for relevance scoring."""
+    tokens_a = _significant_tokens(description_a)
+    tokens_b = _significant_tokens(description_b)
+    if not tokens_a or not tokens_b:
+        return 0.0
+    matched = _fuzzy_token_overlap(tokens_a, tokens_b)
+    union_size = len(tokens_a) + len(tokens_b) - matched
+    return matched / union_size if union_size else 0.0
+
+
+def _diversity_penalty(video: dict, selected: list[dict]) -> tuple[int, int | None]:
+    """Penalty against the MOST similar already-selected candidate (the
+    worst case, not a sum across all of them -- one close match is what
+    makes a set feel repetitive, penalizing against every selected clip
+    cumulatively would over-punish a large, otherwise-fine selection)."""
+    if not selected:
+        return 0, None
+    description = _describe_clip(video)
+    best_similarity = 0.0
+    most_similar_id = None
+    for s in selected:
+        similarity = _text_similarity(description, _describe_clip(s["video"]))
+        if similarity > best_similarity:
+            best_similarity = similarity
+            most_similar_id = s["video"]["id"]
+    penalty = round(best_similarity * MAX_DIVERSITY_PENALTY)
+    return penalty, (most_similar_id if penalty > 0 else None)
+
+
+def _select_diverse_set(candidates: list[dict], min_count: int, beat_label: str = "") -> tuple[list[dict], list[dict]]:
+    """Greedy diversity-aware selection: select the best SET, not the
+    top-N scored independently. Each round, every remaining candidate's
+    diversity-adjusted score (base relevance - similarity penalty
+    against everything already selected) is recomputed, and the best one
+    wins -- so a candidate that looked strong before anything was
+    selected can still lose out once something too similar is already
+    in the set. See MAX_DIVERSITY_PENALTY for why relevance still wins
+    over "different at any cost" (a much weaker, merely-diverse
+    candidate can't out-score a much stronger, moderately-similar one).
+
+    Deduplicates by video id itself (doesn't just trust the caller's own
+    seen_ids bookkeeping) -- defense in depth, same real ID can never be
+    selected twice regardless of how many times it appears in `candidates`.
+    """
+    seen_ids: set = set()
+    remaining: list[dict] = []
+    for c in candidates:
+        vid = c["video"]["id"]
+        if vid in seen_ids:
+            continue
+        seen_ids.add(vid)
+        remaining.append(c)
+    selected: list[dict] = []
+    log: list[dict] = []
+
+    while remaining and len(selected) < min_count:
+        scored_round = []
+        for c in remaining:
+            penalty, similar_to = _diversity_penalty(c["video"], selected)
+            scored_round.append((c["score"] - penalty, penalty, similar_to, c))
+        scored_round.sort(key=lambda t: t[0], reverse=True)
+        final_score, penalty, similar_to, winner = scored_round[0]
+
+        remaining.remove(winner)
+        selected.append(winner)
+        reason = "highest relevance" if not selected[:-1] else (
+            "too similar to already-selected clip(s), but still the best available" if penalty >= MAX_DIVERSITY_PENALTY
+            else "diversity-adjusted top pick"
+        )
+        log.append({
+            "clip_id": winner["video"]["id"], "query": winner["query"], "tier": winner["tier"],
+            "match_type": winner["match_type"], "clip_description": _describe_clip(winner["video"]),
+            "clip_url": winner["video"].get("url"), "base_score": winner["score"],
+            "diversity_penalty": penalty, "relevance_score": final_score,
+            "similar_to": [similar_to] if similar_to else [], "selection_reason": reason,
+        })
+        print(
+            f"[visual diversity] {beat_label}candidate {winner['video']['id']}: "
+            f"base={winner['score']} penalty=-{penalty} final={final_score} "
+            f"SELECTED ({reason}{f', similar to {similar_to}' if similar_to else ''})"
+        )
+    return selected, log
+
+
+def _build_clip_pool(
+    visual_plan: dict, api_key: str, min_count: int, beat_label: str = ""
+) -> tuple[list[dict], list[dict]]:
     """Searches the beat's visual plan tier by tier -- exact_subject
     first, then accurate_representation, then concept_explanation,
     falling back to a generic search built from the subject alone only
-    if nothing scored acceptably. Stops early once enough
-    MIN_ACCEPTABLE_SCORE-or-better candidates exist, rather than always
-    exhausting every tier. Returns the top-scoring `min_count` candidates
-    (not first-found) plus a log entry per candidate actually searched,
-    for {video_id}_visual_log.json.
+    if nothing scored acceptably. Stops early once there's real SLACK
+    beyond min_count (not just barely enough) -- diversity selection
+    needs genuine alternatives to choose between, or it can only pick
+    the order of an unchanged set, not the set itself. Returns the
+    diversity-aware selection (see _select_diverse_set) plus a log entry
+    per SELECTED candidate for {video_id}_visual_log.json.
     """
     subject = visual_plan.get("subject") or ""
     tiers = [
@@ -170,11 +296,12 @@ def _build_clip_pool(visual_plan: dict, api_key: str, min_count: int) -> tuple[l
 
     all_scored: list[dict] = []
     seen_ids: set[int] = set()
+    slack_target = min_count * 2  # room for diversity to actually reject near-duplicates
     for tier, queries in tiers:
         for query in queries:
             all_scored.extend(_search_tier(query, tier, subject, api_key, seen_ids))
         good_enough = [c for c in all_scored if c["score"] >= MIN_ACCEPTABLE_SCORE]
-        if len(good_enough) >= min_count:
+        if len(good_enough) >= slack_target:
             break
 
     if not all_scored and subject:
@@ -187,21 +314,9 @@ def _build_clip_pool(visual_plan: dict, api_key: str, min_count: int) -> tuple[l
     if not all_scored:
         raise RuntimeError(f"no Pexels results for visual plan: {visual_plan}")
 
-    all_scored.sort(key=lambda c: c["score"], reverse=True)
-    selected = all_scored[:min_count]
+    selected, selection_log = _select_diverse_set(all_scored, min_count, beat_label)
     pool = [c["video"] for c in selected]
-    log = [
-        {
-            "query": c["query"],
-            "clip_id": c["video"]["id"],
-            "clip_description": _describe_clip(c["video"]),
-            "clip_url": c["video"].get("url"),
-            "match_type": c["match_type"],
-            "relevance_score": c["score"],
-        }
-        for c in selected
-    ]
-    return pool, log
+    return pool, selection_log
 
 
 def _download_clip(video: dict, out_path: Path) -> None:
@@ -362,7 +477,7 @@ def visuals_facts(video_id: str) -> str:
 
             visual_plan = _parse_beat_visual_plan(beat["keywords"])
             beat_frames = _plan_segment_frames(clip_duration)
-            pool, pool_log = _build_clip_pool(visual_plan, api_key, min_count=len(beat_frames))
+            pool, pool_log = _build_clip_pool(visual_plan, api_key, min_count=len(beat_frames), beat_label=f"beat {beat['step_index']}: ")
             for entry in pool_log:
                 visual_log.append({"beat": beat["step_index"], "subject": visual_plan.get("subject"), **entry})
 
