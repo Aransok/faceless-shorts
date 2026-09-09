@@ -25,5 +25,23 @@
       1.8
     ],
     "thumbnail_path": "C:\\my folder\\claude-playbook\\faceless-shorts\\assets\\output\\17d3f309-4290-4e0a-9648-23a47065c6ff_thumbnail.jpg"
+  },
+  {
+    "video_id": "7d626e69-558c-405f-86e1-d341210fed75",
+    "chosen_timestamp": 43.84,
+    "candidate_timestamps": [
+      43.84,
+      39.41
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/7d626e69-558c-405f-86e1-d341210fed75_thumbnail.jpg"
+  },
+  {
+    "video_id": "f5f46edd-7f45-4280-b07c-93e1a663f838",
+    "chosen_timestamp": 3.5,
+    "candidate_timestamps": [
+      3.5,
+      1.8
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/f5f46edd-7f45-4280-b07c-93e1a663f838_thumbnail.jpg"
   }
 ]

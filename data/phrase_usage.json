@@ -6,7 +6,12 @@
     "Here's the reasoning behind this that usually gets cut:",
     "There's a real reason this is true, and it's not what you'd guess:",
     "This isn't the explanation most people settle for:",
-    "The reason this happens rarely makes it into the retelling:"
+    "The reason this happens rarely makes it into the retelling:",
+    "Here's the part of this story most explanations skip:",
+    "Most people get the story behind this completely wrong:",
+    "Most retellings of this leave out the actual reason it happens:",
+    "The full explanation for this rarely makes the cut:",
+    "Most versions of this story skip the actual cause:"
   ],
   "script_structures": [
     "Lead with a question the story answers by the end.",
@@ -15,7 +20,12 @@
     "Set expectations early, then flip them in the back half.",
     "Start in the middle of the action, then rewind to explain.",
     "Introduce the normal expectation, then subvert it hard.",
-    "Frame it as a mystery, then solve it by the end."
+    "Frame it as a mystery, then solve it by the end.",
+    "Open with a confession, then explain what led to it.",
+    "Walk through it in real time, like you're narrating it as it unfolds.",
+    "Build toward an 'and that's when it got weird' turn.",
+    "Open with the outcome, then walk backward through the cause.",
+    "Structure it as three escalating moments, biggest last."
   ],
   "phrasing_styles": [
     "Plainspoken but with real conviction underneath it.",
@@ -24,7 +34,12 @@
     "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
     "Curious and searching, like you're figuring it out as you go.",
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
-    "Building excitement that peaks right at the reveal."
+    "Building excitement that peaks right at the reveal.",
+    "Unhurried \u2014 let the details breathe before moving on.",
+    "Conversational, like explaining it to a friend over coffee.",
+    "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
+    "A little breathless, like you can't wait to get to the good part.",
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling."
   ],
   "game_night_intro": [
     "Alright, it's game night. Let's see how this one goes."
@@ -36,9 +51,10 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "center_punch_mid"
+    "late_banner_cadence"
   ],
   "code_theme": [
-    "monokai"
+    "monokai",
+    "nord"
   ]
 }
