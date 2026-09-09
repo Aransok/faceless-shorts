@@ -1006,6 +1006,77 @@ in place of the original three near-identical hand-on-wall shots.
 16 tests total in tests/test_visuals_facts.py (10 from Phase 17a + 6
 new diversity-specific ones), all passing.
 
+## Phase 20 — Emergency cost/reliability fixes from a real daily run (2026-09-09) — DONE
+
+Owner reported hitting ~98% of the day's Claude usage limit from a
+single `run_daily.py --count 5` run, plus blank thumbnails on several
+already-live videos and visible errors in the run log. Triggered the
+run manually (owner's own scheduled 14:07 UTC cron hadn't fired for the
+day) via `workflow_dispatch` on `daily-shorts.yml`, then pulled the real
+job logs to diagnose all three, rather than guessing:
+
+1. **Real cost driver, confirmed from the actual run's summary**: 2 of
+   5 videos (`programming`, `facts`) exhausted `REVIEW_MAX_REWRITES = 4`
+   (raised there in Phase 17) and failed completely — zero video
+   produced from either. Each full review/rewrite round trip is TWO real
+   LLM calls (a review call + a rewrite generation call), so budget=4
+   means up to 5 generation + 5 review = 10 real calls burned on a
+   single failed video. Cut `REVIEW_MAX_REWRITES` back to 1 (worst case
+   now 4 calls, 60% less) — real data from this run showed a script
+   still rejected after one real rewrite (using the reviewer's own
+   specific feedback) wasn't obviously converging on a 2nd-4th attempt
+   either, so the extra budget was mostly buying more expensive
+   failures, not more successes.
+2. **Root cause of what made those 2 videos fail, not just the cost
+   symptom**: both failures' reviewer feedback flagged a
+   `config/approaches.yaml` `storytelling_hook.hook_openers` pool entry
+   — specifically two entries ("Most people get the story behind this
+   completely wrong:", "Here's the part of this story most explanations
+   skip:") that Phase 17's own audit had explicitly judged safe and kept.
+   Confirms a deeper pattern across 4 total real instances now (Phase 17
+   found 2, this run found 2 more of the "kept" ones): individually
+   rewording pool entries doesn't fully fix this, since a pool of
+   reusable phrases is generic by construction, no matter how it's
+   worded. Fixed at the actual root instead of chasing more phrases:
+   `pipeline/approaches.py`'s `style_guidance_block()` now explicitly
+   tells the model the picked hook_opener is a tone/rhythm reference
+   ONLY, never text to insert — covers `fast_cuts`/`deadpan_facts` too,
+   which were never individually audited for this same risk.
+3. **Blank thumbnails, root cause found in the run's own log**: a
+   `warning: thumbnail upload failed` line showed `HttpError 404` from
+   `thumbnails().set()`, called immediately after `videos().insert()`
+   returns — YouTube's backend hadn't finished indexing the just-created
+   video yet. Same "immediately after upload" propagation-delay bug
+   class as Phase 15's CTA-comment-on-a-still-private-video fix, just a
+   different endpoint. Fixed with a short retry
+   (`THUMBNAIL_SET_RETRY_DELAYS = (2, 4, 8)` seconds) in
+   `pipeline/thumbnails.py`'s `upload_thumbnail()`, retrying ONLY on a
+   404 (a real quota/permission error still fails fast, not masked).
+4. **The other real error in the log**: `sauce_recipe` failed at the
+   voice stage with `edge_tts.exceptions.NoAudioReceived` — a known
+   transient failure of edge_tts's free Microsoft backend, not a
+   parameter problem (its own error message is misleading about that).
+   Fixed with a short retry (`EDGE_TTS_RETRY_DELAYS = (1, 3, 6)` seconds)
+   around the actual synthesis call in `pipeline/voice.py`, retrying only
+   that specific exception.
+5. **Branch note**: `claude/problem-w3vbok` had already been merged into
+   `main` before this session started, and `main` had since gained
+   substantial unrelated work from a parallel session (the Phase 19
+   Visual Director upgrade, plus a `call_llm` timeout bump 120s -> 240s).
+   Restarted the branch from latest `main` (stashing this session's
+   in-progress fixes first, per the branch-reuse rule for an
+   already-merged designated branch) rather than push on top of stale
+   history — all fixes above are on top of that current `main`.
+
+Deliberately did NOT spend more real LLM-call budget re-verifying with
+another live `run_daily.py` pass this session, given the owner's
+explicit report of being near the daily usage limit — relied on unit
+tests (`tests/test_thumbnails.py`, `tests/test_voice.py`, both new,
+mocking every network/API boundary per `CLAUDE.md`'s testing rule) plus
+careful code review of the real diff against the real log evidence.
+46 tests total across the suite, all passing. The next real scheduled
+run is the actual verification for items 1-4.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

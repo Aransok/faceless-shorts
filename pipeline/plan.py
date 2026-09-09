@@ -53,15 +53,24 @@ VALID_STEP_COUNTS = (2, 3, 4)
 # around plan(), same as any other plan() failure (this template's slot
 # is skipped for this run, others continue).
 #
-# Real, not guessed: 2 real end-to-end runs (facts, programming) against
-# the real claude_code backend both exhausted 2 rewrite attempts and
-# still got rejected -- the reviewer's feedback each round was legitimate
-# (a CTA line interrupting a fact list, repeated sentence shapes, a
-# near-verbatim repeated phrase, a stock hook phrase, an engagement-bait
-# CTA sentence), not overly strict nitpicking, so raised the budget
-# rather than loosen what counts as a problem. Owner-confirmed choice
-# over softening the anti-hallucination rule.
-REVIEW_MAX_REWRITES = 4
+# Phase 19, real cost problem (2026-09-09): this was raised 2 -> 4 in
+# Phase 17 to fix a convergence problem, but the real cost of a full
+# review/rewrite round trip is TWO LLM calls (a review call + a rewrite
+# generation call), so budget=4 means up to 5 generation + 5 review = 10
+# real calls for a single video -- and when a video fails outright
+# (exhausts the budget without ever passing), every one of those calls
+# was wasted, zero video produced. The very first real daily run after
+# shipping budget=4 hit exactly this: 2 of 5 videos in one run exhausted
+# all 4 rewrites and failed completely, and the owner reported hitting
+# ~98% of the day's Claude usage limit from this run alone. Cut back to
+# 1 -- worst case now 2 generation + 2 review = 4 calls, 60% less than
+# budget=4's worst case, and a bounded failure costs far less. This
+# trades some convergence rate for cost -- real data so far suggests a
+# script that's still rejected after one real rewrite attempt (using the
+# reviewer's own specific feedback) is not obviously about to converge
+# on a second or third attempt either, so the extra budget was mostly
+# buying failed videos at 2-3x the cost, not more successful ones.
+REVIEW_MAX_REWRITES = 1
 
 # facts_template.txt output is always exactly 3 fact beats (fixed count,
 # unlike programming's variable STEPS). Each beat's visual fields are the

@@ -29,6 +29,17 @@ storytelling_hook:
   # a different rule. Rewrote every entry that promised excitement
   # without content; kept the ones that promise something real and
   # specific (an explanation, a corrected misconception).
+  #
+  # Phase 19 follow-up, real again: a subsequent real daily run failed
+  # review on TWO of the entries kept above ("Most people get the story
+  # behind this completely wrong:", "Here's the part of this story most
+  # explanations skip:") for the exact same reason -- still generic/
+  # topic-swappable despite promising something real. Individually
+  # rewording pool entries doesn't fully fix this: a pool of reusable
+  # phrases is generic by construction. Fixed at the actual root instead
+  # -- pipeline/approaches.py's style_guidance_block() now explicitly
+  # tells the model these are a tone/rhythm reference, never text to
+  # insert, whichever entry gets picked.
   hook_openers:
     - "There's a real reason this is true, and it's not what you'd guess:"
     - "Most people get the story behind this completely wrong:"

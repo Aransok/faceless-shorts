@@ -57,11 +57,29 @@ def pick_style(approach: str | None = None) -> dict:
 
 
 def style_guidance_block(style: dict) -> str:
-    """Formatted for appending directly to an LLM prompt."""
+    """Formatted for appending directly to an LLM prompt.
+
+    Real, repeated bug this guards against (Phase 17/19, 4 confirmed
+    real instances across 2 separate real daily runs, not a one-off):
+    hook_openers entries get picked up and inserted near-verbatim, and
+    several -- even ones already reviewed and judged "safe" once --
+    later failed the authenticity review pass for being generic/
+    topic-swappable. A pool of reusable phrases is generic by
+    construction; no amount of individually rewording pool entries fully
+    fixes that. The real fix is telling the model explicitly not to copy
+    one in, every time -- covers the two pools (fast_cuts, deadpan_facts)
+    that were never individually audited for this, too.
+    """
     return (
         "\n\nSTYLE GUIDANCE FOR THIS VIDEO (vary your writing to actually "
         "match this, not your default pattern):\n"
-        f"- Opening line style: {style['hook_opener']}\n"
+        f"- Opening line TONE/RHYTHM to match: {style['hook_opener']}\n"
+        "  This is a reference for tone and rhythm ONLY -- do not insert "
+        "it, or anything close to it, as your actual opening line. Write "
+        "an original opening sentence, specific to THIS video's actual "
+        "topic, that has a similar feel. Copying it (even lightly "
+        "reworded) reads as a generic template line, not something "
+        "written for this topic.\n"
         f"- Script structure: {style['script_structure']}\n"
         f"- Phrasing: {style['phrasing_style']}\n"
     )

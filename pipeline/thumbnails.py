@@ -14,8 +14,10 @@ import json
 import random
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
+from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from PIL import Image, ImageDraw, ImageFont
 
@@ -367,6 +369,17 @@ def generate_quiz_thumbnail(video_id: str) -> Path:
     return out_path
 
 
+# Real, observed failure (2026-09-09 daily run): thumbnails().set()
+# called immediately after videos().insert() returns a 404 "video not
+# found" -- YouTube's backend hasn't finished indexing the just-created
+# video yet. Same "immediately after upload" propagation-delay class of
+# bug as Phase 15's CTA-comment-on-a-still-private-video fix, just a
+# different endpoint. Retrying specifically on 404 (not any other error
+# -- a real quota/permission failure should still fail fast, not be
+# masked by retries) recovers it once the video is indexed.
+THUMBNAIL_SET_RETRY_DELAYS = (2, 4, 8)
+
+
 def upload_thumbnail(video_id: str, youtube) -> Path:
     """Call after the main upload succeeds. `youtube` is an
     already-built googleapiclient discovery resource, reused from
@@ -381,6 +394,16 @@ def upload_thumbnail(video_id: str, youtube) -> Path:
     else:
         thumb_path = generate_thumbnail(video_id)
 
-    media = MediaFileUpload(str(thumb_path), mimetype="image/jpeg")
-    youtube.thumbnails().set(videoId=video["youtube_video_id"], media_body=media).execute()
-    return thumb_path
+    last_exc: HttpError | None = None
+    for delay in (0,) + THUMBNAIL_SET_RETRY_DELAYS:
+        if delay:
+            time.sleep(delay)
+        media = MediaFileUpload(str(thumb_path), mimetype="image/jpeg")
+        try:
+            youtube.thumbnails().set(videoId=video["youtube_video_id"], media_body=media).execute()
+            return thumb_path
+        except HttpError as exc:
+            if exc.resp.status != 404:
+                raise
+            last_exc = exc
+    raise last_exc

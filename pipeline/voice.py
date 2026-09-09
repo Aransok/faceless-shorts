@@ -86,22 +86,43 @@ def _pad_with_silence(path: Path, seconds: float) -> None:
     padded_path.replace(path)
 
 
+# Real, observed failure (2026-09-09 daily run): edge_tts.exceptions.
+# NoAudioReceived, a known transient failure of the free Microsoft
+# endpoint edge_tts talks to -- not a parameter/config problem (the
+# library's own error message is misleading about that). Retrying with a
+# short backoff is the real fix other edge_tts users report working;
+# only retries this specific exception, so a real config problem still
+# fails fast instead of being masked.
+EDGE_TTS_RETRY_DELAYS = (1, 3, 6)
+
+
 async def _synth_one_edge_tts_call(text: str, out_path: Path) -> list[dict]:
     """One real edge_tts call, one sentence or the whole text — returns its
     word list with start/end in seconds, relative to this call's own audio
     (no cumulative offset applied yet)."""
     import edge_tts
 
-    communicate = edge_tts.Communicate(text, EDGE_TTS_VOICE, rate=EDGE_TTS_RATE, boundary="WordBoundary")
-    words: list[dict] = []
-    with open(out_path, "wb") as audio_file:
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_file.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                start = chunk["offset"] / 1e7
-                words.append({"word": chunk["text"], "start": start, "end": start + chunk["duration"] / 1e7})
-    return words
+    async def _attempt() -> list[dict]:
+        communicate = edge_tts.Communicate(text, EDGE_TTS_VOICE, rate=EDGE_TTS_RATE, boundary="WordBoundary")
+        words: list[dict] = []
+        with open(out_path, "wb") as audio_file:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_file.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    start = chunk["offset"] / 1e7
+                    words.append({"word": chunk["text"], "start": start, "end": start + chunk["duration"] / 1e7})
+        return words
+
+    last_exc: BaseException | None = None
+    for delay in (0,) + EDGE_TTS_RETRY_DELAYS:
+        if delay:
+            await asyncio.sleep(delay)
+        try:
+            return await _attempt()
+        except edge_tts.exceptions.NoAudioReceived as exc:
+            last_exc = exc
+    raise last_exc
 
 
 def _synthesize_edge_tts(text: str, out_path: Path) -> None:
