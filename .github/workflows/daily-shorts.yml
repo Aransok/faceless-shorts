@@ -74,7 +74,7 @@ jobs:
         run: |
           git config user.name "faceless-shorts-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add state.db data/videos.json
+          git add state.db data/videos.json data/phrase_usage.json data/thumbnails.json
           if git diff --cached --quiet; then
             echo "no state changes to commit"
             exit 0
