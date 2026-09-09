@@ -1,15 +1,30 @@
 {
   "hook_openers": [
     "Here's something that sounds fake but checks out:",
-    "I didn't believe this either, until I checked:"
+    "I didn't believe this either, until I checked:",
+    "This is real, and the reason is more specific than most people assume:",
+    "Here's the reasoning behind this that usually gets cut:",
+    "There's a real reason this is true, and it's not what you'd guess:",
+    "This isn't the explanation most people settle for:",
+    "The reason this happens rarely makes it into the retelling:"
   ],
   "script_structures": [
     "Lead with a question the story answers by the end.",
-    "Contrast what you'd expect against what actually happened."
+    "Contrast what you'd expect against what actually happened.",
+    "Use a slow build with one big reveal near the very end.",
+    "Set expectations early, then flip them in the back half.",
+    "Start in the middle of the action, then rewind to explain.",
+    "Introduce the normal expectation, then subvert it hard.",
+    "Frame it as a mystery, then solve it by the end."
   ],
   "phrasing_styles": [
     "Plainspoken but with real conviction underneath it.",
-    "Slightly conspiratorial, like you're letting them in on something."
+    "Slightly conspiratorial, like you're letting them in on something.",
+    "Warm and a little self-deprecating.",
+    "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
+    "Curious and searching, like you're figuring it out as you go.",
+    "Direct eye-contact energy \u2014 like you're talking straight to one person.",
+    "Building excitement that peaks right at the reveal."
   ],
   "game_night_intro": [
     "Alright, it's game night. Let's see how this one goes."
@@ -22,5 +37,8 @@
   ],
   "cta_variant": [
     "center_punch_mid"
+  ],
+  "code_theme": [
+    "monokai"
   ]
 }
