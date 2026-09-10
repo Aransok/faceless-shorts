@@ -23,8 +23,8 @@ from pipeline.state import (
     create_video_steps,
     get_video,
     get_video_steps,
+    recent_beats,
     recent_cta_types,
-    recent_facts,
     recent_topics,
     update_video,
 )
@@ -291,11 +291,16 @@ def plan(template: str) -> str:
     prompt_body = TEMPLATES[template].read_text(encoding="utf-8")
     avoid = recent_topics(template, limit=RECENT_TOPICS_LIMIT)
     prompt = prompt_body.replace("{avoid_topics}", ", ".join(avoid) if avoid else "(none yet)")
-    if template == "facts":
-        avoid_facts = recent_facts(limit_videos=RECENT_TOPICS_LIMIT)
+    # facts/sauce_recipe are both 3-item-per-video templates -- see
+    # recent_beats()'s docstring for the real overlap bug (two
+    # consecutive sauce_recipe videos both independently picking
+    # chimichurri) this closes.
+    _AVOID_BEATS_PLACEHOLDER = {"facts": "{avoid_facts}", "sauce_recipe": "{avoid_sauces}"}
+    if template in _AVOID_BEATS_PLACEHOLDER:
+        avoid_beats = recent_beats(template, limit_videos=RECENT_TOPICS_LIMIT)
         prompt = prompt.replace(
-            "{avoid_facts}",
-            "; ".join(avoid_facts) if avoid_facts else "(none yet)",
+            _AVOID_BEATS_PLACEHOLDER[template],
+            "; ".join(avoid_beats) if avoid_beats else "(none yet)",
         )
 
     style = pick_style()

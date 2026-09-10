@@ -422,34 +422,41 @@ def recent_topics(template: str, limit: int = 15, db_path: Path = DB_PATH) -> li
 
 
 # Phase 17's persona.md/topic-swap fix works at the whole-video level
-# (one topic label per video) -- but "facts" covers THREE distinct facts
-# per video under one connecting theme, so two videos with different
-# themes could still repeat the same individual fact without
-# recent_topics() ever seeing it (it only compares the theme label, not
-# the three facts inside it). This closes that gap: short summaries (not
-# full script_text -- 15 videos x 3 facts of full ~35-word narration
-# would bloat the prompt) of each recent fact, for facts_template.txt's
-# own avoid-list.
-_FACT_SUMMARY_WORDS = 15
+# (one topic label per video) -- but "facts" and "sauce_recipe" both
+# cover THREE distinct items per video under one connecting theme, so
+# two videos with different themes could still repeat the same
+# individual item without recent_topics() ever seeing it (it only
+# compares the theme label, not the three items inside it). This closes
+# that gap: short summaries (not full script_text -- 15 videos x 3 items
+# of full ~35-45-word narration would bloat the prompt) of each recent
+# item, for the template's own avoid-list.
+#
+# Originally facts-only (Phase 18); generalized 2026-09-10 after real,
+# confirmed proof sauce_recipe needed it too -- two consecutive
+# sauce_recipe videos, different connecting themes ("No-Cook Sauces" /
+# "Three bright sauces..."), each independently picked chimichurri AND
+# salsa verde as one of their three sauces, uploaded back to back with
+# zero overlap detection.
+_BEAT_SUMMARY_WORDS = 15
 
 
-def recent_facts(limit_videos: int = 15, db_path: Path = DB_PATH) -> list[str]:
+def recent_beats(template: str, limit_videos: int = 15, db_path: Path = DB_PATH) -> list[str]:
     with _connect(db_path) as conn:
         rows = conn.execute(
             """
             SELECT vs.script_text FROM video_steps vs
             JOIN videos v ON v.id = vs.video_id
-            WHERE v.template = 'facts'
+            WHERE v.template = ?
             ORDER BY v.created_at DESC, vs.step_index ASC
             LIMIT ?
             """,
-            (limit_videos * 3,),
+            (template, limit_videos * 3),
         ).fetchall()
     summaries = []
     for row in rows:
         words = row["script_text"].split()
-        summary = " ".join(words[:_FACT_SUMMARY_WORDS])
-        if len(words) > _FACT_SUMMARY_WORDS:
+        summary = " ".join(words[:_BEAT_SUMMARY_WORDS])
+        if len(words) > _BEAT_SUMMARY_WORDS:
             summary += "..."
         summaries.append(summary)
     return summaries

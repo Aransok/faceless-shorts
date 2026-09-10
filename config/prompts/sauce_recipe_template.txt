@@ -6,6 +6,9 @@ cooking video mixed into the feed.
 
 Avoid these topics (already covered recently): {avoid_topics}
 
+Avoid these specific sauces too (already used, even if under a
+different theme): {avoid_sauces}
+
 Requirements:
 - Pick THREE specific sauces that share a real connecting theme — not a
   random grab-bag. The connection can be loose (a cuisine, an occasion,
