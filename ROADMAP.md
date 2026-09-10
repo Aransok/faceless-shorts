@@ -1604,6 +1604,45 @@ render-and-watch pass for the 4 newest game types first, plus either a
 real `higher_or_lower` LLM call (whenever that slot gets picked) or a
 deliberate exclusion/mock for a full real episode render.
 
+## Post-launch fix: scheduled-run ffmpeg install failure (2026-09-10)
+
+Owner reported the daily workflow "didn't run." Two separate real
+findings, not one:
+
+1. **A real bug, found and fixed.** The last actual `schedule`-triggered
+   run (2026-09-09T17:45 UTC, run #6) failed in 17 seconds -- far too
+   fast to be a real pipeline failure. The job log showed the true
+   cause: `sudo apt-get update && sudo apt-get install -y ffmpeg` died
+   because the GitHub-hosted runner image's own pre-baked Google Chrome
+   apt source (not anything this project added) had a transient
+   upstream "Hash Sum mismatch" on its own package index. `apt-get
+   update` exits non-zero whenever ANY configured repo's index fails to
+   fetch, even if every repo this project actually needs (the regular
+   Ubuntu archive mirrors, which fetched fine in the same run) succeeded
+   -- and the old `&&`-chained command meant that one unrelated broken
+   repo aborted the ffmpeg install, which skipped the entire pipeline
+   run behind it (confirmed from the job's own step list: every step
+   after "Install ffmpeg" shows `skipped`). Fixed in both
+   `daily-shorts.yml` and `weekly-quiz.yml` (the only two workflows with
+   this exact pattern): `apt-get update || true` followed by a separate
+   `apt-get install -y ffmpeg` -- tolerates one broken third-party
+   repo's index without masking a real ffmpeg install failure, since
+   ffmpeg's own package data doesn't come from the Chrome repo at all.
+2. **Not a bug, a known GitHub limitation.** Today's actual cron slot
+   (14:07 UTC) hadn't fired at all as of 15:16 UTC (69+ minutes late,
+   zero run of any kind for that slot) -- this matches
+   `daily-shorts.yml`'s own existing code comment, which already
+   documents this exact class of problem happening once before
+   ("sat 7+ minutes past its nominal 14:00 UTC fire time with zero
+   run... Actions enabled, workflow registered well before the slot,
+   YAML valid"). GitHub's own docs describe scheduled workflows as
+   best-effort, not guaranteed-on-time -- nothing in this repo's config
+   is wrong, and there is no fix available from this side beyond what's
+   already been done (picking an off-the-hour minute). The existing
+   "Later" section below already lists the real structural fix (an
+   always-on VM instead of relying on GitHub's scheduler) as unstarted
+   future work, not something to solve today.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

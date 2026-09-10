@@ -48,7 +48,21 @@ jobs:
           python-version: "3.11"
 
       - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        # `apt-get update` is allowed to fail non-fatally here: a real
+        # scheduled run (2026-09-09) died at this exact step because the
+        # runner image's pre-baked Google Chrome apt source had a
+        # transient upstream hash mismatch on ITS OWN index -- nothing
+        # to do with this project or ffmpeg, but the old `&&`-chained
+        # command meant one unrelated broken repo aborted the whole
+        # step (and skipped the entire pipeline run behind it). ffmpeg
+        # itself comes from the regular Ubuntu archive mirrors, which
+        # fetched fine in that same failed run -- only the Chrome repo's
+        # index failed -- so tolerating apt-get update's exit code and
+        # still attempting the install is the correct fix, not papering
+        # over a real ffmpeg problem.
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y ffmpeg
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
