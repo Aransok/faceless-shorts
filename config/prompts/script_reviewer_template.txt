@@ -36,6 +36,16 @@ Check for:
 10. Empty conclusions ("and that's why this is important", "now you
     know") that don't add anything specific.
 
+Note on the video's CTA line: exactly one brief subscribe/comment/save/
+share mention is an intentional, sanctioned part of the script, not
+something to flag on its own as filler or an interruption (criterion 9)
+— judge it by the same specificity/genericness bar as everything else
+(criteria 1, 8), not by whether it "adds content." A line like "most
+people watching this aren't subscribed yet" is a standing, true-for-any-
+small-channel observation, not an invented statistic about this
+specific video's actual audience — don't flag it under criterion 2 for
+that reason alone.
+
 Do not invent replacement facts or rewrite the script yourself — only
 identify problems.
 

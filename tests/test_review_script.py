@@ -57,6 +57,24 @@ class ReviewScriptTest(unittest.TestCase):
         self.assertIn("Some narration text.", captured["prompt"])
         self.assertIn("APPROVED", captured["prompt"])  # instructions mention the verdict format
 
+    def test_prompt_carves_out_the_sanctioned_cta_line(self):
+        # Real bug (2026-09-10): the reviewer rejected "most people
+        # watching this aren't subscribed yet" -- a cta.py-sanctioned
+        # line explicitly designed to avoid fabricating a real statistic
+        # -- as both an invented factual claim and filler, because the
+        # reviewer prompt had no idea a single CTA line was expected,
+        # sanctioned content. This just checks the carve-out is actually
+        # in the prompt the reviewer sees, not a review-quality judgment.
+        captured = {}
+
+        def fake_llm(prompt: str) -> str:
+            captured["prompt"] = prompt
+            return "APPROVED"
+
+        review_script("Some narration text.", fake_llm)
+        self.assertIn("aren't subscribed yet", captured["prompt"])
+        self.assertIn("sanctioned part of the script", captured["prompt"])
+
 
 if __name__ == "__main__":
     unittest.main()
