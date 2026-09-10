@@ -1490,11 +1490,66 @@ needed.
 23 new tests, all algorithmic/no-mocking -- 126 tests total across the
 suite, all passing.
 
-**All 7 of the spec's game types now exist and are unit-tested.** Not
-yet done: a real render-and-watch pass for these 4 (deferred per the
-owner's request this round, not forgotten -- worth doing before Phase 6
-trusts them in a full episode), Phase 6 (episode composer), Phase 7
-(quality gate), Phase 8 (full end-to-end test episode).
+**All 7 of the spec's game types now exist and are unit-tested.**
+
+## Phase 6 — episode composer, 2026-09-10 — DONE
+
+`pipeline/family_game/episode.py`: stitches several rounds from
+different game-type modules into one episode, implementing section 7
+steps 1-2 (theme selection, game-type selection) and section 16/17's
+pacing/difficulty guidance. Zero LLM calls of its own -- it's pure
+orchestration over the 7 already-built game modules (`GAME_MODULES`
+registry) -- though `higher_or_lower` itself still calls the real LLM
+when actually picked, same as it always has; composing a real episode
+for real still costs at most one real LLM call, only if that slot lands
+on it.
+
+- `MAIN_ROUND_PLAN`: 5 slots, each a small pool of game types (not one
+  fixed type) plus a difficulty (easy -> medium -> medium -> medium ->
+  hard), collapsing section 17's 7-step example curve onto the 3-valued
+  scale every game module already uses. `_select_rounds_plan()` refuses
+  to repeat a game type already used earlier in the same episode --
+  directly avoids the "four Higher or Lower rounds in a row" failure
+  mode section 7 names by name, not just coincidentally.
+- Rapid Fire is a fixed closing slot, not part of the rotating pool --
+  section 30's own "this should be the energetic ending" framing.
+- Episode theme picked via `pipeline.rotation.pick_rotating()` (the
+  existing hook/CTA/music-track rotation mechanism, reused rather than
+  a parallel one) against section 7 Step 1's own 5 example themes --
+  real "use existing BiteBits rotation and recent-exclusion patterns"
+  compliance, not a new pattern invented for this format.
+- `flatten_episode_to_segments()`: the whole episode (intro -> every
+  round's real segments in order -> outro) as one flat list, ready for
+  `render.render_episode()` completely unchanged. Intro/outro segments
+  use a synthetic "episode" game_type that isn't in `render.py`'s
+  per-game-type dispatch table, so they fall through to the existing
+  plain-text-card path with zero new rendering code.
+- Deliberately does NOT fold in Phase 7's quality gate -- each module's
+  own `generate_round()` already runs `validate_round()` internally and
+  raises on a broken round, so composition either succeeds with valid
+  rounds or fails loudly; Phase 7's actual job (regenerate only a failed
+  round rather than the whole episode, duplicate-answer-pattern checks
+  across the WHOLE episode, an overly-long-narration check) is real
+  additional work, not something to bolt onto orchestration logic.
+
+**Verified without any real LLM call**, per the owner's explicit request
+to keep this phase light on Claude usage: `tests/test_family_game_episode.py`
+monkeypatches every `GAME_MODULES` entry with a lightweight fake
+`generate_round()` (not the real modules), so these 10 tests exercise
+only the composer's own selection/ordering/rotation/flattening logic --
+never `higher_or_lower`'s real LLM call. Real game-module content
+generation is already covered by each module's own test file
+separately. The rotation log file (`data/phrase_usage.json`) is
+backed up and restored around the theme-rotation tests so a test run
+never leaves the real project file mutated. 136 tests total, all
+passing.
+
+**Not yet done**: a real end-to-end render-and-watch pass for a full
+composed episode (would need Phase 3-5's still-pending render
+verification for the 4 newest game types first, plus a real
+`higher_or_lower` LLM call unless that slot is deliberately excluded or
+mocked for the test) -- Phase 7 (quality gate), Phase 8 (full
+end-to-end test episode) are the next real steps.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
