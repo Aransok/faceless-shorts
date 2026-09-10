@@ -187,5 +187,21 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-10T17:14:46.559974+00:00"
+  },
+  {
+    "video_id": "154a3b15-1773-4ae3-903d-1808398ca7ed",
+    "youtube_video_id": "tKxDzBOHCSw",
+    "uploaded_at": "2026-09-10T08:14:29.812584+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-10T19:35:46.722284+00:00"
+  },
+  {
+    "video_id": "84c80f08-6410-4d0e-b44f-5ca635c9cc3b",
+    "youtube_video_id": "xHnSc6HOEZ0",
+    "uploaded_at": "2026-09-10T08:20:34.060075+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-10T21:58:47.093619+00:00"
   }
 ]
