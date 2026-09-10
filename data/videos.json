@@ -227,5 +227,21 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-11T06:25:57.411846+00:00"
+  },
+  {
+    "video_id": "dd1a5207-0207-40f6-ae20-a042a56507af",
+    "youtube_video_id": "sIgHFXkjGi0",
+    "uploaded_at": "2026-09-10T17:51:23.229259+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-11T09:45:01.227110+00:00"
+  },
+  {
+    "video_id": "cc9dc1bf-8998-405f-940c-8909ddd34e5b",
+    "youtube_video_id": "wsNUhdV-5OI",
+    "uploaded_at": "2026-09-10T17:59:35.734478+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-11T12:00:09.412362+00:00"
   }
 ]
