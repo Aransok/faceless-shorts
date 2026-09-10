@@ -207,13 +207,21 @@ def validate_round(round_: dict, segments: list[dict]) -> tuple[bool, str]:
         if answer_lower and s.get("script_text") and answer_lower in s["script_text"].lower():
             return False, f"PLAYER_TIME segment (beat={s['beat']!r}) narration leaks the answer {round_['answer']!r}"
 
-    # A "reveal" segment must never come before player time has finished --
-    # that would mean the answer is on screen before the viewer is done
-    # guessing, exactly what section 9 forbids.
+    # No PLAYER_TIME segment may trail after every reveal in the round --
+    # that would mean its own decision window never actually gets an
+    # answer shown, section 9's rule turned inside-out. This deliberately
+    # checks against the LAST reveal, not the first: a multi-cycle round
+    # (rapid_fire's several question/think/reveal groups back to back) is
+    # fine having player time between an EARLIER cycle's reveal and a
+    # LATER cycle's own reveal -- only a player segment with no reveal
+    # anywhere after it at all is the real bug (the exact case a reordered
+    # round -- reveal moved before its own think/countdown -- produces).
     reveal_indices = [i for i, s in enumerate(segments) if s["beat"] == "reveal"]
     player_indices = [i for i, s in enumerate(segments) if s["kind"] == PLAYER_TIME]
-    if reveal_indices and player_indices and min(reveal_indices) < max(player_indices):
-        return False, "a 'reveal' segment appears before player time ends"
+    if not reveal_indices:
+        return False, "round has no 'reveal' segment at all"
+    if player_indices and max(player_indices) > max(reveal_indices):
+        return False, "a PLAYER_TIME segment appears after every reveal -- its own answer never gets shown"
 
     return True, "ok"
 

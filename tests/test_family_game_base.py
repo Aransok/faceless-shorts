@@ -155,12 +155,40 @@ class ValidateRoundTest(unittest.TestCase):
         reordered = [segments[0], segments[4], segments[1], segments[2], segments[3]]
         ok, reason = validate_round(round_, reordered)
         self.assertFalse(ok)
-        self.assertIn("before player time", reason)
+        self.assertIn("never gets shown", reason)
 
     def test_empty_segments_fails(self):
         round_, _ = _valid_round_and_segments()
         ok, reason = validate_round(round_, [])
         self.assertFalse(ok)
+
+    def test_no_reveal_at_all_fails(self):
+        round_, segments = _valid_round_and_segments()
+        no_reveal = [s for s in segments if s["beat"] != "reveal"]
+        ok, reason = validate_round(round_, no_reveal)
+        self.assertFalse(ok)
+        self.assertIn("no 'reveal' segment", reason)
+
+    def test_multi_cycle_round_with_player_time_between_reveals_passes(self):
+        # rapid_fire's real shape: several question/think/reveal cycles
+        # back to back -- player time between an earlier cycle's reveal
+        # and a later cycle's own reveal must NOT be flagged as a leak,
+        # only a player segment with no reveal anywhere after it at all.
+        segments = [
+            make_segment("rapid_fire", 0, HOST_TIME, "intro", "Rapid fire -- three questions."),
+            make_segment("rapid_fire", 0, HOST_TIME, "prompt", "True or false: the sky is blue."),
+            make_segment("rapid_fire", 0, PLAYER_TIME, "think", "", duration_seconds=4.0),
+            make_segment("rapid_fire", 0, HOST_TIME, "reveal", "True."),
+            make_segment("rapid_fire", 0, HOST_TIME, "prompt", "True or false: fish can fly."),
+            make_segment("rapid_fire", 0, PLAYER_TIME, "think", "", duration_seconds=4.0),
+            make_segment("rapid_fire", 0, HOST_TIME, "reveal", "False."),
+        ]
+        round_ = make_round(
+            "rapid_fire", "medium", "Rapid Fire", "True or false.", {"statements": ["a", "b"]},
+            "a->true; b->false", "stated after each", thinking_time=8.0, reveal_data={"statements": ["a", "b"]},
+        )
+        ok, reason = validate_round(round_, segments)
+        self.assertTrue(ok, reason)
 
 
 if __name__ == "__main__":

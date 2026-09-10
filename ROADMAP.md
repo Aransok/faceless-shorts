@@ -1433,12 +1433,68 @@ render.
 7 new tests, no mocking (fully algorithmic) -- 101 tests total, all
 passing.
 
-**Next**: the remaining Phase 5 game types (Odd One Out, Guess the
-Connection, Who/What Am I, Rapid Fire) -- not yet started. None of the
-existing `pipeline/games/*` modules is a close precedent for these the
-way `what_changed.py`/`memory.py` were, so these will need to be
-designed closer to first-principles from their own spec sections
-(GAME TYPE C, B, H, I).
+**Phase 5, remaining four game types — done, 2026-09-10.** Owner
+explicitly asked to keep real Claude usage low for this batch ("don't
+use the pipeline... make tests but don't generate") -- all four are
+built as fully algorithmic, curated-pool modules with zero LLM calls at
+all, same pattern as spot_the_difference/memory_challenge, so this was
+free either way; the real-render-and-watch step (done for the first 3
+game types) was skipped this round per that request, verified instead
+via the full mocked/algorithmic test suite plus a direct frame-render
+smoke test (every segment of all 4 types rendered through
+`_render_segment_frame` with no crash, no ffmpeg/video encoding
+needed for that check).
+
+- `pipeline/family_game/odd_one_out.py` (Game Type C) -- curated pool of
+  {items, odd_one, category_label, explanation}. The spec's own
+  validation worry ("must avoid ambiguous cases") is sidestepped by
+  hand-picking every entry rather than judging a generated one live.
+- `pipeline/family_game/guess_the_connection.py` (Game Type B) -- same
+  approach, curated {clues, connection, explanation} pool.
+- `pipeline/family_game/who_what_am_i.py` (Game Type H) -- curated pool
+  of {answer, clues} with clues pre-ordered hardest-to-easiest. Real
+  player time after EVERY clue (not just the last), matching the
+  spec's own example layout -- a viewer can guess early.
+- `pipeline/family_game/rapid_fire.py` (Game Type I) -- curated pool of
+  real true/false statements (no invented facts). Several
+  question/think/reveal cycles back to back in ONE round, no
+  per-question countdown (section 30's own "fast, energetic ending"
+  framing argues against a real countdown pause on every one of 5
+  quick questions).
+
+**Real bug found and fixed while building rapid_fire, not just
+inherited from the first three types.** `validate_round()`'s
+reveal-ordering check (`pipeline/family_game/base.py`) assumed exactly
+one reveal per round -- true for every game type built so far, false
+for rapid_fire's several reveals in sequence. The old check
+(`min(reveal_indices) < max(player_indices)`) flagged every real
+rapid_fire round as invalid, since cycle 2's think naturally sits after
+cycle 1's reveal. Fixed to the actually-correct general rule: a round
+is invalid only if some PLAYER_TIME segment has NO reveal anywhere
+after it at all (`max(player_indices) > max(reveal_indices)`) -- this
+still catches the original bug case (a reveal accidentally moved before
+its own think/countdown) and now also correctly allows player time
+between an earlier cycle's reveal and a later cycle's own reveal. Two
+new tests in `tests/test_family_game_base.py` cover both the
+still-caught original failure and the newly-allowed multi-cycle case;
+`rapid_fire`'s own real generated rounds are the actual end-to-end
+proof (`test_produces_a_valid_round_every_time`, 50 real trials).
+
+`render.py` gained `_render_item_grid_card` (shared chip-row visual for
+odd_one_out/guess_the_connection) plus dispatch entries for both;
+who_what_am_i/rapid_fire deliberately attach no `round_data` at all
+(their beats are plain narration -- a clue, a true/false statement) and
+fall through to the existing plain-text-card path with no new code
+needed.
+
+23 new tests, all algorithmic/no-mocking -- 126 tests total across the
+suite, all passing.
+
+**All 7 of the spec's game types now exist and are unit-tested.** Not
+yet done: a real render-and-watch pass for these 4 (deferred per the
+owner's request this round, not forgotten -- worth doing before Phase 6
+trusts them in a full episode), Phase 6 (episode composer), Phase 7
+(quality gate), Phase 8 (full end-to-end test episode).
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM

@@ -261,6 +261,30 @@ def _render_memory_card(round_data: dict) -> Image.Image:
     return frame
 
 
+def _render_item_grid_card(items: tuple, title: str, highlight: str | None) -> Image.Image:
+    """odd_one_out / guess_the_connection share this shape: a row of
+    item chips, plain until revealed, at which point `highlight` (the
+    odd one out, or None for guess_the_connection -- that game's answer
+    is the connection itself, not one of the shown items) gets the
+    reveal accent."""
+    frame = _render_base_panel()
+    draw = ImageDraw.Draw(frame)
+    cx0, cy0, cx1, cy1 = _content_area()
+    cy_mid = (cy0 + cy1) / 2
+    chip_font = _font(FONT_PATH, CHIP_FONT_SIZE)
+
+    entries = [
+        (item.upper(), REVEAL_BG if item == highlight else CARD_BG, REVEAL_TEXT if item == highlight else TEXT_COLOR)
+        for item in items
+    ]
+    _chip_row(draw, cy_mid, entries, chip_font, pad_x=36, pad_y=22)
+
+    label_font = _font(FONT_PATH, LABEL_FONT_SIZE)
+    tw = draw.textlength(title, font=label_font)
+    draw.text((WIDTH / 2 - tw / 2, cy0), title, font=label_font, fill=DIM_TEXT)
+    return frame
+
+
 def _render_single_scene_card(subject: str, scene: dict, phase_label: str) -> Image.Image:
     """spot_the_difference's "study this" / "here's the new version"
     beats -- ONE scene's full attribute list, nothing hidden (there's
@@ -350,14 +374,30 @@ def _render_memory_challenge_frame(segment: dict, round_data: dict) -> Image.Ima
     return _render_memory_card(round_data)
 
 
+def _render_odd_one_out_frame(segment: dict, round_data: dict) -> Image.Image:
+    highlight = round_data.get("odd_one") if segment["beat"] == "reveal" else None
+    return _render_item_grid_card(round_data["items"], "WHICH ONE DOESN'T BELONG?", highlight)
+
+
+def _render_guess_the_connection_frame(segment: dict, round_data: dict) -> Image.Image:
+    title = round_data["connection"].upper() if segment["beat"] == "reveal" else "WHAT'S THE CONNECTION?"
+    return _render_item_grid_card(round_data["clues"], title, highlight=None)
+
+
 # One dispatch entry per game-type module's own round_data shape -- new
 # game types register here rather than growing a single function's
 # if/elif chain, since each game type's round_data means something
 # different (a pair of values, a before/after scene, an icon sequence).
+# who_what_am_i and rapid_fire aren't registered here -- both attach no
+# round_data at all (their beats are plain narration: a clue, a true/
+# false statement), so they fall through to the plain text card below
+# with no special-casing needed.
 _GAME_TYPE_RENDERERS = {
     "higher_or_lower": _render_higher_or_lower_frame,
     "spot_the_difference": _render_spot_the_difference_frame,
     "memory_challenge": _render_memory_challenge_frame,
+    "odd_one_out": _render_odd_one_out_frame,
+    "guess_the_connection": _render_guess_the_connection_frame,
 }
 
 
