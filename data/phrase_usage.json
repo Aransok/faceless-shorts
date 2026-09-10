@@ -1,7 +1,5 @@
 {
   "hook_openers": [
-    "Here's something that sounds fake but checks out:",
-    "I didn't believe this either, until I checked:",
     "This is real, and the reason is more specific than most people assume:",
     "Here's the reasoning behind this that usually gets cut:",
     "There's a real reason this is true, and it's not what you'd guess:",
@@ -11,11 +9,14 @@
     "Most people get the story behind this completely wrong:",
     "Most retellings of this leave out the actual reason it happens:",
     "The full explanation for this rarely makes the cut:",
-    "Most versions of this story skip the actual cause:"
+    "Most versions of this story skip the actual cause:",
+    "This one holds up, and the reason why is the actual point:",
+    "Nobody explains why this is actually true, so here goes:",
+    "The real cause here gets simplified out of most versions of the story:",
+    "This is accurate, and the actual mechanism is worth knowing:",
+    "This is true for a specific, checkable reason, not just 'because':"
   ],
   "script_structures": [
-    "Lead with a question the story answers by the end.",
-    "Contrast what you'd expect against what actually happened.",
     "Use a slow build with one big reveal near the very end.",
     "Set expectations early, then flip them in the back half.",
     "Start in the middle of the action, then rewind to explain.",
@@ -25,11 +26,14 @@
     "Walk through it in real time, like you're narrating it as it unfolds.",
     "Build toward an 'and that's when it got weird' turn.",
     "Open with the outcome, then walk backward through the cause.",
-    "Structure it as three escalating moments, biggest last."
+    "Structure it as three escalating moments, biggest last.",
+    "Build tension gradually across three beats, then release it in the last line.",
+    "Cold open on the surprising moment, then unpack how we got there.",
+    "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
+    "Start with the punchline, then explain why it's true.",
+    "Lead with a question the story answers by the end."
   ],
   "phrasing_styles": [
-    "Plainspoken but with real conviction underneath it.",
-    "Slightly conspiratorial, like you're letting them in on something.",
     "Warm and a little self-deprecating.",
     "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
     "Curious and searching, like you're figuring it out as you go.",
@@ -39,7 +43,12 @@
     "Conversational, like explaining it to a friend over coffee.",
     "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
     "A little breathless, like you can't wait to get to the good part.",
-    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling."
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
+    "Warm humor threaded through, without undercutting the actual point.",
+    "Intimate, like sharing something you don't tell everyone.",
+    "Earnest, like you genuinely want the listener to feel what you felt.",
+    "Reflective, like you're still a little surprised by it yourself.",
+    "A little wry, noticing the absurdity without overplaying it."
   ],
   "game_night_intro": [
     "Alright, it's game night. Let's see how this one goes."
@@ -51,10 +60,10 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "save_for_later_early"
   ],
   "code_theme": [
-    "monokai",
-    "nord"
+    "nord",
+    "dracula"
   ]
 }
