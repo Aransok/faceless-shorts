@@ -1112,6 +1112,132 @@ current YouTube Shorts algorithm/monetization research:
    consistent with staying conservative on real API spend after the
    cost incident above.
 
+## Phase 21 — Family Game Night long-form track (2026-09-10) — NOT STARTED (inspection done)
+
+Owner-provided full spec (`FAMILY_GAME_NIGHT_SPEC.md`, verbatim) for a new
+10-20 minute long-form YouTube format: an automated "game show" with 9
+distinct game types (Higher/Lower, Guess the Connection, Odd One Out,
+Spot the Difference, Memory, Riddle, Would You Rather, Who/What Am I,
+Rapid Fire), built around one hard rule the spec calls the single most
+important behavioral thing to get right — the video must genuinely wait
+for the human viewer to think/guess (real HOST TIME vs. PLAYER TIME
+pacing), not simulate an AI player racing through its own content the
+way Phase 16's blocked `game_night` track did.
+
+**This is explicitly NOT a continuation of the blocked Phase 16
+`game_night` Shorts track** (still blocked, see that phase's note — real
+owner feedback was "too fast" / "the ai plays by himself" / "still bad"
+after two fix passes with no further specifics). It's a different
+delivery format (long-form, not Shorts-length) with a different pacing
+model, built on top of the same underlying game-mechanic infrastructure —
+that infrastructure was never what the owner's feedback called bad; the
+Shorts-length pacing and the simulated-AI-player mechanic were.
+
+**Phase 1 (inspection) — done.** Per the spec's own required first step,
+read the existing Phase 16 game-night code before writing anything new,
+to find real overlap instead of assuming a from-scratch build:
+
+- `pipeline/games/base.py` — `GameSession`, `select_rounds()`
+  (no-adjacent-repeat variety picker, verified in Phase 16 against 2000+
+  real trials), `verify_claim()` (independent LLM fact-check gate before
+  any generated number ships, last-verdict-match parsing), and the shared
+  `make_beat()` / `BEAT_TYPES` schema (`intro, rule, countdown, gameplay,
+  suspense, reveal`) — all directly reusable for the new format's own
+  beat structure.
+- `pipeline/games/{higher_or_lower,memory,what_changed,risk_or_safe,
+  prediction}.py` — 5 existing round-type modules behind one shared
+  `generate_round(avoid_topics, round_index) -> list[dict]` interface.
+  Two of the new spec's 9 game types (Higher/Lower, Memory) already have
+  a real, previously-verified implementation to adapt rather than write
+  new; the other 7 (Guess the Connection, Odd One Out, Spot the
+  Difference, Riddle, Would You Rather, Who/What Am I, Rapid Fire) are
+  real new modules, though several are close cousins of what exists
+  (Spot the Difference is close to `what_changed.py`'s before/after
+  mechanic; Odd One Out and Who/What Am I are closer to new territory).
+- `pipeline/plan_game.py` — the existing episode assembler
+  (`plan_game_night()`): picks rounds, threads one `GameSession` through
+  them, substitutes on verification failure. Structurally close to what
+  this spec calls its "episode composer," but it currently drives the
+  blocked Shorts-length/simulated-player shape end to end, so it needs
+  real rework, not just reuse, for the new format's host-persona +
+  real-wait-time state machine — not a small parameter change.
+  Importantly, this is a separate function from `plan.py`'s regular
+  `plan()` used by facts/programming/sauce_recipe, so building the new
+  format's composer on/from this file cannot regress the daily Shorts
+  pipeline.
+- `pipeline/visuals_game.py` — 1920x1080 renderer (matches this spec's
+  long-form horizontal requirement, unlike the 1080x1920 Shorts frame),
+  already has per-round-type bespoke visual layouts for the 5 existing
+  round types plus a generic centered-text card for
+  intro/rule/countdown/suspense beats — a real starting point for the new
+  UI-component requirements, not a blank page.
+- `pipeline/voice.py`'s `GAME_NIGHT_MIN_BEAT_SECONDS` (countdown 1.5s,
+  gameplay 3.5s, reveal 4.0s) — the existing mechanism for padding a beat
+  with real silence so a visual card stays on screen long enough to read.
+  This is the right *mechanism* for the spec's HOST TIME vs. PLAYER TIME
+  rule, but the existing values were tuned for Shorts-length pacing and
+  are almost certainly too short for the spec's actual "wait for the
+  viewer to think/guess" requirement (its own examples imply real
+  multi-second-to-tens-of-seconds pauses per round, not ~3-4s) — needs
+  new, much longer per-game-type values, not a reuse of the existing
+  ones as-is.
+- `pipeline/visuals_quiz.py`'s `COUNTDOWN_SECONDS = 30.0` — a real,
+  already-shipped precedent for exactly this spec's core ask: a
+  long-form format (`quiz_longform`) that pauses for a real 30-second
+  silent think-time window per question, verified in production (Phase
+  11/12) with real audio/video duration sync
+  (`_build_padded_audio()` appending real silence, not just a visual
+  hold). This is the strongest piece of existing evidence that the
+  spec's central "the video must wait for the human" requirement is
+  achievable in this codebase, since it already ships elsewhere on this
+  channel today.
+- `pipeline/captions.py` already special-cases `quiz_longform` and
+  `game_night` to skip burned-in captions — the new format's own
+  template name will need the same guard once it exists.
+
+**Net read of the inspection**: this is real build work (7 new game-type
+modules, a new host persona, a new episode composer with a genuine
+HOST/PLAYER-time state machine, new long-hold timing values, a quality
+gate, new metadata/upload wiring, a new orchestrator entry point and
+schedule) — not a small change — but meaningfully less than
+"from scratch," since round-module interface, beat schema, variety
+selection, fact-verification, and the 1920x1080 rendering foundation all
+already exist and are already proven in production on this channel.
+
+**Plan (matches the spec's own 8-phase implementation order)**, not yet
+started, not yet built:
+1. Inspection — done above.
+2. Foundation: new template name/schema fields (only what's new — beat
+   schema and `video_steps` columns already exist from Phase 16 and
+   should be reused, not duplicated), a new host persona file (separate
+   from `persona_pet_peeves_dev.md`, matching this spec's own
+   personality requirements rather than the Shorts narrator voice), and
+   the new long-hold timing constants.
+3. One game type built vertically, end to end (script -> voice -> visual
+   -> assemble), to prove the real HOST/PLAYER-time wait mechanic works
+   before building the other 8 — this is the spec's own explicit
+   phase-gate ("do not proceed until the complete loop works"), and this
+   project's own established pattern (Phase 16 was built the same way,
+   items 1-2 approved before render code).
+4. The procedural/algorithmic game type(s) (no LLM needed, like
+   `what_changed.py`/`risk_or_safe.py` already are).
+5. Remaining game-type modules.
+6. Episode composer (the real rework of `plan_game.py`'s shape, not a
+   copy).
+7. Quality gate (per the spec's own requirement).
+8. Full real end-to-end test episode, verified by actually watching it —
+   same verification bar this project has used for every prior format
+   (Phase 11 quiz, Phase 16 game_night, Phase 17-20 narration/CTA
+   changes), never shipped on unit tests alone for a new content format.
+
+**Not started**: no new code has been written yet. Given this project's
+established pattern of getting a plan approved before spending real
+render/LLM budget on a new format (explicit for Phase 16 items 1-2), and
+this session's own recent hands-on cost-crisis experience (Phase 20),
+the next step is presenting this phased plan to the owner and confirming
+scope/priority before starting Phase 2 above — not building the full
+9-game-type composer unilaterally in one pass.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
