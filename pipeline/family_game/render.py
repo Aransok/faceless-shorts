@@ -187,14 +187,113 @@ def _render_countdown_number(n: int) -> Image.Image:
     return frame
 
 
+ROW_FONT_SIZE = 34
+ATTR_LABEL_FONT_SIZE = 30
+
+
+def _render_single_scene_card(subject: str, scene: dict, phase_label: str) -> Image.Image:
+    """spot_the_difference's "study this" / "here's the new version"
+    beats -- ONE scene's full attribute list, nothing hidden (there's
+    nothing to hide yet; the challenge is remembering this against the
+    scene shown next, not reading anything off this card)."""
+    frame = _render_base_panel()
+    draw = ImageDraw.Draw(frame)
+    cx0, cy0, cx1, cy1 = _content_area()
+
+    subject_font = _font(FONT_BOLD_PATH, NAME_FONT_SIZE)
+    title = subject.upper() if not phase_label else f"{subject.upper()} -- {phase_label.upper()}"
+    tw = draw.textlength(title, font=subject_font)
+    draw.text((WIDTH / 2 - tw / 2, cy0), title, font=subject_font, fill=TEXT_COLOR)
+
+    row_font = _font(FONT_PATH, ROW_FONT_SIZE)
+    attrs = list(scene)
+    row_top = cy0 + 110
+    row_h = 64
+    row_gap = 16
+    row_w = 640
+    row_x = WIDTH / 2 - row_w / 2
+
+    for i, attr in enumerate(attrs):
+        y = row_top + i * (row_h + row_gap)
+        draw.rounded_rectangle([row_x, y, row_x + row_w, y + row_h], radius=12, fill=CARD_BG)
+        label = f"{attr}: {scene[attr]}"
+        draw.text((row_x + 24, y + (row_h - ROW_FONT_SIZE) / 2 - 4), label, font=row_font, fill=TEXT_COLOR)
+    return frame
+
+
+def _render_what_changed_card(round_data: dict, revealed: bool) -> Image.Image:
+    """The reveal beat's before/after comparison -- both scenes side by
+    side, the changed row highlighted only once revealed. Not used
+    before the reveal (the two study/compare beats each show one full
+    scene alone via _render_single_scene_card, per section 30 Game Type
+    D's actual flow -- study scene 1, then compare scene 2 against
+    memory, not a side-by-side table the whole way through)."""
+    frame = _render_base_panel()
+    draw = ImageDraw.Draw(frame)
+    cx0, cy0, cx1, cy1 = _content_area()
+
+    subject_font = _font(FONT_BOLD_PATH, NAME_FONT_SIZE)
+    subject = round_data["subject"].upper()
+    sw = draw.textlength(subject, font=subject_font)
+    draw.text((WIDTH / 2 - sw / 2, cy0), subject, font=subject_font, fill=DIM_TEXT)
+
+    before, after = round_data["before"], round_data["after"]
+    changed = round_data.get("changed_attribute")
+    attrs = list(before)
+    row_font = _font(FONT_PATH, ROW_FONT_SIZE)
+    header_font = _font(FONT_BOLD_PATH, ATTR_LABEL_FONT_SIZE)
+    row_top = cy0 + 100
+    row_h = 64
+    row_gap = 16
+    col_w = (cx1 - cx0 - 60) / 2
+    col_a_x, col_b_x = cx0, cx0 + col_w + 60
+
+    draw.text((col_a_x, row_top - 46), "BEFORE", font=header_font, fill=DIM_TEXT)
+    draw.text((col_b_x, row_top - 46), "AFTER", font=header_font, fill=DIM_TEXT)
+
+    for i, attr in enumerate(attrs):
+        y = row_top + i * (row_h + row_gap)
+        is_changed = revealed and attr == changed
+        bg = REVEAL_BG if is_changed else CARD_BG_DIM
+        text_color = REVEAL_TEXT if is_changed else TEXT_COLOR
+        draw.rounded_rectangle([col_a_x, y, col_a_x + col_w, y + row_h], radius=12, fill=bg)
+        draw.text((col_a_x + 20, y + (row_h - ROW_FONT_SIZE) / 2 - 4), f"{attr}: {before[attr]}", font=row_font, fill=text_color)
+        draw.rounded_rectangle([col_b_x, y, col_b_x + col_w, y + row_h], radius=12, fill=bg)
+        draw.text((col_b_x + 20, y + (row_h - ROW_FONT_SIZE) / 2 - 4), f"{attr}: {after[attr]}", font=row_font, fill=text_color)
+    return frame
+
+
+def _render_higher_or_lower_frame(segment: dict, round_data: dict) -> Image.Image:
+    state = "player" if segment["beat"] == "think" else segment["beat"]
+    return _render_comparison_card(round_data, state)
+
+
+def _render_spot_the_difference_frame(segment: dict, round_data: dict) -> Image.Image:
+    if segment["beat"] == "reveal":
+        return _render_what_changed_card(round_data, revealed=True)
+    if "scene" in round_data:
+        return _render_single_scene_card(round_data["subject"], round_data["scene"], round_data.get("phase", ""))
+    return _render_text_card(segment["script_text"] or " ")
+
+
+# One dispatch entry per game-type module's own round_data shape -- new
+# game types register here rather than growing a single function's
+# if/elif chain, since each game type's round_data means something
+# different (a pair of values vs. a before/after scene).
+_GAME_TYPE_RENDERERS = {
+    "higher_or_lower": _render_higher_or_lower_frame,
+    "spot_the_difference": _render_spot_the_difference_frame,
+}
+
+
 def _render_segment_frame(segment: dict, round_data: dict | None) -> Image.Image:
-    beat = segment["beat"]
-    if beat == "prompt" and round_data:
-        return _render_comparison_card(round_data, "prompt")
-    if beat == "reveal" and round_data:
-        return _render_comparison_card(round_data, "reveal")
-    if beat == "think" and round_data:
-        return _render_comparison_card(round_data, "player")
+    """The one non-countdown visual for a segment -- used for every
+    HOST_TIME beat and every non-countdown PLAYER_TIME beat alike, since
+    a game type's own renderer already knows how to draw its "unrevealed"
+    vs. "revealed" states from `segment["beat"]`/`round_data` alone."""
+    renderer = _GAME_TYPE_RENDERERS.get(segment["game_type"])
+    if renderer and round_data:
+        return renderer(segment, round_data)
     return _render_text_card(segment["script_text"] or " ")
 
 
@@ -265,12 +364,8 @@ def render_episode(segments: list[dict], output_path: Path, voice_backend: str =
                 duration = audio_duration_seconds(audio_path)
                 audio_clips.append(audio_path)
 
-                if segment["beat"] in ("prompt", "reveal") and round_data:
-                    frame = _render_comparison_card(round_data, segment["beat"])
-                    video_clips.append(_image_clip(frame, duration, tmp_dir / f"seg{i:03d}_video.mp4", tmp_dir, f"seg{i:03d}"))
-                else:
-                    frame = _render_text_card(segment["script_text"])
-                    video_clips.append(_image_clip(frame, duration, tmp_dir / f"seg{i:03d}_video.mp4", tmp_dir, f"seg{i:03d}"))
+                frame = _render_segment_frame(segment, round_data)
+                video_clips.append(_image_clip(frame, duration, tmp_dir / f"seg{i:03d}_video.mp4", tmp_dir, f"seg{i:03d}"))
                 continue
 
             # PLAYER_TIME: real silence for exactly duration_seconds, never
@@ -297,7 +392,7 @@ def render_episode(segments: list[dict], output_path: Path, voice_backend: str =
                 _concat(sub_clips, video_path)
                 video_clips.append(video_path)
             else:
-                frame = _render_comparison_card(round_data, "player") if round_data else _render_text_card(" ")
+                frame = _render_segment_frame(segment, round_data)
                 video_clips.append(_image_clip(frame, duration, tmp_dir / f"seg{i:03d}_video.mp4", tmp_dir, f"seg{i:03d}"))
 
         video_only = tmp_dir / "video_only.mp4"

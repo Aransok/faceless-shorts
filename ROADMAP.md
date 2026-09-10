@@ -1349,10 +1349,61 @@ unverified, and is expected to just work the same way it already does
 for the rest of the channel. Worth a real end-to-end run once outside
 this sandbox (or once the daily pipeline itself exercises this format).
 
-**Next**: Phase 4 (the procedural/algorithmic game type -- no LLM
-needed, the spec's own recommendation is Spot the Difference / What
-Changed, and `pipeline/games/what_changed.py` is a close, adaptable
-precedent) or Phase 5 (the remaining game types) -- not yet started.
+**Phase 4 (procedural game type) — done and watched, 2026-09-10.**
+`pipeline/family_game/spot_the_difference.py`: zero LLM calls, adapted
+from `pipeline/games/what_changed.py`'s scene-template mechanic (mutate
+one attribute of a small scene) but reshaped into the real two-phase
+flow section 30 Game Type D actually describes -- study scene 1 (real
+player time), then compare scene 2 against memory (a second, distinct
+player-time budget), not the blocked Shorts track's side-by-side table
+the whole way through (that shape needed a "?" placeholder on the
+changed cell to keep any challenge at all, which visually gives the
+answer away pre-reveal -- a real design flaw not worth inheriting). The
+two-column comparison table is used only at the reveal, where showing
+both together is actually the right way to explain the answer.
+
+Two distinct timing categories used on purpose: studying scene 1 reuses
+`memory_challenge` (the same "observe then recall" cognitive task Memory
+Challenge already needs), comparing scene 2 uses `spot_the_difference`
+(section 8's own named category for this) -- real evidence the timing
+engine's per-category design (`pipeline/family_game/base.py`) earns its
+keep once a second game type exists, not just decoration.
+
+`render.py` gained a real per-game-type dispatch
+(`_GAME_TYPE_RENDERERS`) replacing what had been higher_or_lower-only
+logic duplicated inline in `render_episode()` -- necessary now that a
+second game type's `round_data` means something structurally different
+(a scene dict, not a value pair), and worth doing now rather than
+deferring to whenever a third game type made the duplication obvious.
+New visuals: `_render_single_scene_card` (one full scene, nothing
+hidden -- there's nothing to hide, the challenge is memory) and
+`_render_what_changed_card` (the before/after table, changed row
+highlighted only once revealed).
+
+9 new tests (`tests/test_family_game_spot_the_difference.py`) run for
+real against `generate_round()` with no mocking at all (fully
+algorithmic, nothing to mock) -- 50-trial checks that the changed
+attribute always actually differs and is the ONLY attribute that
+differs, plus the segment-sequence shape and the avoid-topics pool
+logic. 94 tests total, all passing.
+
+Rendered and watched end to end (real frames extracted, not just
+trusted from code): the "before" scene card, the "after" scene card
+with the real changed value, and the reveal's two-column table with
+only the real changed row highlighted (banana count: 6 -> 4) -- all
+correct on the first real render, no bugs found this time (Higher or
+Lower's first render caught 2 real bugs; this one didn't, which is
+itself worth noting -- the per-game-type dispatch refactor done
+alongside this one probably helped, not just luck). Same sandbox
+caveat as Higher or Lower: real edge_tts narration untested here (this
+game type has no narration during player time at all, so the caveat
+matters even less here -- both PLAYER_TIME segments are silent by
+construction, asserted by a test).
+
+**Next**: Phase 5, the remaining game types (Odd One Out, Memory
+Challenge, Guess the Connection, Who/What Am I, Rapid Fire) -- not yet
+started. `pipeline/games/memory.py` is a real adaptable precedent for
+Memory Challenge, same relationship this phase had to `what_changed.py`.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
