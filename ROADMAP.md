@@ -1284,31 +1284,75 @@ question, never states item B's value) → `think`(player, silent,
 before returning it, so a round that would leak the answer during
 player time fails loudly here rather than reaching a renderer.
 
-Verified with unit tests only (`tests/test_family_game_base.py`,
-`tests/test_family_game_higher_or_lower.py` — 85 tests total across the
-suite now, all passing), mocking `call_llm`/`verify_claim` per
-`CLAUDE.md`'s testing rule. **Not yet verified with a real LLM call or a
-real render** — Structured data → Validation → Timeline are code-complete
-and tested; Narration → Player time → Countdown → Reveal → Render (the
-rest of spec section 30 Phase 3's own vertical-slice list) needs a real
-visuals renderer for family-game segments, real player-time silence in
-the render pipeline (the proven mechanism to reuse is
-`visuals_quiz.py`'s `_build_padded_audio()`/`apad` pattern — explicit
-silence appended independent of narration length, not a new one), and
-wiring into `voice.py`/`assemble.py`/`captions.py`, none of which exist
-yet for this format. Section 30's own phase gate is explicit: "do not
-proceed until the complete loop works" — the loop isn't complete yet.
+**Phase 3 render path — done and watched, 2026-09-10.**
+`pipeline/family_game/render.py` (new): a self-contained renderer, not
+importing `visuals_game.py`'s private helpers (this project's own
+convention -- each `visuals_*.py`/render module owns its panel
+constants, sharing only the genuinely public pieces of
+`pipeline.brand`/`pipeline.render_text`). Per segment: a HOST_TIME
+segment's clip duration is its real synthesized narration length
+(`voice.synthesize()` + `voice.audio_duration_seconds()`, the same
+primitives the rest of the pipeline already uses); a PLAYER_TIME
+segment's clip duration is real silence built to exactly its own
+`duration_seconds` -- never derived from narration, since there isn't
+any. The versus card (item A's real value vs. item B's "?") is reused
+across three states -- host "prompt" (asking the question), player
+"think" (same unrevealed card, distinct amber accent + "YOUR TURN --
+WHAT'S YOUR ANSWER?" so a viewer can tell "still guessable" from
+"answer shown" without reading text), and host "reveal" (item B's real
+value, teal accent) -- rather than three separate layouts, since the
+actual data differs only in what's shown, not the shape. The countdown
+segment renders a real per-second numeral sequence (3, 2, 1), not a
+static card.
 
-**Next step, not yet started**: build the render path for this one
-game type (reusing `visuals_quiz.py`'s silence-padding pattern rather
-than inventing a new one) so Phase 3 can actually be watched end to end
-— the same verification bar this project has used for every prior new
-format (Phase 11 quiz, Phase 16 game_night) — before Phase 4 (the
-procedural game type) or Phase 5 (the remaining 6 game types) start.
-Real LLM-call cost for Phase 3's own verification is small (one
-`generate_round()` call, cheap relative to the cost incident in Phase
-20); the render-path build itself is local/free (ffmpeg, Pillow, and
-edge_tts all free-tier per `CLAUDE.md`'s allowed-dependency list).
+Rendered and actually watched end to end (frames extracted and
+inspected at each state, not just trusted from the code): intro card →
+versus card with Denali held back as "?" → the same card during real
+player time with the distinct amber "YOUR TURN" treatment → countdown →
+reveal with Denali's real value and a teal accent. Total real duration
+matched the sum of each segment's real duration to the millisecond
+(26.239s against 5 segments' computed durations) -- confirms
+PLAYER_TIME's core promise (an explicit, narration-independent timeline
+event) actually holds in a rendered file, not just in the data model.
+
+Two real bugs caught by this verification pass, not just trusted from
+code review:
+1. `higher_or_lower.py`'s "think" segment was built with no
+   `round_data` at all -- meaning the renderer had nothing to draw
+   during the one segment that most needs a visual (the viewer is
+   staring at the screen thinking). Fixed by attaching
+   `presentation_data` (item A's real value, item B's name only, never
+   `reveal_data`) to the think segment -- deliberately not just "the
+   renderer happens not to read the answer field" but "the answer
+   never enters a PLAYER_TIME segment's data at all," consistent with
+   validate_round()'s existing structural approach to the same rule.
+2. `render.py`'s countdown sub-clip duration math double-subtracted on
+   the last second (produced a literal negative duration, caught
+   immediately by ffmpeg refusing to encode it rather than silently
+   producing a wrong-length clip) -- fixed to let the last sub-clip
+   simply absorb whatever remains, so the sub-clips always sum to
+   exactly the segment's real duration.
+
+**Real narration (edge_tts) could not be exercised in this sandbox
+session** -- `speech.platform.bing.com` is blocked by this session's own
+network egress policy (confirmed via the proxy's own status endpoint:
+explicit 403 policy denial, not a bug in the code or a transient
+failure). This is a sandbox-only limitation, not a production one: this
+exact `voice.synthesize()` call already runs successfully in the real
+daily GitHub Actions pipeline today (facts/programming/sauce_recipe all
+depend on it). The verification render above used word-count-estimated
+silence in place of real narration for HOST_TIME segments specifically
+to work around that one sandbox restriction -- everything about
+PLAYER_TIME timing, the visual state machine, and the render pipeline
+itself is real; only "does the narration audio sound good" remains
+unverified, and is expected to just work the same way it already does
+for the rest of the channel. Worth a real end-to-end run once outside
+this sandbox (or once the daily pipeline itself exercises this format).
+
+**Next**: Phase 4 (the procedural/algorithmic game type -- no LLM
+needed, the spec's own recommendation is Spot the Difference / What
+Changed, and `pipeline/games/what_changed.py` is a close, adaptable
+precedent) or Phase 5 (the remaining game types) -- not yet started.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM

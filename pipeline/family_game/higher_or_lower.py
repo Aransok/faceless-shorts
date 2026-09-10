@@ -131,7 +131,13 @@ def generate_round(avoid_topics: list[str], round_index: int, difficulty: str = 
     segments = [
         make_segment(GAME_TYPE, round_index, HOST_TIME, "intro", content["INTRO_SCRIPT"]),
         make_segment(GAME_TYPE, round_index, HOST_TIME, "prompt", content["PROMPT_SCRIPT"], round_data=presentation_data),
-        make_segment(GAME_TYPE, round_index, PLAYER_TIME, "think", "", duration_seconds=thinking_time),
+        # presentation_data only, never reveal_data -- the point is that
+        # item B's real value/correct_answer never enter a PLAYER_TIME
+        # segment's data at all, not just that the renderer happens not
+        # to draw them. This is what lets the renderer show the same
+        # "unrevealed" versus card during player time (section 9's
+        # "the answer must not accidentally appear during this stage").
+        make_segment(GAME_TYPE, round_index, PLAYER_TIME, "think", "", duration_seconds=thinking_time, round_data=presentation_data),
         make_segment(GAME_TYPE, round_index, PLAYER_TIME, "countdown", "", duration_seconds=3.0),
         make_segment(GAME_TYPE, round_index, HOST_TIME, "reveal", content["REVEAL_SCRIPT"], round_data=reveal_data),
     ]
