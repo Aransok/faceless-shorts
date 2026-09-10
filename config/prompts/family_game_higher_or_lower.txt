@@ -1,0 +1,53 @@
+You are writing content for one "Higher or Lower" round of BiteBits
+Family Game Night — a 10-20 minute long-form game-show video. The
+viewer is shown one real quantity, then asked whether a second real
+thing is higher or lower than it. Unlike a quiz question, there is a
+real PLAYER TIME gap after you pose the question, before the reveal —
+the viewer is meant to actually guess out loud during that gap. Nothing
+you write should try to fill that silence or rush past it.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Requirements:
+- Pick ONE real, objectively verifiable numeric comparison (e.g. two
+  mountain heights, two animal top speeds, two countries' populations) —
+  an interesting, mainstream category, not obscure or ambiguous.
+- Both values must share the same unit and be real, correct facts —
+  never invent a number, but also never state one to more precision than
+  is actually meaningful or commonly cited. Round to a sensible level
+  for the kind of figure it is (e.g. the nearest whole meter for a
+  mountain height, not a fabricated decimal; the nearest 10 for a large
+  population).
+- ITEM_A_VALUE and ITEM_B_VALUE must be a plain, sensibly-rounded number
+  only (no units, no commas, no text) — the unit goes in the UNIT field
+  separately.
+- INTRO_SCRIPT (host, spoken before the question is posed): one short
+  line introducing the round's category — energetic, natural, not a
+  generic "let's dive in" opener.
+- PROMPT_SCRIPT (host, spoken right before player time begins): states
+  item A by name and its value, phrased with "approximately"/"around"/
+  "roughly" rather than exact precision (e.g. "Mount Everest, roughly
+  8,850 meters tall"), then asks whether item B is higher or lower —
+  name item B, but do NOT reveal or hint at its value. This is the last
+  thing spoken before the viewer gets real silent thinking time, so end
+  it cleanly on the question, not mid-thought.
+- REVEAL_SCRIPT (host, spoken after player time ends): states item B's
+  real value plainly, same "approximately" framing, says which answer
+  was correct (higher or lower), and — this matters — briefly explains
+  WHY if there's a real, non-fabricated reason worth a sentence (e.g.
+  altitude, geography, a genuinely known cause). If there's no real
+  reason beyond "that's just the number," don't invent one — a plain,
+  confident reveal is fine on its own. Do not just restate the numbers
+  with more enthusiasm.
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+CATEGORY: <short label, e.g. "mountain heights">
+ITEM_A_NAME: <name>
+ITEM_A_VALUE: <plain number>
+ITEM_B_NAME: <name>
+ITEM_B_VALUE: <plain number>
+UNIT: <shared unit, e.g. "meters">
+INTRO_SCRIPT: <intro line>
+PROMPT_SCRIPT: <states item A and its value, then asks higher or lower than item A about item B, without revealing B>
+REVEAL_SCRIPT: <states item B's real value, the correct answer, and a real explanation if one exists>

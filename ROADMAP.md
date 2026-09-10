@@ -1112,7 +1112,7 @@ current YouTube Shorts algorithm/monetization research:
    consistent with staying conservative on real API spend after the
    cost incident above.
 
-## Phase 21 — Family Game Night long-form track (2026-09-10) — NOT STARTED (inspection done)
+## Phase 21 — Family Game Night long-form track (2026-09-10) — IN PROGRESS
 
 Owner-provided full spec (`FAMILY_GAME_NIGHT_SPEC.md`, verbatim) for a new
 10-20 minute long-form YouTube format: an automated "game show" with 9
@@ -1230,13 +1230,85 @@ started, not yet built:
    (Phase 11 quiz, Phase 16 game_night, Phase 17-20 narration/CTA
    changes), never shipped on unit tests alone for a new content format.
 
-**Not started**: no new code has been written yet. Given this project's
-established pattern of getting a plan approved before spending real
-render/LLM budget on a new format (explicit for Phase 16 items 1-2), and
-this session's own recent hands-on cost-crisis experience (Phase 20),
-the next step is presenting this phased plan to the owner and confirming
-scope/priority before starting Phase 2 above — not building the full
-9-game-type composer unilaterally in one pass.
+**Phase 2 (foundation) — done, 2026-09-10.** `pipeline/family_game/`
+(new package, deliberately not an extension of `pipeline/games/` — that
+package drives the still-blocked Shorts-length track, and its
+`make_beat()`/`BEAT_TYPES` contract has no HOST/PLAYER distinction to
+build on top of):
+
+- `pipeline/family_game/base.py` — the actual HOST_TIME/PLAYER_TIME
+  state machine, made structural rather than left as a prompt
+  instruction: `make_segment()` refuses to construct a `reveal` beat
+  during player time or a `think`/`countdown` beat during host time,
+  and refuses a `PLAYER_TIME` segment with no explicit
+  `duration_seconds` — the spec's own core rule ("the countdown and
+  player time must not depend on narration audio duration") enforced in
+  code, not just asked for. `estimate_thinking_time(category,
+  item_count, difficulty)` gives every game-type module the same
+  deterministic timing source instead of letting each one invent its
+  own number, seeded from section 8's suggested ranges (explicitly
+  starting points, not fixed — same tuning-after-a-real-render pattern
+  already used for `voice.py`'s `GAME_NIGHT_MIN_BEAT_SECONDS` and
+  `visuals_quiz.py`'s `COUNTDOWN_SECONDS`). `make_round()`/
+  `validate_round()` implement section 24's recommended Round shape as
+  a plain dict (matching the project's existing convention, not a new
+  dataclass layer) plus the free, no-LLM-call layer of section 18's
+  quality gate: every round must have at least one PLAYER_TIME segment,
+  every PLAYER_TIME segment must have a positive duration, no
+  PLAYER_TIME segment's narration may contain the round's own answer
+  string, and no `reveal` segment may sit before the last PLAYER_TIME
+  segment in sequence. `verify_claim()` is re-exported from
+  `pipeline.games.base`, not copied — fact-checking a number has
+  nothing format-specific about it.
+- `config/persona_family_game_host.md` — a genuinely new host persona
+  (section 10's narration rules), not routed through
+  `pipeline/persona.py`'s `_PET_PEEVES_FILE` mapping yet: that core
+  file's Shorts-specific tone/CTA rules don't fit a 10-20 minute host,
+  and this format has no `template` row in `state.py` yet to key that
+  mapping on. Explicitly flagged as the natural point to reconsider once
+  Phase 6 (episode composer) actually wires this into the video/template
+  system. `host_persona_guidance_block()` in `base.py` loads it
+  standalone.
+
+**Phase 3 (one game vertically) — round-generation half done, not yet
+rendered.** `pipeline/family_game/higher_or_lower.py` +
+`config/prompts/family_game_higher_or_lower.txt`: same LLM-proposes/
+`verify_claim()`-confirms shape as the blocked track's own
+`higher_or_lower.py` (the LLM never decides the answer — once verified,
+higher/lower is a plain numeric comparison in code), but produces the
+new segment sequence — `intro`(host) → `prompt`(host, poses the
+question, never states item B's value) → `think`(player, silent,
+`estimate_thinking_time()`-derived duration) → `countdown`(player) →
+`reveal`(host) — instead of a narration-duration-driven beat list.
+`generate_round()` runs every produced round through `validate_round()`
+before returning it, so a round that would leak the answer during
+player time fails loudly here rather than reaching a renderer.
+
+Verified with unit tests only (`tests/test_family_game_base.py`,
+`tests/test_family_game_higher_or_lower.py` — 85 tests total across the
+suite now, all passing), mocking `call_llm`/`verify_claim` per
+`CLAUDE.md`'s testing rule. **Not yet verified with a real LLM call or a
+real render** — Structured data → Validation → Timeline are code-complete
+and tested; Narration → Player time → Countdown → Reveal → Render (the
+rest of spec section 30 Phase 3's own vertical-slice list) needs a real
+visuals renderer for family-game segments, real player-time silence in
+the render pipeline (the proven mechanism to reuse is
+`visuals_quiz.py`'s `_build_padded_audio()`/`apad` pattern — explicit
+silence appended independent of narration length, not a new one), and
+wiring into `voice.py`/`assemble.py`/`captions.py`, none of which exist
+yet for this format. Section 30's own phase gate is explicit: "do not
+proceed until the complete loop works" — the loop isn't complete yet.
+
+**Next step, not yet started**: build the render path for this one
+game type (reusing `visuals_quiz.py`'s silence-padding pattern rather
+than inventing a new one) so Phase 3 can actually be watched end to end
+— the same verification bar this project has used for every prior new
+format (Phase 11 quiz, Phase 16 game_night) — before Phase 4 (the
+procedural game type) or Phase 5 (the remaining 6 game types) start.
+Real LLM-call cost for Phase 3's own verification is small (one
+`generate_round()` call, cheap relative to the cost incident in Phase
+20); the render-path build itself is local/free (ffmpeg, Pillow, and
+edge_tts all free-tier per `CLAUDE.md`'s allowed-dependency list).
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
