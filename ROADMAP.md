@@ -1077,6 +1077,41 @@ careful code review of the real diff against the real log evidence.
 46 tests total across the suite, all passing. The next real scheduled
 run is the actual verification for items 1-4.
 
+**Follow-up (2026-09-10)**, from a growth-diagnosis session comparing
+real per-template view data (facts/sauce_recipe running 2.8-4x
+programming's views, same channel, same review pipeline) against
+current YouTube Shorts algorithm/monetization research:
+
+1. `pipeline/orchestrator.py`'s `TEMPLATES` rotation reweighted from an
+   even 3-way split to 2 facts : 2 sauce_recipe : 1 programming, based
+   directly on that real view gap. Programming isn't dropped (it's real
+   signal that it under-indexes, worth a separate root-cause look), just
+   no longer given equal weight to two templates already outperforming
+   it 2-3x on the same channel.
+2. New CTA type `pipeline/cta.py`'s `subscribe_not_yet` (owner request):
+   on a real slice of videos (weight 10, split out of subscribe's
+   existing 25% alongside `subscribe_series`'s 15%), the subscribe ask
+   moves to the very beginning of the script instead of the end — "most
+   people watching this aren't subscribed" is a real, common,
+   high-converting pattern specifically because it lands before a viewer
+   swipes away. Explicitly forbidden from stating a specific percentage
+   or number: this pipeline has no real per-video subscriber-ratio data
+   (no YouTube Analytics API scope), and inventing one would be exactly
+   the fabricated-statistic pattern `persona.md`'s anti-hallucination
+   rule already bans elsewhere — "most people watching this" is safe
+   because it's genuinely, unfalsifiably true for a channel this size,
+   not because it's vague. `cta_guidance_block()`'s placement instruction
+   now branches on the picked type's `placement` field; every other type
+   is unaffected and still placed at the end.
+3. Tests extended (`tests/test_cta.py`): early-vs-end placement text
+   branches correctly, the new type participates in the weighted
+   rotation with a real (non-zero) share, and its instruction text
+   actually contains the anti-fabrication constraint. 49 tests total,
+   all passing. Not verified with a real LLM call this session — a
+   prompt/config-level change, checked via tests and code review only,
+   consistent with staying conservative on real API spend after the
+   cost incident above.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

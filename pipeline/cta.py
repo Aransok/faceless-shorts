@@ -7,6 +7,9 @@ Owner-provided spec: one CTA goal per video (never stack multiple asks),
 weighted toward comment/subscribe over share/save, 10% of videos get no
 spoken CTA at all, and every CTA must pass the same topic-specificity bar
 as the rest of the script (never copy-paste onto an unrelated video).
+2026-09-10 addition: on a slice of videos, subscribe is called out right
+at the open ("most people watching this aren't subscribed") instead of
+the end — see subscribe_not_yet below.
 
 Deliberately gives the LLM an ABSTRACT instruction per type, never a
 literal example phrase to insert — Phase 17's real verification found
@@ -28,6 +31,19 @@ import random
 # (same "there's more of this coming" promise), and Like CTAs are
 # deliberately not in the main weighted rotation at all, per the spec's
 # own "use sparingly, not every video" rule for likes.
+#
+# subscribe_not_yet (2026-09-10, owner request): the subscribe goal's
+# 25% is split into two flavors -- subscribe_series (15%, end-placed, as
+# before) and this one (10%, placed at the OPEN, right after the hook).
+# It's the one deliberate exception to "never during the hook" below:
+# calling out that most viewers aren't subscribed yet is a real, common,
+# high-converting pattern specifically because it lands early, before a
+# viewer swipes away. Never states a specific percentage -- this pipeline
+# has no real per-video subscriber-ratio data (no YouTube Analytics API
+# scope), and inventing one would be exactly the fabricated-statistic
+# pattern persona.md's anti-hallucination rule bans. "most people
+# watching this" is safe precisely because it's genuinely, unfalsifiably
+# true for a channel this size, not because it's vague.
 CTA_TYPES = {
     "comment_question": {
         "goal": "comment",
@@ -42,7 +58,7 @@ CTA_TYPES = {
     },
     "subscribe_series": {
         "goal": "subscribe",
-        "weight": 25,
+        "weight": 15,
         "instruction": (
             "Include one brief, low-key subscribe mention that tells the "
             "viewer WHAT they'll get by subscribing -- a concrete promise "
@@ -52,6 +68,23 @@ CTA_TYPES = {
             "one coming, if that fits the video better than a direct ask. "
             "Do not claim a specific upload day/schedule unless one is "
             "given below."
+        ),
+    },
+    "subscribe_not_yet": {
+        "goal": "subscribe",
+        "weight": 10,
+        "placement": "early",
+        "instruction": (
+            "Include one brief, low-key subscribe mention right at the "
+            "very beginning, immediately after the hook -- calling out "
+            "that most people watching this aren't subscribed yet, and "
+            "framing subscribing as how they'd catch more of specifically "
+            "this kind of content. Never state a specific percentage or "
+            "number of viewers/subscribers -- there's no real data behind "
+            "one, and inventing a number is a fabricated statistic. "
+            "'most people watching this' or 'most of you' is fine, since "
+            "it's genuinely true for a channel this size; a specific "
+            "invented number is not."
         ),
     },
     "save": {
@@ -162,13 +195,26 @@ def cta_guidance_block(angle: dict, template: str, milestone_line: str | None = 
     )
     if hint:
         block += f"- For this template, that might mean something like {hint}\n"
+    if angle.get("placement") == "early":
+        placement_line = (
+            "- Place it near the very beginning, right after the hook and "
+            "before the main content starts -- this specific CTA type is "
+            "the one deliberate exception to \"place it at the end\": "
+            "calling out that most viewers aren't subscribed lands best "
+            "early, before someone swipes away, not tacked onto a close "
+            "they've already checked out of.\n"
+        )
+    else:
+        placement_line = (
+            "- Place it near the end, after the video's real payoff/"
+            "conclusion has already landed -- never during the hook, a mid-"
+            "explanation, or a reveal itself. It should read as the natural "
+            "next thought after the content, not an interruption.\n"
+        )
     block += (
         "- Exactly ONE ask, one sentence at most -- never stack multiple "
         "asks (comment AND subscribe AND share) into the same script.\n"
-        "- Place it near the end, after the video's real payoff/"
-        "conclusion has already landed -- never during the hook, a mid-"
-        "explanation, or a reveal itself. It should read as the natural "
-        "next thought after the content, not an interruption.\n"
+        f"{placement_line}"
         "- Keep it low-key -- never urgency language like \"subscribe "
         "now!!\", that reads as manipulative rather than authentic.\n"
         "- Always say \"subscribe\", never \"follow\" — this is YouTube, "

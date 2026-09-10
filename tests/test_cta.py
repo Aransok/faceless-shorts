@@ -38,6 +38,8 @@ class PickCtaAngleTest(unittest.TestCase):
         self.assertGreater(counts["comment_question"], counts["share"])
         self.assertGreater(counts["comment_question"], counts["none"])
         self.assertGreater(counts["subscribe_series"], counts["share"])
+        self.assertGreater(counts["subscribe_series"], counts["subscribe_not_yet"])
+        self.assertGreater(counts["subscribe_not_yet"], 0)  # a real slice of videos, not zero
 
 
 class CtaGuidanceBlockTest(unittest.TestCase):
@@ -65,6 +67,22 @@ class CtaGuidanceBlockTest(unittest.TestCase):
         angle = {"name": "save", **CTA_TYPES["save"]}
         block = cta_guidance_block(angle, "sauce_recipe")
         self.assertIn("ONE ask", block)
+
+    def test_subscribe_not_yet_places_at_the_beginning(self):
+        angle = {"name": "subscribe_not_yet", **CTA_TYPES["subscribe_not_yet"]}
+        block = cta_guidance_block(angle, "facts")
+        self.assertIn("very beginning", block)
+        self.assertNotIn("near the end", block)
+
+    def test_other_types_still_place_at_the_end(self):
+        angle = {"name": "comment_question", **CTA_TYPES["comment_question"]}
+        block = cta_guidance_block(angle, "facts")
+        self.assertIn("near the end", block)
+        self.assertNotIn("very beginning", block)
+
+    def test_subscribe_not_yet_forbids_inventing_a_percentage(self):
+        instruction = CTA_TYPES["subscribe_not_yet"]["instruction"]
+        self.assertIn("Never state a specific percentage", instruction)
 
 
 if __name__ == "__main__":

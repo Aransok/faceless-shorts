@@ -24,7 +24,14 @@ from pipeline.visuals_game import visuals_game
 from pipeline.visuals_quiz import visuals_quiz
 from pipeline.voice import voice
 
-TEMPLATES = ("programming", "facts", "sauce_recipe")  # the daily Shorts rotation — quiz_longform is weekly, separate entrypoint
+# The daily Shorts rotation, picked via TEMPLATES[i % len(TEMPLATES)] below
+# -- quiz_longform is weekly, separate entrypoint. Real per-video view data
+# (see ROADMAP.md's growth-diagnosis session, 2026-09-10) showed facts and
+# sauce_recipe running 2.8-4x programming's views on the same channel, same
+# review pipeline -- weighted 2:2:1 toward facts/sauce_recipe over
+# programming instead of the old even 3-way split. Order deliberately
+# avoids two same-template slots back to back.
+TEMPLATES = ("facts", "sauce_recipe", "programming", "facts", "sauce_recipe")
 
 # A previous run stopped here (killed, crashed, or just ended) but the
 # video isn't done and isn't waiting on a human — safe to keep driving.
