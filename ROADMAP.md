@@ -1544,12 +1544,65 @@ backed up and restored around the theme-rotation tests so a test run
 never leaves the real project file mutated. 136 tests total, all
 passing.
 
-**Not yet done**: a real end-to-end render-and-watch pass for a full
-composed episode (would need Phase 3-5's still-pending render
-verification for the 4 newest game types first, plus a real
-`higher_or_lower` LLM call unless that slot is deliberately excluded or
-mocked for the test) -- Phase 7 (quality gate), Phase 8 (full
-end-to-end test episode) are the next real steps.
+## Phase 7 — quality gate, 2026-09-10 — DONE
+
+`pipeline/family_game/quality_gate.py`: the layer section 18 actually
+asks for on top of `validate_round()`'s existing structural floor
+(missing answer, answer-visible-too-early, non-positive thinking time
+-- already enforced by every module's own `generate_round()`, not
+duplicated here).
+
+- `check_round()` adds the two remaining per-round checks section 18
+  names that `validate_round()` doesn't already cover: a real minimum
+  thinking-time floor (`MIN_THINKING_SECONDS = 3.0`, below every game
+  type's own configured range -- rapid_fire's 3-6s bucket has the
+  lowest floor of anything in `THINKING_TIME_RANGES`, so nothing
+  correctly generated should ever actually hit this) and an
+  overly-long-narration cap (`MAX_HOST_NARRATION_WORDS = 60`, ~20s at
+  this pipeline's own established ~2.6-2.8 words/sec pacing).
+- `generate_round_with_quality_gate()` is section 32's own loop --
+  reject a failing round, regenerate (not the whole episode), validate
+  the replacement, bounded by `MAX_REGENERATE_ATTEMPTS = 3` (matches
+  this project's existing bounded-retry convention exactly --
+  `REVIEW_MAX_REWRITES`, `games/base.py`'s `VERIFY_MAX_ATTEMPTS` --
+  not a new number invented for this format). Raises
+  `QualityGateFailure` with the last real rejection reason attached
+  after exhausting retries, rather than silently shipping broken
+  content.
+- `check_episode()` is the cross-round layer no single round's own
+  validation could ever catch on its own: duplicate answers or titles
+  across the whole episode (section 18: "duplicate answer patterns").
+  Returns problems rather than raising or silently fixing anything --
+  which of two otherwise-valid rounds to touch is a judgment call, not
+  something to auto-resolve.
+- `compose_episode_with_quality_gate()` is the real Phase 7 entry point
+  -- same shape as `episode.compose_episode()`, but every round goes
+  through the regenerate-on-failure loop, and the finished episode
+  carries a `quality_warnings` list (empty when clean) rather than
+  either swallowing or crashing on a cross-round problem -- this
+  project's usual fail-soft spirit, applied here.
+
+Kept genuinely separate from `episode.py` rather than folded in, per
+that module's own already-stated design choice -- a caller that just
+wants a composed episode isn't forced through the extra checks to get
+one.
+
+**Verified with zero real LLM calls**, same approach as Phase 6:
+`tests/test_family_game_quality_gate.py` monkeypatches `GAME_MODULES`
+with lightweight fakes, including one real end-to-end exercise of
+`check_episode()` wired through the full compose path (every fake
+module forced to return the same answer, confirming
+`compose_episode_with_quality_gate()` actually surfaces the resulting
+warning, not just `check_episode()` in isolation) and a real
+retry-then-succeed / exhausted-retries pair for
+`generate_round_with_quality_gate()`. 15 new tests, 151 total across
+the suite, all passing.
+
+**Not yet done**: Phase 8 (full end-to-end test episode, actually
+rendered and watched) -- would need Phase 3-5's still-pending
+render-and-watch pass for the 4 newest game types first, plus either a
+real `higher_or_lower` LLM call (whenever that slot gets picked) or a
+deliberate exclusion/mock for a full real episode render.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
