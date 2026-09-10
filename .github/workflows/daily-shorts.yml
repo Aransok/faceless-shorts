@@ -26,9 +26,13 @@ on:
   workflow_dispatch:
     inputs:
       count:
-        description: "Number of new videos to generate"
+        description: "Number of new videos to generate (ignored if templates is set)"
         required: false
         default: "5"
+      templates:
+        description: "Optional: exact comma-separated template sequence to run instead of count (e.g. 'sauce_recipe,sauce_recipe')"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -64,7 +68,10 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python scripts/run_daily.py --count "${{ github.event.inputs.count || '5' }}"
+        run: >
+          python scripts/run_daily.py
+          --count "${{ github.event.inputs.count || '5' }}"
+          --templates "${{ github.event.inputs.templates || '' }}"
 
       # assets/output/* is gitignored (rendered audio/video never gets
       # committed — the runner's filesystem is thrown away after the job

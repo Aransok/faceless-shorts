@@ -136,11 +136,20 @@ def run_video_to_completion(video_id: str) -> dict:
             }
 
 
-def run_daily(count: int) -> list[dict]:
-    """Resumes any in-flight videos first, then starts `count` new ones
-    (alternating template), driving each to a terminal status. Safe to
-    re-run after an interrupted run — resumable videos pick up from
-    wherever they stopped instead of restarting from plan()."""
+def run_daily(count: int, templates: list[str] | None = None) -> list[dict]:
+    """Resumes any in-flight videos first, then starts new ones, driving
+    each to a terminal status. Safe to re-run after an interrupted run —
+    resumable videos pick up from wherever they stopped instead of
+    restarting from plan() (and since a `scripted` video skips straight
+    to voice(), resuming one costs no extra plan()/review calls — free
+    reuse of work already paid for).
+
+    `templates`, when given, is run as an exact sequence in the order
+    given (e.g. `["sauce_recipe", "sauce_recipe"]` for two sauce videos
+    specifically) instead of cycling the default TEMPLATES rotation —
+    lets a manual trigger ask for a specific mix rather than the daily
+    default. `count` is ignored when `templates` is given.
+    """
     batch_start = time.monotonic()
     results = []
 
@@ -152,9 +161,9 @@ def run_daily(count: int) -> list[dict]:
         print(f"resuming {video_id}...")
         results.append(run_video_to_completion(video_id))
 
-    for i in range(count):
-        template = TEMPLATES[i % len(TEMPLATES)]
-        print(f"starting new {template} video ({i + 1}/{count})...")
+    sequence = templates if templates else [TEMPLATES[i % len(TEMPLATES)] for i in range(count)]
+    for i, template in enumerate(sequence):
+        print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()
         try:
             video_id = plan(template)

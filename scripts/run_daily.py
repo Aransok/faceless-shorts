@@ -4,6 +4,7 @@ Phase 9. The actual orchestration logic lives in pipeline/orchestrator.py
 
 Usage:
     python scripts/run_daily.py --count 5
+    python scripts/run_daily.py --templates sauce_recipe,sauce_recipe
 """
 
 from __future__ import annotations
@@ -22,7 +23,13 @@ def main() -> None:
     if "--count" in args:
         count = int(args[args.index("--count") + 1])
 
-    results = run_daily(count)
+    templates = None
+    if "--templates" in args:
+        raw = args[args.index("--templates") + 1]
+        parsed = [t.strip() for t in raw.split(",") if t.strip()]
+        templates = parsed or None  # an empty/blank value falls back to --count
+
+    results = run_daily(count, templates=templates)
     print()
     print("=== run_daily summary ===")
     for r in results:
