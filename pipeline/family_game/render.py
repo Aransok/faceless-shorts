@@ -65,6 +65,7 @@ NAME_FONT_SIZE = 40
 MIN_NAME_FONT_SIZE = 24
 LABEL_FONT_SIZE = 30
 COUNTDOWN_FONT_SIZE = 220
+CHIP_FONT_SIZE = 32
 
 TEXT_COLOR = (242, 242, 234)
 DIM_TEXT = (147, 148, 138)
@@ -191,6 +192,75 @@ ROW_FONT_SIZE = 34
 ATTR_LABEL_FONT_SIZE = 30
 
 
+def _text_center_y(font: ImageFont.FreeTypeFont, cy: float) -> float:
+    ascent, descent = font.getmetrics()
+    return cy - (ascent + descent) / 2 - descent / 2 + descent
+
+
+def _chip_row(
+    draw: ImageDraw.ImageDraw, cy: float, entries: list[tuple[str, tuple[int, int, int], tuple[int, int, int]]],
+    font: ImageFont.FreeTypeFont, gap: int = 24, pad_x: int = 28, pad_y: int = 18,
+) -> None:
+    """A horizontal row of rounded-rect text chips, centered on the
+    panel. entries: list of (label, bg_color, text_color)."""
+    ascent, descent = font.getmetrics()
+    h = ascent + descent + 2 * pad_y
+    widths = [draw.textlength(label, font=font) + 2 * pad_x for label, _, _ in entries]
+    total_w = sum(widths) + gap * max(0, len(entries) - 1)
+    x = WIDTH / 2 - total_w / 2
+    for (label, bg, text_color), w in zip(entries, widths):
+        box = [x, cy - h / 2, x + w, cy + h / 2]
+        draw.rounded_rectangle(box, radius=14, fill=bg)
+        tw = draw.textlength(label, font=font)
+        draw.text((x + w / 2 - tw / 2, _text_center_y(font, cy)), label, font=font, fill=text_color)
+        x += w + gap
+
+
+def _render_memory_card(round_data: dict) -> Image.Image:
+    """Memory Challenge's three real states, one function since they
+    share the same chip-row visual language:
+    - "sequence": the full sequence, nothing hidden -- this is shown
+      while the viewer has real time to memorize it.
+    - "question": the sequence is gone, only the target icon's name
+      remains -- forces a genuine recall decision instead of letting the
+      viewer just re-read the sequence to check.
+    - "reveal": the sequence again, with the target's own chip (if
+      present) highlighted, plus the real yes/no answer.
+    """
+    frame = _render_base_panel()
+    draw = ImageDraw.Draw(frame)
+    cx0, cy0, cx1, cy1 = _content_area()
+    cy_mid = (cy0 + cy1) / 2
+    phase = round_data["phase"]
+    chip_font = _font(FONT_PATH, CHIP_FONT_SIZE)
+
+    if phase == "sequence":
+        title = "MEMORIZE THIS SEQUENCE"
+        entries = [(icon.upper(), CARD_BG, TEXT_COLOR) for icon in round_data["sequence"]]
+        _chip_row(draw, cy_mid, entries, chip_font)
+    elif phase == "question":
+        title = "WAS THIS IN THE SEQUENCE?"
+        target_font = _font(FONT_BOLD_PATH, VALUE_FONT_SIZE)
+        entries = [(round_data["target"].upper(), PLAYER_ACCENT, PLAYER_ACCENT_TEXT)]
+        _chip_row(draw, cy_mid, entries, target_font, pad_x=40, pad_y=26)
+    else:  # reveal
+        title = "THE SEQUENCE"
+        target = round_data["target"]
+        entries = [
+            (icon.upper(), REVEAL_BG if icon == target else CARD_BG, REVEAL_TEXT if icon == target else TEXT_COLOR)
+            for icon in round_data["sequence"]
+        ]
+        _chip_row(draw, cy_mid - 70, entries, chip_font)
+        answer_font = _font(FONT_BOLD_PATH, VALUE_FONT_SIZE)
+        answer_label = f"{target.upper()} -- {round_data['correct_answer'].upper()}"
+        _chip_row(draw, cy_mid + 90, [(answer_label, REVEAL_BG, REVEAL_TEXT)], answer_font, pad_x=40, pad_y=26)
+
+    label_font = _font(FONT_PATH, LABEL_FONT_SIZE)
+    tw = draw.textlength(title, font=label_font)
+    draw.text((WIDTH / 2 - tw / 2, cy0), title, font=label_font, fill=DIM_TEXT)
+    return frame
+
+
 def _render_single_scene_card(subject: str, scene: dict, phase_label: str) -> Image.Image:
     """spot_the_difference's "study this" / "here's the new version"
     beats -- ONE scene's full attribute list, nothing hidden (there's
@@ -276,13 +346,18 @@ def _render_spot_the_difference_frame(segment: dict, round_data: dict) -> Image.
     return _render_text_card(segment["script_text"] or " ")
 
 
+def _render_memory_challenge_frame(segment: dict, round_data: dict) -> Image.Image:
+    return _render_memory_card(round_data)
+
+
 # One dispatch entry per game-type module's own round_data shape -- new
 # game types register here rather than growing a single function's
 # if/elif chain, since each game type's round_data means something
-# different (a pair of values vs. a before/after scene).
+# different (a pair of values, a before/after scene, an icon sequence).
 _GAME_TYPE_RENDERERS = {
     "higher_or_lower": _render_higher_or_lower_frame,
     "spot_the_difference": _render_spot_the_difference_frame,
+    "memory_challenge": _render_memory_challenge_frame,
 }
 
 

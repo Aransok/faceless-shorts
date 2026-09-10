@@ -1400,10 +1400,45 @@ game type has no narration during player time at all, so the caveat
 matters even less here -- both PLAYER_TIME segments are silent by
 construction, asserted by a test).
 
-**Next**: Phase 5, the remaining game types (Odd One Out, Memory
-Challenge, Guess the Connection, Who/What Am I, Rapid Fire) -- not yet
-started. `pipeline/games/memory.py` is a real adaptable precedent for
-Memory Challenge, same relationship this phase had to `what_changed.py`.
+**Phase 5, first game type (Memory Challenge) — done and watched,
+2026-09-10.** `pipeline/family_game/memory_challenge.py`: zero LLM
+calls, adapted from `pipeline/games/memory.py`'s icon-sequence mechanic
+(show a sequence, ask whether a specific icon was really in it, decided
+for real from the generated sequence) but split into the actual
+two-phase recall test the game's name promises -- memorize the sequence
+while it's visible (real player time), THEN decide once it's hidden and
+only the question remains on screen. The original blocked-track
+version showed the sequence and the question at the same time, which
+isn't really testing memory at all; hiding the sequence during the
+decision is the one change that makes this an actual memory game.
+
+`question_data` (the round_data attached to the "was X in it?" segment)
+deliberately carries only the target name -- no `correct_answer`, no
+`sequence` -- so the answer can't leak into a PLAYER_TIME segment's data
+even in principle, same discipline as higher_or_lower's presentation/
+reveal split. A new test explicitly checks this rather than trusting it
+by inspection.
+
+`render.py` gained `_render_memory_card` (one function, three states --
+"sequence" shows every icon as an unhighlighted chip, "question" shows
+only the target's chip in the amber player-time accent, "reveal" shows
+the sequence again with the target's chip highlighted teal only if it
+was really present) plus a small reusable `_chip_row` helper. Rendered
+and watched end to end: the 6-icon sequence, the hidden-sequence
+question card (just "ROCKET" in amber), and the reveal correctly
+showing no chip highlighted plus "ROCKET -- NO" in teal (rocket
+genuinely wasn't in this trial's sequence) -- correct on the first real
+render.
+
+7 new tests, no mocking (fully algorithmic) -- 101 tests total, all
+passing.
+
+**Next**: the remaining Phase 5 game types (Odd One Out, Guess the
+Connection, Who/What Am I, Rapid Fire) -- not yet started. None of the
+existing `pipeline/games/*` modules is a close precedent for these the
+way `what_changed.py`/`memory.py` were, so these will need to be
+designed closer to first-principles from their own spec sections
+(GAME TYPE C, B, H, I).
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
