@@ -1,6 +1,5 @@
 {
   "hook_openers": [
-    "What usually gets skipped here is the actual why:",
     "This isn't the explanation most people settle for:",
     "There's a real reason this is true, and it's not what you'd guess:",
     "The reason this happens rarely makes it into the retelling:",
@@ -14,10 +13,10 @@
     "Most people get the story behind this completely wrong:",
     "This is accurate, and the actual mechanism is worth knowing:",
     "This is true for a specific, checkable reason, not just 'because':",
-    "The real cause here gets simplified out of most versions of the story:"
+    "The real cause here gets simplified out of most versions of the story:",
+    "The explanation for this usually gets left out entirely:"
   ],
   "script_structures": [
-    "Start in the middle of the action, then rewind to explain.",
     "Use a slow build with one big reveal near the very end.",
     "Contrast what you'd expect against what actually happened.",
     "Open with a confession, then explain what led to it.",
@@ -31,10 +30,10 @@
     "Build tension gradually across three beats, then release it in the last line.",
     "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
     "Start with the punchline, then explain why it's true.",
-    "Set up the ordinary situation, then reveal the twist, then land the payoff."
+    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
+    "Lead with a question the story answers by the end."
   ],
   "phrasing_styles": [
-    "Curious and searching, like you're figuring it out as you go.",
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
     "Slightly conspiratorial, like you're letting them in on something.",
     "Unhurried \u2014 let the details breathe before moving on.",
@@ -48,7 +47,8 @@
     "Slightly dramatic \u2014 build a little tension before the reveal.",
     "A little wry, noticing the absurdity without overplaying it.",
     "Plainspoken but with real conviction underneath it.",
-    "Earnest, like you genuinely want the listener to feel what you felt."
+    "Earnest, like you genuinely want the listener to feel what you felt.",
+    "Reflective, like you're still a little surprised by it yourself."
   ],
   "game_night_intro": [
     "Alright, it's game night. Let's see how this one goes."
@@ -60,7 +60,7 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "corner_badge_late"
   ],
   "code_theme": [
     "one-dark",

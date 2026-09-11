@@ -259,5 +259,13 @@
     "template": "programming",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-11T17:39:08.941008+00:00"
+  },
+  {
+    "video_id": "9b107fd1-fb3a-4c4a-a2df-091b32f5aab2",
+    "youtube_video_id": "EEz66l5gBL8",
+    "uploaded_at": "2026-09-11T09:20:59.707752+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-11T19:53:14.548521+00:00"
   }
 ]
