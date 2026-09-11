@@ -1700,6 +1700,41 @@ use.
 `tests/test_orchestrator.py`'s topic-hint wiring cases) -- 158 tests
 total, all passing.
 
+**First real production run, and a real lesson learned about writing a
+good hint.** Triggered with all 3 hints above: `facts` (bone collector
+caterpillar) succeeded on the first attempt and uploaded cleanly.
+`programming` and `sauce_recipe` both failed authenticity review on the
+first attempt -- not a feature bug, a hint-writing one: both hints
+stated their one key insight in two different phrasings within the same
+hint text (e.g. sauce_recipe's hint said the pumpkin's-sweetness point
+once, but framed it two ways across the hint), and the model faithfully
+mirrored that redundancy into two near-identical sentences in the
+actual script, which `review_script.py`'s repetition criteria correctly
+caught. Same root lesson this project has hit several times before
+(cta.py's examples, approaches.yaml's hook_openers) about never handing
+the LLM something it'll structurally echo -- just showing up here as a
+hint's own internal redundancy rather than a literal copyable phrase.
+
+`programming` succeeded on a second attempt after tightening its hint
+to state its core point exactly once. `sauce_recipe` needed a third
+attempt: the second failure was a NEW instance of the same pattern in a
+different spot -- the video's HOOK field and the first sauce's own
+script are two separate output fields, and the model used the same
+"pumpkin's sweetness works in savory food" insight in both, since nothing
+in the hint said those two fields needed to divide the idea rather than
+each reach for it independently. Fixed by explicitly telling the hint
+that insight belongs in the hook OR the first sauce's script, never
+both -- succeeded immediately after.
+
+**Real, generalizable takeaway for writing future topic hints**: state
+each key insight exactly once, and if the template has multiple output
+fields that could each independently reach for the same central point
+(a hook line separate from a beat's own narration, in particular), say
+explicitly which field it belongs in. A hint that reads as internally
+repetitive, or is ambiguous about where its punchline goes, reliably
+produces a script the reviewer rejects for the same reason -- this
+isn't a one-off quirk, it happened on 2 of the first 3 real hints tried.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
