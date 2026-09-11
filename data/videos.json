@@ -251,5 +251,13 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-11T15:28:23.592333+00:00"
+  },
+  {
+    "video_id": "5cb41db4-9d85-46fc-8952-513a3b8b104f",
+    "youtube_video_id": "AwAlkRXovYE",
+    "uploaded_at": "2026-09-11T08:59:01.908625+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-11T17:39:08.941008+00:00"
   }
 ]
