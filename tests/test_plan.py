@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.plan import _build_rewrite_prompt, _extract_narration
+from pipeline.plan import _build_rewrite_prompt, _extract_narration, _topic_hint_block
 
 
 class ExtractNarrationTest(unittest.TestCase):
@@ -54,6 +54,23 @@ class BuildRewritePromptTest(unittest.TestCase):
         self.assertIn("TOPIC: x\nHOOK: y", prompt)
         self.assertIn("REWRITE_REQUIRED", prompt)
         self.assertIn("generic filler", prompt)
+
+
+class TopicHintBlockTest(unittest.TestCase):
+    def test_includes_the_hint_text(self):
+        block = _topic_hint_block("the bone collector caterpillar (Hawaii, 2025 discovery)")
+        self.assertIn("the bone collector caterpillar (Hawaii, 2025 discovery)", block)
+
+    def test_frames_it_as_a_direction_not_verbatim_text(self):
+        # Same "never hand the LLM a literal copyable phrase" lesson this
+        # project has re-learned several times (cta.py, approaches.yaml)
+        # -- the hint must read as guidance, not insertable script text.
+        block = _topic_hint_block("some hint")
+        self.assertIn("not a script to copy", block)
+
+    def test_warns_against_repeating_unverified_stats(self):
+        block = _topic_hint_block("some hint")
+        self.assertIn("unverified", block)
 
 
 class GenerateReviewedTest(unittest.TestCase):

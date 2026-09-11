@@ -47,7 +47,7 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.addCleanup(self.run_video_patcher.stop)
         self.addCleanup(self.list_by_status_patcher.stop)
 
-        self.mock_plan.side_effect = lambda template: f"vid-{template}"
+        self.mock_plan.side_effect = lambda template, topic_hint=None: f"vid-{template}"
         self.mock_run_video.side_effect = lambda video_id: {
             "video_id": video_id, "template": "x", "status": "uploaded", "error": None,
         }
@@ -81,6 +81,42 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         # The resumed video plus the one newly planned video should both
         # have produced a run_video_to_completion call.
         self.assertEqual(self.mock_run_video.call_count, 2)
+
+    def test_topic_hints_passed_to_plan_per_template(self):
+        orchestrator.run_daily(
+            count=5,
+            templates=["facts", "programming"],
+            topic_hints={"facts": "the bone collector caterpillar", "programming": "vibecoding bugs"},
+        )
+        calls = {c.args[0]: c.kwargs.get("topic_hint") for c in self.mock_plan.call_args_list}
+        self.assertEqual(calls["facts"], "the bone collector caterpillar")
+        self.assertEqual(calls["programming"], "vibecoding bugs")
+
+    def test_template_with_no_matching_hint_gets_none(self):
+        orchestrator.run_daily(count=5, templates=["sauce_recipe"], topic_hints={"facts": "unrelated hint"})
+        self.assertIsNone(self.mock_plan.call_args_list[0].kwargs.get("topic_hint"))
+
+    def test_no_topic_hints_given_still_works(self):
+        # topic_hints=None (the default) must not blow up run_daily() --
+        # this is the ordinary daily-run path, exercised far more often
+        # than the hinted one.
+        orchestrator.run_daily(count=1, templates=["facts"])
+        self.assertIsNone(self.mock_plan.call_args_list[0].kwargs.get("topic_hint"))
+
+    def test_resumed_videos_never_get_a_topic_hint(self):
+        # A resumed video's topic was already locked in when it was first
+        # planned -- run_video_to_completion() (mocked here) doesn't call
+        # plan() at all, so there's nothing to assert on plan() calls for
+        # the resumed id, but this pins the actual invariant: topic_hints
+        # only ever reaches plan() for a NEW video this call starts.
+        with patch.object(orchestrator, "list_by_status") as mock_list:
+            mock_list.side_effect = lambda status: (
+                [{"id": "already-scripted-1"}] if status == "scripted" else []
+            )
+            orchestrator.run_daily(count=1, templates=["facts"], topic_hints={"facts": "a hint"})
+
+        self.assertEqual(self.mock_plan.call_count, 1)
+        self.assertEqual(self.mock_plan.call_args_list[0].kwargs.get("topic_hint"), "a hint")
 
 
 if __name__ == "__main__":

@@ -1643,6 +1643,63 @@ findings, not one:
    always-on VM instead of relying on GitHub's scheduler) as unstarted
    future work, not something to solve today.
 
+## New: per-template topic hints (2026-09-11)
+
+Owner asked to research real trending topics for today's videos and run
+with them specifically -- not just as loose inspiration, but as the
+actual required subject. `plan()` previously had no way to steer a
+video's topic at all; it always let the LLM pick freely (subject only
+to `{avoid_topics}`/`{avoid_facts}`/`{avoid_sauces}` recent-repeat
+exclusion).
+
+- `pipeline/plan.py`: new optional `topic_hint` param on `plan()`.
+  `_topic_hint_block()` appends it to the prompt as a firm "this is
+  today's real subject" directive -- but explicitly framed as a
+  direction to write from, not text to insert verbatim ("not a script
+  to copy"), the same lesson this project has re-learned several times
+  now (cta.py's examples, approaches.yaml's hook_openers) about never
+  handing the LLM a literal copyable phrase. Also explicitly tells the
+  model to drop any specific stat in the hint it isn't confident is
+  accurate rather than repeat it unverified -- the hint text itself
+  might carry an unverified claim (it did, this first real use: see
+  below), and the model shouldn't trust it uncritically just because it
+  came from the prompt. The video still goes through the full
+  `_generate_reviewed()` authenticity-review pass exactly as before --
+  this only changes what subject gets picked, never bypasses review.
+- `pipeline/orchestrator.py`'s `run_daily()`: new optional
+  `topic_hints: dict[str, str]` param, keyed by template name, only
+  applied to NEW videos this call starts (never a resumed in-flight
+  one, whose topic was already locked in when first planned).
+- `scripts/run_daily.py`: reads the hints from a `TOPIC_HINTS_JSON` env
+  var (parsed as JSON), not a CLI flag -- a JSON object can contain
+  characters that don't round-trip safely through a shell-quoted CLI
+  arg the way `--templates` does, and this project already reads
+  config through env vars for exactly that reason (`LLM_BACKEND`,
+  `TTS_BACKEND`, etc.).
+- `daily-shorts.yml`: new `topic_hints` `workflow_dispatch` input (JSON
+  string), passed through as that same env var.
+
+**Real verification before first use**: the owner's own drafted content
+for today's 3 videos included a specific claim ("only about 0.1% of the
+200,000 known moth/butterfly species are carnivorous") that a real web
+search could not confirm from any source describing the actual bone
+collector caterpillar discovery (University of Hawai'i at Mānoa,
+published in *Science*, April 2025 -- that part checked out, along with
+better real details the draft didn't even use: found only in a 15 km²
+patch of Oʻahu's Waiʻanae mountains, just 62 specimens documented in 20
+years of fieldwork, already endangered). The unverified stat was
+dropped from the actual hint text fed to the pipeline rather than
+passed through -- exactly the failure mode this project's
+anti-hallucination review exists to catch, caught one step earlier by
+checking the input itself first. The other two draft topics (AI-
+generated "vibecoding" bugs, a savory pumpkin sauce trend) were both
+independently confirmed as real, current, well-documented trends before
+use.
+
+7 new tests (`tests/test_plan.py`'s `TopicHintBlockTest`,
+`tests/test_orchestrator.py`'s topic-hint wiring cases) -- 158 tests
+total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

@@ -284,7 +284,31 @@ def _generate_reviewed(template: str, prompt: str) -> dict:
         parsed = _parse_response(template, raw)
 
 
-def plan(template: str) -> str:
+def _topic_hint_block(topic_hint: str) -> str:
+    """Appended when a caller (run_daily(), ultimately a manual
+    workflow_dispatch input) wants to steer today's video onto a specific
+    real subject -- e.g. a genuinely verified trending topic researched
+    ahead of time. Deliberately a DIRECTION, not text to insert verbatim:
+    the same "never hand the LLM a literal copyable phrase" lesson this
+    project has re-learned several times (cta.py, approaches.yaml) --
+    the model still writes its own narration in its own voice, and it
+    still goes through the full authenticity review pass below (this
+    function runs before _generate_reviewed(), not instead of it).
+    """
+    return (
+        "\n\nREQUIRED TOPIC FOR THIS VIDEO -- do not pick a different "
+        "subject; this is today's real subject and angle, researched and "
+        "verified ahead of time:\n"
+        f"{topic_hint}\n\n"
+        "Write it in your own voice, per the persona/style rules below -- "
+        "this is the real subject to cover, not a script to copy. Only "
+        "state facts you can actually stand behind; if any specific "
+        "number/stat mentioned above isn't something you're confident is "
+        "accurate, leave it out rather than repeating it unverified.\n"
+    )
+
+
+def plan(template: str, topic_hint: str | None = None) -> str:
     if template not in TEMPLATES:
         raise ValueError(f"unknown template: {template!r} (expected {sorted(TEMPLATES)})")
 
@@ -302,6 +326,9 @@ def plan(template: str) -> str:
             _AVOID_BEATS_PLACEHOLDER[template],
             "; ".join(avoid_beats) if avoid_beats else "(none yet)",
         )
+
+    if topic_hint:
+        prompt += _topic_hint_block(topic_hint)
 
     style = pick_style()
     prompt += style_guidance_block(style)

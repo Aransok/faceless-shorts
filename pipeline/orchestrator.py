@@ -136,7 +136,7 @@ def run_video_to_completion(video_id: str) -> dict:
             }
 
 
-def run_daily(count: int, templates: list[str] | None = None) -> list[dict]:
+def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[str, str] | None = None) -> list[dict]:
     """Resumes any in-flight videos first, then starts new ones, driving
     each to a terminal status. Safe to re-run after an interrupted run —
     resumable videos pick up from wherever they stopped instead of
@@ -149,6 +149,18 @@ def run_daily(count: int, templates: list[str] | None = None) -> list[dict]:
     specifically) instead of cycling the default TEMPLATES rotation —
     lets a manual trigger ask for a specific mix rather than the daily
     default. `count` is ignored when `templates` is given.
+
+    `topic_hints`, when given, maps a template name to a real, specific
+    topic/angle plan() should steer that template's NEW video onto (see
+    plan.py's `_topic_hint_block()`) — e.g. a genuinely researched
+    trending topic for today rather than whatever the LLM would pick on
+    its own. Only applies to new videos started this call, never to a
+    resumed in-flight video (its topic was already locked in when it was
+    first planned). If `templates` names the same template more than
+    once, every occurrence gets the same hint — there's no per-occurrence
+    addressing, since a caller wanting N distinct hints for the same
+    template should just… want N distinct videos, which this shape
+    doesn't distinguish.
     """
     batch_start = time.monotonic()
     results = []
@@ -161,12 +173,13 @@ def run_daily(count: int, templates: list[str] | None = None) -> list[dict]:
         print(f"resuming {video_id}...")
         results.append(run_video_to_completion(video_id))
 
+    topic_hints = topic_hints or {}
     sequence = templates if templates else [TEMPLATES[i % len(TEMPLATES)] for i in range(count)]
     for i, template in enumerate(sequence):
         print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()
         try:
-            video_id = plan(template)
+            video_id = plan(template, topic_hint=topic_hints.get(template))
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"
             print(f"plan() failed for {template}: {error_message}")

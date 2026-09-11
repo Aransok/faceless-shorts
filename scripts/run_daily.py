@@ -5,10 +5,19 @@ Phase 9. The actual orchestration logic lives in pipeline/orchestrator.py
 Usage:
     python scripts/run_daily.py --count 5
     python scripts/run_daily.py --templates sauce_recipe,sauce_recipe
+
+Per-template topic hints (see plan.py's _topic_hint_block()) come from
+the TOPIC_HINTS_JSON env var, not a CLI flag — a JSON object can contain
+characters (quotes, newlines) that don't round-trip safely through a
+shell-quoted CLI arg the way the workflow's other inputs do, and this
+project already reads config through env vars for exactly that reason
+(LLM_BACKEND, TTS_BACKEND, etc.).
 """
 
 from __future__ import annotations
 
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -29,7 +38,12 @@ def main() -> None:
         parsed = [t.strip() for t in raw.split(",") if t.strip()]
         templates = parsed or None  # an empty/blank value falls back to --count
 
-    results = run_daily(count, templates=templates)
+    topic_hints = None
+    raw_hints = os.environ.get("TOPIC_HINTS_JSON", "").strip()
+    if raw_hints:
+        topic_hints = json.loads(raw_hints)
+
+    results = run_daily(count, templates=templates, topic_hints=topic_hints)
     print()
     print("=== run_daily summary ===")
     for r in results:
