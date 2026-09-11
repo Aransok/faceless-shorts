@@ -1735,6 +1735,43 @@ repetitive, or is ambiguous about where its punchline goes, reliably
 produces a script the reviewer rejects for the same reason -- this
 isn't a one-off quirk, it happened on 2 of the first 3 real hints tried.
 
+## Scheduled-cron reliability: real pattern found, backup routine added (2026-09-11)
+
+Owner reported needing to manually trigger the daily run every day.
+Checked the real GitHub Actions run history rather than assuming: this
+is a genuine, consistent pattern, not occasional flakiness --
+
+- 2026-09-09: `schedule` event fired at 17:45 UTC (nominal slot 14:07 --
+  3h38m late), and that run also failed for an unrelated real reason
+  (the apt/ffmpeg bug, fixed the same day, see above).
+- 2026-09-10: `schedule` event fired at 17:38 UTC (3h31m late), succeeded.
+- 2026-09-11: as of 16:33 UTC (2h26m past the 14:07 slot), still no
+  `schedule` event run at all that day.
+
+A ~3.5 hour delay showing up two days running, on the exact same
+repo, is a real GitHub-side scheduling deprioritization (well-documented
+as a real phenomenon for lower-traffic public repos, distinct from the
+"a few minutes of congestion at the top of the hour" issue the :07
+cron-minute choice already addresses) -- not something fixable from the
+workflow file itself. Confirmed by triggering today's run manually
+(`workflow_dispatch`, default settings, run #14) rather than waiting
+further.
+
+**Real fix**: rather than the owner (or a session) needing to notice and
+manually trigger it each day, a Claude Code Remote Routine ("Daily
+Shorts cron backup check", `trig_01KQjsZLx4iBa9C8F6GjdUs8`) now fires
+daily at 19:00 UTC -- comfortably past the observed worst-case delay --
+and checks whether a real `schedule`-triggered run already happened
+that day. If yes, it's a silent no-op. If not, it fires
+`workflow_dispatch` itself as the backup and tells the owner. Bound to
+this session specifically (not a fresh spawned one) so it keeps the
+GitHub tool access already proven to work here, rather than risking a
+fresh session lacking the same repo-scoped access. Deliberately narrow:
+it only checks "did it fire," never re-diagnoses a real failure (a
+`schedule` run that fired and failed is a different problem for a human
+session to look at, same as this project's existing `failed` status
+convention -- never auto-retried blindly).
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
