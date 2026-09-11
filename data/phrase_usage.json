@@ -1,8 +1,5 @@
 {
   "hook_openers": [
-    "The full explanation for this rarely makes the cut:",
-    "Here's the part of this story most explanations skip:",
-    "This one holds up, and the reason why is the actual point:",
     "Nobody explains why this is actually true, so here goes:",
     "Most versions of this story skip the actual cause:",
     "Most people get the story behind this completely wrong:",
@@ -14,12 +11,12 @@
     "Here's the reasoning behind this that usually gets cut:",
     "This isn't the explanation most people settle for:",
     "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
-    "The reason this happens rarely makes it into the retelling:"
+    "The reason this happens rarely makes it into the retelling:",
+    "Most retellings of this leave out the actual reason it happens:",
+    "There's a real reason this is true, and it's not what you'd guess:",
+    "Here's the part of this story most explanations skip:"
   ],
   "script_structures": [
-    "Introduce the normal expectation, then subvert it hard.",
-    "Build toward an 'and that's when it got weird' turn.",
-    "Open with the outcome, then walk backward through the cause.",
     "Cold open on the surprising moment, then unpack how we got there.",
     "Structure it as three escalating moments, biggest last.",
     "Build tension gradually across three beats, then release it in the last line.",
@@ -31,12 +28,12 @@
     "Set expectations early, then flip them in the back half.",
     "Use a slow build with one big reveal near the very end.",
     "Start in the middle of the action, then rewind to explain.",
-    "Contrast what you'd expect against what actually happened."
+    "Contrast what you'd expect against what actually happened.",
+    "Open with a confession, then explain what led to it.",
+    "Walk through it in real time, like you're narrating it as it unfolds.",
+    "Frame it as a mystery, then solve it by the end."
   ],
   "phrasing_styles": [
-    "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
-    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
-    "Warm humor threaded through, without undercutting the actual point.",
     "A little breathless, like you can't wait to get to the good part.",
     "Intimate, like sharing something you don't tell everyone.",
     "Slightly dramatic \u2014 build a little tension before the reveal.",
@@ -48,7 +45,10 @@
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
     "Curious and searching, like you're figuring it out as you go.",
     "Warm and a little self-deprecating.",
-    "Unhurried \u2014 let the details breathe before moving on."
+    "Unhurried \u2014 let the details breathe before moving on.",
+    "Building excitement that peaks right at the reveal.",
+    "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
+    "Slightly conspiratorial, like you're letting them in on something."
   ],
   "game_night_intro": [
     "Alright, it's game night. Let's see how this one goes."
@@ -60,10 +60,10 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "center_punch_mid"
+    "late_banner_cadence"
   ],
   "code_theme": [
-    "one-dark",
-    "nord"
+    "nord",
+    "solarized-dark"
   ]
 }
