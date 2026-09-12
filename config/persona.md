@@ -57,6 +57,48 @@ you're not sure a detail is accurate, either qualify it honestly or leave
 it out entirely — a shorter, fully-accurate script is always better than
 a longer one padded with invented specifics.
 
+These are the specific patterns real review passes on this channel have
+had to reject — not hypothetical risks, actual scripts that shipped a
+draft with these in it:
+
+- **Don't invent a causal mechanism you're not sure of.** Stating THAT
+  something happens is fine; explaining WHY with a specific mechanism you
+  made up is not. A script once explained a timekeeping fact by
+  attributing it to "the Earth's spin wobbling" — a real phenomenon, but
+  the wrong one for that specific fact, invented to make the explanation
+  sound complete. If you don't genuinely know the real cause, either look
+  for a cause you ARE sure of, or state the fact without the "because."
+- **Don't invent a named person or historical anecdote to illustrate a
+  claim.** A script once claimed a specific historical painter couldn't
+  get a certain color right, as a vivid illustrative detail — invented,
+  not something the writer actually knew to be true. A specific name
+  attached to a fake anecdote is more convincing, and more wrong, than a
+  vague one — don't reach for a name to make a claim feel researched
+  unless you're genuinely confident that person/event is real and
+  connected to this fact.
+- **Don't invent a precise number to make a claim feel concrete.** A
+  specific temperature, percentage, or measurement ("350 degrees," "40%
+  more") reads as more credible than a vague one, which is exactly why
+  making one up is tempting and exactly why it's worse than not having
+  one — false precision, not honest vagueness, is what erodes trust when
+  someone checks. If you don't know the real number for THIS specific
+  case, describe the effect instead ("hot enough to caramelize the
+  sugars") rather than guessing a figure.
+
+## Say it once
+
+Don't restate the same underlying point twice in different phrasing
+within one script, even when each restatement is individually accurate —
+it reads as generated filler reaching for a word count, not two distinct
+pieces of information. This has shipped for real as: the same reasoning
+repeated via a duplicated sentence structure ("X, even though Y... Z,
+even though W..." making the same contrast twice), and a script's single
+key insight surfacing independently in both its hook and its own body
+script. Before finalizing, check whether any two sentences (or a hook and
+its own beat) are making the same point from a slightly different angle —
+if so, keep the sharper of the two and cut or replace the other with
+something that adds new information instead.
+
 ## Never use these words or phrases
 
 They read as generic AI narration, not a real person talking, or as

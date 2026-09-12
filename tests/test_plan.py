@@ -7,10 +7,17 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.plan import _build_rewrite_prompt, _extract_narration, _topic_hint_block
+from pipeline.plan import (
+    ClaudeUsageLimitError,
+    _build_rewrite_prompt,
+    _extract_narration,
+    _topic_hint_block,
+    call_llm,
+)
 
 
 class ExtractNarrationTest(unittest.TestCase):
@@ -71,6 +78,76 @@ class TopicHintBlockTest(unittest.TestCase):
     def test_warns_against_repeating_unverified_stats(self):
         block = _topic_hint_block("some hint")
         self.assertIn("unverified", block)
+
+
+class CallLlmFallbackTest(unittest.TestCase):
+    """call_llm()'s usage-limit fallback: only a genuine claude CLI
+    usage-limit hit (not any other failure) should ever divert to
+    LLM_FALLBACK_BACKEND, and only when one is actually configured and
+    differs from the primary backend. No real subprocess/network calls —
+    subprocess.run and requests.post are both mocked."""
+
+    def setUp(self):
+        patcher = mock.patch.dict(
+            "os.environ",
+            {"LLM_BACKEND": "claude_code", "LLM_FALLBACK_BACKEND": "", "GROQ_API_KEY": ""},
+            clear=False,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_claude_success_never_touches_fallback(self, mock_run, mock_which):
+        mock_run.return_value = mock.Mock(returncode=0, stdout="a real script", stderr="")
+        self.assertEqual(call_llm("prompt"), "a real script")
+
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_usage_limit_without_fallback_configured_raises(self, mock_run, mock_which):
+        mock_run.return_value = mock.Mock(
+            returncode=1, stdout="", stderr="Claude AI usage limit reached, please try again after 2pm"
+        )
+        with self.assertRaises(ClaudeUsageLimitError):
+            call_llm("prompt")
+
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_usage_limit_falls_back_to_configured_backend(self, mock_run, mock_which, mock_post):
+        mock_run.return_value = mock.Mock(
+            returncode=1, stdout="", stderr="Claude AI usage limit reached, please try again after 2pm"
+        )
+        mock_post.return_value = mock.Mock()
+        mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            result = call_llm("prompt")
+        self.assertEqual(result, "fallback script")
+        mock_post.assert_called_once()
+
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_non_usage_limit_failure_never_falls_back(self, mock_run, mock_which):
+        # A real CLI bug/crash must fail loudly, not silently degrade to a
+        # lower-quality backend -- only a genuine usage-limit hit is
+        # fallback-eligible (see call_llm()'s docstring).
+        mock_run.return_value = mock.Mock(returncode=1, stdout="", stderr="some unrelated crash")
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            with self.assertRaises(RuntimeError) as ctx:
+                call_llm("prompt")
+        self.assertNotIsInstance(ctx.exception, ClaudeUsageLimitError)
+
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_fallback_same_as_primary_backend_is_a_noop(self, mock_run, mock_which):
+        # LLM_FALLBACK_BACKEND=claude_code (same as the primary) would
+        # just retry the exact call that already hit the limit -- treat
+        # it as no fallback configured instead of looping.
+        mock_run.return_value = mock.Mock(returncode=1, stdout="", stderr="usage limit reached")
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "claude_code"}):
+            with self.assertRaises(ClaudeUsageLimitError):
+                call_llm("prompt")
 
 
 class GenerateReviewedTest(unittest.TestCase):

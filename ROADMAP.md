@@ -1772,6 +1772,109 @@ it only checks "did it fire," never re-diagnoses a real failure (a
 session to look at, same as this project's existing `failed` status
 convention -- never auto-retried blindly).
 
+## Anti-hallucination hardening from real review-failure evidence (2026-09-12)
+
+Real production runs on 2026-09-11 hit an unusually high authenticity-
+review failure rate: 5 of 8 total generation attempts across facts,
+programming, and sauce_recipe failed their review pass (~62%, well above
+the previously observed rate). Per the owner's explicit instruction
+("we don't have much limit so leave it [today's failed videos] but we
+need to fix that almost every time it fails"), this was root-caused
+against the actual reviewer rejection reasons rather than guessed at,
+and fixed as a no-extra-cost prompt/persona change (not a
+REVIEW_MAX_REWRITES increase, which would raise cost per video --
+working against the same budget constraint that caused this
+investigation).
+
+Every one of the 5 failures was a legitimate reviewer catch (not a false
+positive, not a code bug), and they clustered into exactly the same few
+patterns across unrelated topics:
+- inventing a specific causal mechanism for a fact the writer wasn't
+  actually sure of (a real phenomenon, but the wrong one, offered as
+  "why" something happens)
+- inventing a named historical person/anecdote as illustrative detail
+- inventing a precise-sounding number (e.g. an exact temperature) to
+  make a claim feel more concrete than the writer actually knew it to be
+- restating the same underlying point twice in different phrasing within
+  one script (a duplicated sentence structure making the same contrast
+  twice; a script's key insight surfacing independently in both its hook
+  and its own body)
+
+`config/persona.md`'s Anti-hallucination section (shared across every
+template) now names these exact patterns as concrete, non-hypothetical
+examples instead of only stating the general principle -- a model is
+more reliably steered away from a specific temptation it's already shown
+it's susceptible to than from an abstract rule alone. Added a new "Say
+it once" section for the repetition pattern specifically, since it's a
+distinct failure mode from inventing facts (both sentences can be
+individually true) and wasn't covered by the existing "Sentence rhythm"
+section (which is about sentence SHAPE, not repeated CONTENT). All 163
+existing tests still pass -- this is a text-only change to a prompt
+file, not a code change, so nothing to unit-test directly, but nothing
+else needed updating either.
+
+This is a real fix aimed at today's concrete evidence, not a rewrite of
+the whole section -- the next real-world run is what actually confirms
+whether the failure rate drops; if these same patterns keep recurring
+despite the added examples, that's a sign the per-template pet-peeves
+files need equivalent treatment, or that a specific template needs a
+stronger guard than the shared core file can carry alone.
+
+## Direct-upload confirmation + Claude usage-limit fallback (2026-09-12)
+
+Two owner requests, checked/built same day:
+
+**"Upload each video as it's ready, don't wait for the whole batch."**
+Checked `pipeline/orchestrator.py`'s `run_daily()` against this -- it
+already does this: for each new video, `plan()` is followed immediately
+by `run_video_to_completion()`, which drives THAT ONE video all the way
+through voice/visuals/assemble/captions/metadata/upload before the loop
+even starts the next video's `plan()` call. In CI (`REQUIRE_REVIEW=false`)
+`generate_metadata()` sets status straight to `approved`, and the same
+`run_video_to_completion()` loop immediately advances that into
+`upload()` -- no code change needed, the batch was never uploading as one
+unit. What IS deliberately staggered is when a `scheduled`-visibility
+upload goes PUBLIC (`_next_publish_time()` in `pipeline/upload.py` spaces
+each video 2-4 random hours after the last already-scheduled one) --
+that's a separate, intentional release-pacing decision, not the pipeline
+withholding the upload call itself.
+
+**"Fall back to a free Llama backend if Claude usage hits its limit."**
+`pipeline/plan.py`'s `call_llm()` now catches a claude CLI failure
+specifically identified as a usage-limit hit (`ClaudeUsageLimitError`,
+matched against the CLI's own "usage limit reached" wording in its
+combined stdout+stderr) and, only when `LLM_FALLBACK_BACKEND` is set to
+a different backend than the primary one, retries that one call on the
+fallback instead of failing the video outright. Deliberately narrow:
+any OTHER claude CLI failure (bad prompt, CLI missing, a real crash)
+is NOT fallback-eligible -- only "this backend is exhausted for today"
+should ever divert to a lower-quality backend, never "this backend
+might be broken," which should fail loudly instead of being masked.
+
+Added a new `groq` backend (`_call_groq()`) as the fallback target
+rather than the existing `ollama` backend, because `ollama` needs a
+locally-running model server this project's GitHub Actions runner
+doesn't have -- Groq's API is a plain hosted HTTPS endpoint with a
+genuinely free tier (no credit card) serving open Llama models, which
+fits CLAUDE.md's "no paid APIs by default" rule and is a real fallback
+that works unattended in CI, unlike `ollama` (still the right choice for
+local dev, where a model server can actually run). Wired
+`LLM_FALLBACK_BACKEND: groq` + `GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}`
+into both `daily-shorts.yml` and `weekly-quiz.yml` -- inert until the
+owner actually signs up for a free Groq account
+(https://console.groq.com) and adds `GROQ_API_KEY` as a repo secret; an
+empty key just makes the fallback attempt fail too, same net effect as
+not having one configured. 5 new tests in `tests/test_plan.py`
+(`CallLlmFallbackTest`) cover: success path never touches the fallback,
+a usage-limit hit with no fallback configured still raises, a
+usage-limit hit WITH a fallback configured returns the fallback's
+result, a non-usage-limit failure never falls back even with one
+configured, and a fallback set to the same backend as the primary is
+treated as unconfigured (avoids retrying the exact call that already
+failed). All mocked (subprocess.run, requests.post) -- no real
+network/CLI calls, per CLAUDE.md's testing rules. 163 tests total now
+passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

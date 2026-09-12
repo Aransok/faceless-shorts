@@ -78,6 +78,14 @@ jobs:
         env:
           LLM_BACKEND: claude_code
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # If today's Claude usage limit is hit mid-run, retry that one
+          # call on Groq's free-tier Llama API instead of failing the
+          # video outright (see pipeline/plan.py's call_llm()). A no-op
+          # until GROQ_API_KEY is actually added as a repo secret --
+          # empty GROQ_API_KEY just makes the fallback attempt itself
+          # fail too, same end result as not having one.
+          LLM_FALLBACK_BACKEND: groq
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TTS_BACKEND: edge_tts
           FACTS_VISUAL_SOURCE: stock
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
