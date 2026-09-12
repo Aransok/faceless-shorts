@@ -14,9 +14,11 @@ whether anyone "won."
 
 from __future__ import annotations
 
+import heapq
 import json
 import random
 import re
+from collections import Counter
 
 from pipeline.plan import call_llm
 
@@ -47,18 +49,65 @@ class RoundVerificationFailed(Exception):
     """
 
 
+def _arrange_no_adjacent_repeats(items: list[str]) -> list[str]:
+    """Classic greedy rearrangement (a max-heap keyed by how many of each
+    type remain, always placing the most plentiful type that isn't the
+    one just placed, then "cooling it down" for exactly one step before
+    it's eligible again) -- the standard, guaranteed-correct algorithm
+    for this problem. Succeeds whenever no single type is more than half
+    of `items`; raises otherwise, since no valid ordering exists at all
+    in that case, not just an unlucky attempt. A random per-type
+    tiebreaker (not alphabetical/insertion order) keeps two equally-
+    plentiful types from always landing in the same relative order every
+    time this runs -- real variety across episodes, not a fixed pattern.
+    """
+    counts = Counter(items)
+    max_type, max_count = max(counts.items(), key=lambda kv: kv[1])
+    if max_count > (len(items) + 1) // 2:
+        raise RuntimeError(
+            f"no no-adjacent-repeat ordering exists: {max_type!r} is {max_count} of {len(items)} entries"
+        )
+
+    heap = [(-c, random.random(), t) for t, c in counts.items()]
+    heapq.heapify(heap)
+    result: list[str] = []
+    cooldown: tuple[int, float, str] | None = None
+    while heap:
+        neg_count, tiebreak, type_name = heapq.heappop(heap)
+        result.append(type_name)
+        if cooldown is not None:
+            heapq.heappush(heap, cooldown)
+            cooldown = None
+        neg_count += 1  # one fewer remaining (neg_count is negative)
+        if neg_count < 0:
+            cooldown = (neg_count, tiebreak, type_name)
+    return result
+
+
 def select_rounds(count: int, pool: tuple[str, ...] = ROUND_TYPES) -> list[str]:
     """Random sequence of `count` round types from `pool`, guaranteeing no
     two adjacent entries are the same type -- the owner's "no same game
-    type twice in a row, reasonable mix" requirement. For count <= len(pool)
-    this reduces to a shuffle (all distinct, so adjacency is trivially
-    satisfied); for count > len(pool) each pick excludes only the
-    immediately preceding type, same mechanism either way.
+    type twice in a row, reasonable mix" requirement. `pool` may contain
+    repeated entries to weight some types more heavily than others (see
+    plan_game.py's LONGFORM_ROUND_POOL, which repeats the free/algorithmic
+    types far more than the LLM-touching ones) -- the no-adjacent-repeat
+    guarantee is enforced either way, not just for a pool of all-distinct
+    types.
+
+    Real bug fixed here (2026-09-12): the old count<=len(pool) branch was
+    a bare shuffle with no adjacency check at all, silently relying on
+    every caller only ever passing an all-distinct pool (true at the
+    time -- the only pool that existed was the 5 distinct ROUND_TYPES).
+    A first attempt at a fix (retry-shuffling up to 200 times and
+    checking) turned out to still fail in practice for a real production
+    pool (three types each ~27% of a 30-entry pool) -- random retries
+    just aren't reliable odds against multiple large, similarly-sized
+    groups. Replaced with a real, guaranteed-correct rearrangement
+    algorithm instead of hoping a random shuffle gets lucky.
     """
     if count <= len(pool):
-        rounds = list(pool)
-        random.shuffle(rounds)
-        return rounds[:count]
+        subset = list(pool) if count == len(pool) else random.sample(pool, count)
+        return _arrange_no_adjacent_repeats(subset)
 
     rounds = [random.choice(pool)]
     for _ in range(count - 1):

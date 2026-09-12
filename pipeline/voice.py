@@ -56,16 +56,25 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 BEAT_PAUSE_SECONDS = 3.5
 _PAUSED_TEMPLATES = {"facts", "sauce_recipe"}
 
-# game_night: gameplay/reveal/countdown beats show a real on-screen card
-# the viewer needs actual time to read (a sequence of icons, a versus
-# card, an attribute table) -- but the narration line driving that beat's
-# duration is often much shorter (e.g. "It hits!" is well under a
-# second). A real watched test episode came out far too fast because of
-# exactly this -- the visual was already gone before it could be read.
+# game_night: gameplay/reveal/countdown/suspense beats show a real
+# on-screen card the viewer needs actual time to read AND think about (a
+# sequence of icons, a versus card, an attribute table) -- but the
+# narration line driving that beat's duration is often much shorter
+# (e.g. "It hits!" is well under a second). A real watched test episode
+# came out far too fast because of exactly this -- the visual was
+# already gone before it could be read, let alone actually guessed at.
 # Fix: pad each of these beats' own audio up to a floor (only the real
 # shortfall, not a flat add-on) so the visual holds long enough
 # regardless of how brief the line is.
-GAME_NIGHT_MIN_BEAT_SECONDS = {"countdown": 1.5, "gameplay": 3.5, "reveal": 4.0}
+#
+# Raised again 2026-09-12 (owner: "at least 10 mins", plus wants it to
+# actually feel like a game, not a rushed narration) -- "gameplay" in
+# particular is the actual moment a viewer would try to guess before the
+# reveal; the old 3.5s floor barely qualified as a pause, let alone real
+# thinking time. Also added a "suspense" floor -- that beat (e.g. "let's
+# find out...") previously had NO floor at all, so it usually vanished
+# in well under a second between the question and the answer.
+GAME_NIGHT_MIN_BEAT_SECONDS = {"countdown": 2.5, "gameplay": 6.0, "suspense": 2.5, "reveal": 5.0}
 
 
 def _pad_with_silence(path: Path, seconds: float) -> None:
