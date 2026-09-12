@@ -2204,6 +2204,43 @@ visual difference on a real uploaded video -- the next real render is
 what confirms this fixes the reported blurriness rather than just
 being a reasonable-sounding change.
 
+## Two real incidents in one afternoon: a missed usage-limit wording, and a session-vs-workflow state.db race (2026-09-12)
+
+**Incident 1 — the fallback regex missed a real wording variant.** A
+real game_night test run failed instantly with "You've hit your
+session limit · resets 4:40pm (UTC)". `_USAGE_LIMIT_PATTERN` only
+matched "usage limit" / "rate limit exceeded" -- "session limit" never
+matched, so `LLM_FALLBACK_BACKEND=groq` never got a chance to rescue
+the call the way it was built to. Broadened the pattern to also catch
+"session limit" and a generic "limit reached" catch-all rather than
+trying to enumerate every exact phrasing Anthropic might use. New
+regression test using the exact real wording. 199 tests total.
+
+**Incident 2 — my own git pushes raced a long-running workflow.** While
+a 5-video Daily Shorts run (#23) spent a real 30 minutes generating
+content, I pushed several unrelated code-fix commits directly to
+`main` from this session. When #23 finished and tried to commit its
+own state.db update, it hit the exact same binary-file-conflict-on-
+rebase failure the concurrency-group fix earlier today was built to
+prevent -- except this time the other writer wasn't a second GitHub
+Actions workflow, it was a human/session's own direct `git push`,
+which the concurrency group has no visibility into at all. Real cost:
+the entire run's state update was lost -- unlike the earlier incident,
+this one's videos may not have even reached "uploaded" (unconfirmed --
+the record is gone, not just delayed), and there's no way to recover
+which real API calls happened during that lost run.
+
+**Real fix, a process discipline, not a code change**: before any
+direct push to `main` from this session while daily-shorts.yml (or any
+other state.db-writing workflow) might be mid-run, check
+`list_workflow_runs` for in-progress/queued runs first, same as
+already being done for the workflow-vs-workflow case the concurrency
+group protects. A code-level fix (e.g. having the session's own pushes
+join the same concurrency mechanism) isn't practical since GitHub's
+concurrency groups only govern Actions runs, not arbitrary git pushes
+-- this has to be an operating habit, documented here so it isn't
+forgotten between sessions.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
