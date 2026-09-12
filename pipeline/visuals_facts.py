@@ -361,7 +361,11 @@ def _build_segment_clip(source_path: Path, frame_count: int, output_path: Path) 
             "-vf", vf,
             "-an",
             "-frames:v", str(frame_count),
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            # See assemble.py's matching comment (real 2026-09-12 quality
+            # complaint) -- no encode in this pipeline set a quality
+            # target before, defaulting to libx264's own CRF 23/preset
+            # medium.
+            "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
             str(output_path),
         ],
         capture_output=True,

@@ -292,7 +292,15 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
             "-filter_complex", filter_complex,
             "-map", "[vout]", "-map", audio_map,
             "-t", f"{duration:.3f}",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            # See visuals_game.py's matching comment -- no encode in this
+            # pipeline set a quality target before, so every one defaulted
+            # to libx264's own CRF 23/preset medium. This is the LAST
+            # encode before upload (re-encoding whatever visuals_*.py
+            # already produced, unavoidable since compositing the CTA
+            # overlay needs a real filter pass, not just a stream copy),
+            # so getting it right here matters most -- a low-quality final
+            # pass undoes good quality from every earlier stage.
+            "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             str(scratch_path),
         ]
