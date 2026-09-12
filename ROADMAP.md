@@ -2126,6 +2126,53 @@ scoped "visual asset engine" idea from the outside review, intentionally
 deferred rather than attempted in the same pass as a hard duration
 requirement.
 
+## game_night: real per-round visual identity (2026-09-12)
+
+Owner pushed back hard after the length fix shipped -- "i want it fix
+dude" -- specifically on the visual-identity critique from outside
+review, not just duration. Rather than defer the whole thing to a large
+future "visual asset engine" rebuild, shipped the real, scoped part of
+it that's actually achievable with Pillow primitives already in this
+codebase:
+
+1. **Per-round-type accent colors.** Every round used to render through
+   `_render_base_panel()` with the exact same hardcoded brand-teal-to-
+   indigo gradient border, regardless of which game was playing -- the
+   literal cause of "every screen looks the same." `_render_base_panel()`
+   now takes `round_type` and looks up a real, thematically-chosen
+   gradient per type (`ROUND_ACCENT_COLORS`): memory=warm amber/red
+   (attention), what_changed=cool cyan/teal (observational),
+   risk_or_safe=red-to-amber (danger-to-safe), higher_or_lower=indigo/
+   violet (a "versus" feel), prediction=green/teal (forward-looking).
+   All 5 renderer functions already had `round_type` in scope, so this
+   was a real wiring fix, not new plumbing.
+
+2. **Real drawn icon glyphs for the memory round**, replacing plain
+   text-word chips -- the single most specific complaint from outside
+   review ("basically words on screen"). 12 small Pillow polygon/
+   ellipse functions (`_draw_star`, `_draw_heart`, `_draw_crown`,
+   `_draw_moon`, `_draw_sun`, `_draw_snowflake`, `_draw_fire`,
+   `_draw_lightning`, `_draw_skull`, `_draw_rocket`, `_draw_leaf`,
+   `_draw_diamond`), one per `pipeline/games/memory.py` `ICON_POOL`
+   entry, no external image assets. Each renders inside a colored
+   circular badge with a small caption underneath (kept for clarity/
+   disambiguation, but the icon shape is now the primary visual, not
+   the word). Verified by actually rendering sample frames locally
+   before shipping, not just trusting the code.
+
+6 new tests (`tests/test_visuals_game.py`): every pool icon draws
+without crashing, every icon renders genuinely distinct pixels (not a
+copy-pasted lambda accidentally reusing another icon's shape), an
+unknown icon name falls back to a plain circle instead of crashing, and
+every round type's panel border is confirmed to render different real
+pixels. 198 tests total.
+
+Still explicitly NOT done, same as before: no illustrated scenes (a
+fruit stand, a street corner with real objects), no social/discussion
+round types, narration-before-gameplay pacing untouched. This pass is
+real, visible, shippable-today progress on the visual-identity
+complaint specifically -- not the full outside-review rebuild.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
