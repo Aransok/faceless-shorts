@@ -103,6 +103,25 @@ class CallLlmFallbackTest(unittest.TestCase):
         mock_run.return_value = mock.Mock(returncode=0, stdout="a real script", stderr="")
         self.assertEqual(call_llm("prompt"), "a real script")
 
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_session_limit_wording_also_triggers_fallback(self, mock_run, mock_which, mock_post):
+        # Real bug (2026-09-12): a real production failure said "You've
+        # hit your session limit · resets 4:40pm (UTC)" -- "session
+        # limit", not "usage limit" -- and the old pattern missed it
+        # entirely, so the fallback silently never fired on a wording
+        # variant that actually happens in production.
+        mock_run.return_value = mock.Mock(
+            returncode=1, stdout="", stderr="You've hit your session limit · resets 4:40pm (UTC)"
+        )
+        mock_post.return_value = mock.Mock()
+        mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            result = call_llm("prompt")
+        self.assertEqual(result, "fallback script")
+
     @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
     @mock.patch("pipeline.plan.subprocess.run")
     def test_usage_limit_without_fallback_configured_raises(self, mock_run, mock_which):

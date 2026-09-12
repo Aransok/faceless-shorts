@@ -102,12 +102,17 @@ class ClaudeUsageLimitError(RuntimeError):
 
 
 # Matched against combined stdout+stderr of a failed claude CLI call.
-# Confirmed wording (2026-09) is "Claude AI usage limit reached" / "usage
-# limit reached", but matching the broader "usage limit" substring (and
-# "rate limit" for the API-key auth path, which phrases it differently)
-# is deliberately looser so a minor wording change upstream doesn't
-# silently stop the fallback from ever triggering.
-_USAGE_LIMIT_PATTERN = re.compile(r"usage limit|rate.?limit exceeded", re.IGNORECASE)
+# Real bug found 2026-09-12: a real production failure had the CLI say
+# "You've hit your session limit · resets 4:40pm (UTC)" -- "session
+# limit", not "usage limit" -- so this pattern missed it entirely, and
+# the whole point of having LLM_FALLBACK_BACKEND (never having to just
+# wait out a limit) silently didn't fire on a wording variant that
+# actually happens. Broadened to match "session limit" too, plus a
+# generic "limit reached" catch-all, rather than trying to enumerate
+# every exact phrasing Anthropic might use.
+_USAGE_LIMIT_PATTERN = re.compile(
+    r"usage limit|session limit|limit reached|rate.?limit exceeded", re.IGNORECASE
+)
 
 
 def _call_claude_code(prompt: str) -> str:
