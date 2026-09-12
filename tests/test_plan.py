@@ -16,6 +16,7 @@ from pipeline.plan import (
     _build_rewrite_prompt,
     _extract_narration,
     _topic_hint_block,
+    call_bulk_llm,
     call_llm,
 )
 
@@ -148,6 +149,46 @@ class CallLlmFallbackTest(unittest.TestCase):
         with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "claude_code"}):
             with self.assertRaises(ClaudeUsageLimitError):
                 call_llm("prompt")
+
+
+class CallBulkLlmTest(unittest.TestCase):
+    """call_bulk_llm() is a pure dispatcher for the cheap-backend split
+    (metadata/CTA generation) -- see pipeline/metadata.py and
+    pipeline/upload.py for the retry/fallback logic that wraps it. No
+    real network calls -- requests.post is mocked."""
+
+    def test_defaults_to_groq(self):
+        with mock.patch.dict("os.environ", {}, clear=True):
+            with mock.patch("pipeline.plan.requests.post") as mock_post:
+                mock_post.return_value = mock.Mock()
+                mock_post.return_value.raise_for_status = lambda: None
+                mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "hi"}}]}
+                with mock.patch.dict("os.environ", {"GROQ_API_KEY": "fake-key"}):
+                    result = call_bulk_llm("prompt")
+        self.assertEqual(result, "hi")
+        mock_post.assert_called_once()
+        self.assertIn("api.groq.com", mock_post.call_args[0][0])
+
+    def test_honors_bulk_backend_override(self):
+        with mock.patch.dict("os.environ", {"BULK_LLM_BACKEND": "claude_code"}):
+            with mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude"):
+                with mock.patch("pipeline.plan.subprocess.run") as mock_run:
+                    mock_run.return_value = mock.Mock(returncode=0, stdout="claude output", stderr="")
+                    result = call_bulk_llm("prompt")
+        self.assertEqual(result, "claude output")
+
+    def test_never_applies_usage_limit_fallback(self):
+        # call_bulk_llm is a plain dispatcher -- it doesn't carry
+        # call_llm()'s claude_code-usage-limit-fallback behavior. If a
+        # caller points BULK_LLM_BACKEND at claude_code and it hits a
+        # usage limit, that's just an error for the caller to handle,
+        # not something this function retries on its own.
+        with mock.patch.dict("os.environ", {"BULK_LLM_BACKEND": "claude_code", "LLM_FALLBACK_BACKEND": "groq"}):
+            with mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude"):
+                with mock.patch("pipeline.plan.subprocess.run") as mock_run:
+                    mock_run.return_value = mock.Mock(returncode=1, stdout="", stderr="usage limit reached")
+                    with self.assertRaises(ClaudeUsageLimitError):
+                        call_bulk_llm("prompt")
 
 
 class GenerateReviewedTest(unittest.TestCase):

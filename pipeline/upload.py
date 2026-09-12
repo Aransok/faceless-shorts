@@ -21,7 +21,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-from pipeline.plan import call_llm
+from pipeline.plan import call_bulk_llm
 from pipeline.state import get_video, list_by_status, list_uploaded_without_cta_comment, update_video
 from pipeline.thumbnails import upload_thumbnail
 
@@ -244,6 +244,13 @@ def _generate_cta_comment(video: dict) -> str:
     reasoning as everywhere else in this pipeline (see persona.md):
     generic, reused-across-every-video comments read as template output,
     a specific one reads as a creator who watched their own upload.
+
+    Uses call_bulk_llm() (cheap backend, default Groq/Llama) rather than
+    call_llm() (Claude) -- a one-line engagement comment is low-stakes
+    enough that post_cta_comment()'s existing _CTA_COMMENTS pool is
+    already a perfectly good fallback on any failure here, so there's no
+    need to escalate to Claude the way metadata.py does; that fallback
+    pool existed before this change and needed no modification.
     """
     prompt_body = CTA_COMMENT_PROMPT_PATH.read_text(encoding="utf-8")
     prompt = (
@@ -251,7 +258,7 @@ def _generate_cta_comment(video: dict) -> str:
         .replace("{hook}", video["hook"] or "")
         .replace("{script_text}", video["script_text"] or "")
     )
-    raw = call_llm(prompt)
+    raw = call_bulk_llm(prompt)
     match = _COMMENT_FIELD_PATTERN.search(raw.strip())
     if not match:
         raise ValueError(f"LLM output missing COMMENT field:\n{raw}")
