@@ -339,5 +339,29 @@
     "template": "game_night",
     "approach": null,
     "scheduled_publish_at": "2026-09-13T04:51:36.406973+00:00"
+  },
+  {
+    "video_id": "250eb4da-1553-4465-aabc-c55dca5ecdab",
+    "youtube_video_id": "fvsL68k7b54",
+    "uploaded_at": "2026-09-12T17:04:33.827533+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T07:27:37.587492+00:00"
+  },
+  {
+    "video_id": "dafdf22c-b230-47b0-9bf7-da9d6bb786de",
+    "youtube_video_id": "uLICxp2FibY",
+    "uploaded_at": "2026-09-12T17:13:18.608291+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T09:29:45.011162+00:00"
+  },
+  {
+    "video_id": "73a04f15-1a82-40b5-9294-250305dce678",
+    "youtube_video_id": "xgnOU196KM8",
+    "uploaded_at": "2026-09-12T17:19:25.011451+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T12:57:19.258264+00:00"
   }
 ]
