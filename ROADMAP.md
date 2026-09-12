@@ -1934,6 +1934,97 @@ give it (e.g. a stronger per-template pet-peeves addition, or accepting
 this as the real cost of REVIEW_MAX_REWRITES=1's cost/convergence
 trade-off).
 
+## Retry results + real facts-template failure recurrence (2026-09-12)
+
+Retried the 4 videos that failed in run #17 (facts, sauce_recipe, facts,
+sauce_recipe) as a fresh run #18, now that the concurrency fix above
+was in place -- its own state.db commit pushed cleanly this time, no
+race. Result: 2/4 succeeded (both sauce_recipe), 2/4 failed again (both
+facts) -- and the facts failures are the same real hallucination
+patterns yesterday's persona.md hardening specifically named: an
+invented "the fungus would die within days" precision claim, a
+fabricated "three-inch fish" size, an invented "half the world" usage
+stat, and a made-up detail about a named character doing something the
+script never established. Real, concrete evidence that persona.md's
+prompt-level hardening reduces but does not reliably prevent these
+patterns for the facts template specifically -- worth a facts-template-
+specific pet-peeves addition if this keeps recurring, rather than
+further generic persona.md changes.
+
+## Cheap-backend split for metadata/CTA generation (2026-09-12)
+
+Owner's ask: cut Claude usage by moving "most of the work" to
+Llama/Groq (already wired as the claude_code usage-limit fallback, see
+above) while keeping Claude on script quality. Landed as a 3-tier split
+(refined from initial 2-tier plan after cross-checking the idea with
+outside review):
+
+- **Tier: Claude (call_llm(), unchanged)** — the actual script draft,
+  the authenticity review pass, and the rewrite-on-rejection. Explicitly
+  NOT moved: a cheaper first-draft model risks MORE review rejections
+  (each one costs a Claude review call anyway), which could easily make
+  total Claude usage worse, not better -- exactly the failure mode
+  outside review flagged and this project's own real REVIEW_MAX_REWRITES
+  4->1 cost incident already demonstrated for a related reason.
+- **Tier: cheap backend (call_bulk_llm(), new, default groq/Llama)** —
+  metadata (title/description/tags) and the CTA comment. Both run on
+  EVERY video regardless of template or review outcome, and neither is
+  the creative "script" -- pure savings with zero exposure to script
+  quality. `pipeline/plan.py`'s `call_bulk_llm()` reads
+  `BULK_LLM_BACKEND` (default "groq") and is a pure dispatcher -- no
+  retry/fallback logic of its own, since only the caller knows what a
+  "bad" response looks like for its own domain.
+- **Tier: Python (already existed, no new code)** — `metadata.py`'s
+  `_enforce_limits()`/`_fix_follow_language()`/`_cap_hashtags()`/
+  `_parse_metadata_response()` already validate every metadata response
+  regardless of which backend produced it (length limits, banned
+  follow-language, hashtag cap, required-field check) -- this is
+  exactly the "don't pay an LLM to validate what Python can validate
+  for free" tier outside review recommended, and it turned out to
+  already exist; nothing new needed there.
+
+`metadata.py`'s `_generate_metadata_fields()` tries the bulk backend,
+and on a malformed/missing-field response (the existing
+`_parse_metadata_response` check IS the validation gate -- no separate
+one needed) retries once on the same cheap backend, then escalates to
+Claude only if that also fails. `upload.py`'s `_generate_cta_comment()`
+also switched to the bulk backend, but does NOT escalate to Claude on
+failure -- it already had a good free fallback (`_CTA_COMMENTS`, a
+canned pool) from before this change, so there's no reason to spend a
+Claude call on a one-line comment when a free fallback already exists.
+
+Both are safe to ship before `GROQ_API_KEY` is ever configured: an
+unset key just makes `call_bulk_llm()` raise immediately, which each
+caller's existing retry/fallback path already handles as "bad response,
+try the next tier" -- so behavior is identical to today until the key
+is actually added, then savings start automatically.
+
+Deliberately did NOT build a separate `llm/` package (claude.py /
+groq.py / router.py submodules) despite that specific suggestion from
+outside review -- `pipeline/plan.py` already IS the single place every
+other module imports its LLM dispatch from (`call_llm`, now also
+`call_bulk_llm`), so a bigger package restructure would be new
+abstraction for its own sake, not a real gap. Also deliberately left
+the game-format claim generation (`higher_or_lower`) on Claude for
+now -- those formats barely run in production, so the savings there are
+small relative to the churn of touching code with its own existing
+fact-verification loop.
+
+Wired `BULK_LLM_BACKEND: groq` (reusing the same `GROQ_API_KEY` secret
+as the existing usage-limit fallback) into `daily-shorts.yml`,
+`weekly-quiz.yml`, and `post-pending-comments.yml` (the latter needed
+`GROQ_API_KEY` added too -- it only posts CTA comments, no metadata
+call, but hadn't had Groq wired in at all before). 13 new tests
+(`CallBulkLlmTest` in `tests/test_plan.py`, plus new `tests/
+test_metadata.py` and `tests/test_upload.py`) -- all mocked, no real
+LLM/YouTube calls. 176 tests total passing.
+
+Expected per-video Claude-call reduction: a first-try-pass video goes
+from 4 Claude calls (script + review + metadata + CTA) to 2 (script +
+review only) -- roughly a 50% cut with zero change to script quality,
+since the two calls removed were never quality-determining in the
+first place.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

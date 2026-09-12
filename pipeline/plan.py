@@ -209,6 +209,28 @@ def call_llm(prompt: str) -> str:
         return _dispatch_llm(fallback, prompt)
 
 
+def call_bulk_llm(prompt: str) -> str:
+    """Dispatches to BULK_LLM_BACKEND (default groq) for mechanical,
+    high-volume, low-stakes generation -- metadata (title/description/
+    tags) and CTA comments, not the actual script. Those two calls happen
+    on EVERY video regardless of template or review outcome, so moving
+    them off Claude is pure savings with zero effect on script quality --
+    unlike the script draft/review/rewrite loop in _generate_reviewed(),
+    which stays on call_llm() deliberately: that's where a cheaper model
+    could plausibly cause MORE review rejections (and therefore MORE
+    Claude calls, not fewer), so it's excluded from this split.
+
+    This function is a pure dispatcher, not a quality gate — it does not
+    validate or retry on its own. Each caller already has its own
+    domain-specific way to tell a bad response from a good one (metadata
+    has _parse_metadata_response's required-field check; a CTA comment
+    just needs to be non-empty), so retry/fallback decisions belong in
+    the caller, not duplicated here for every possible response shape.
+    """
+    backend = os.environ.get("BULK_LLM_BACKEND", "groq")
+    return _dispatch_llm(backend, prompt)
+
+
 def _split_queries(raw: str) -> list[str]:
     """Comma-split a query field, treating a literal "none" (the prompt's
     documented way to say "no concept queries needed") as empty rather

@@ -47,6 +47,11 @@ jobs:
         env:
           LLM_BACKEND: claude_code
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The CTA comment itself calls call_bulk_llm() (cheap backend
+          # by default), not Claude -- see pipeline/plan.py's
+          # call_bulk_llm() and daily-shorts.yml's matching comment.
+          BULK_LLM_BACKEND: groq
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}

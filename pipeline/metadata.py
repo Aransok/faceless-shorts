@@ -9,7 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from pipeline.plan import call_llm
+from pipeline.plan import call_bulk_llm, call_llm
 from pipeline.state import get_video, get_video_steps, list_by_status, update_video
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -66,6 +66,27 @@ def _parse_metadata_response(text: str) -> dict:
     if missing:
         raise ValueError(f"LLM output missing required field(s) {sorted(missing)}:\n{text}")
     return fields
+
+
+def _generate_metadata_fields(prompt: str) -> dict:
+    """Title/description/tags is mechanical, not creative writing, and it
+    runs on every single video regardless of template or review outcome
+    -- a good fit for the cheap bulk backend (see call_bulk_llm()). Tries
+    it, validates the response the same way a Claude response would be
+    validated (_parse_metadata_response already raises on a malformed/
+    missing field -- that IS the quality gate here, no separate check
+    needed), retries once on the same backend, and only escalates to
+    Claude if the cheap backend can't produce a well-formed response
+    twice in a row."""
+    try:
+        return _parse_metadata_response(call_bulk_llm(prompt))
+    except Exception as exc:
+        print(f"warning: bulk metadata generation failed/invalid ({exc}) -- retrying once")
+    try:
+        return _parse_metadata_response(call_bulk_llm(prompt))
+    except Exception as exc:
+        print(f"warning: bulk metadata generation failed again ({exc}) -- falling back to Claude")
+    return _parse_metadata_response(call_llm(prompt))
 
 
 def _fix_follow_language(description: str) -> str:
@@ -162,8 +183,7 @@ def generate_metadata(video_id: str) -> dict:
     if is_sauce_recipe:
         prompt = prompt.replace("{sauce_scripts}", _format_sauce_scripts(video_id))
 
-    raw = call_llm(prompt)
-    parsed = _parse_metadata_response(raw)
+    parsed = _generate_metadata_fields(prompt)
     title, description, tags = _enforce_limits(
         parsed["TITLE"], parsed["DESCRIPTION"], parsed["TAGS"]
     )
