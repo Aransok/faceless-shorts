@@ -291,5 +291,21 @@
     "template": "programming",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-12T05:05:45.526961+00:00"
+  },
+  {
+    "video_id": "e378f8fc-d4ed-409b-ab00-e6bf367d9905",
+    "youtube_video_id": "YMknqKPWjPs",
+    "uploaded_at": "2026-09-12T10:09:32.608280+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-12T13:28:26.021366+00:00"
+  },
+  {
+    "video_id": "f3d23398-0e76-4f99-8b5e-ebdd2f1245bb",
+    "youtube_video_id": "6RIxzJPk98E",
+    "uploaded_at": "2026-09-12T10:19:17.231725+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-12T17:19:40.153144+00:00"
   }
 ]
