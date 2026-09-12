@@ -133,10 +133,15 @@ def _call_claude_code(prompt: str) -> str:
         shell=(os.name == "nt"),
     )
     if result.returncode != 0:
-        combined_output = f"{result.stdout}\n{result.stderr}"
+        combined_output = f"{result.stdout}\n{result.stderr}".strip()
         if _USAGE_LIMIT_PATTERN.search(combined_output):
-            raise ClaudeUsageLimitError(f"claude CLI usage limit reached: {combined_output.strip()[:500]}")
-        raise RuntimeError(f"claude CLI failed (exit {result.returncode}): {result.stderr}")
+            raise ClaudeUsageLimitError(f"claude CLI usage limit reached: {combined_output[:500]}")
+        # Real production failure (2026-09-11): this raised with an EMPTY
+        # message because the CLI's actual error text landed on stdout,
+        # not stderr, and only stderr was ever included here -- made the
+        # real cause undiagnosable from the workflow log alone. Include
+        # both.
+        raise RuntimeError(f"claude CLI failed (exit {result.returncode}): {combined_output[:500] or '(no output captured)'}")
     return result.stdout
 
 
