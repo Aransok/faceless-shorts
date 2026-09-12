@@ -159,26 +159,47 @@ def _chip_row(
         x += w + gap
 
 
-def _render_memory_beat(round_data: dict, revealed: bool, round_type: str) -> Image.Image:
+def _render_memory_beat(round_data: dict, phase: str, round_type: str) -> Image.Image:
+    """Real bug fixed here (2026-09-12, caught by the owner watching the
+    actual rendered episode): the old two-phase (question/reveal) version
+    shared by every other round type showed the FULL icon sequence during
+    the "was X one of them?" question -- the answer was sitting right
+    there on screen the entire time, so the round tested nothing. It also
+    never showed the sequence at all during the "rule" beat (the "watch
+    closely" moment), since that beat_type fell through to a plain-text
+    card instead of reaching this renderer in the first place.
+
+    Three real phases now: "study" (the actual memorize moment -- shows
+    the real sequence, no question yet), "recall" (the actual question --
+    sequence hidden, only the target chip shows, so answering it requires
+    genuinely remembering), "reveal" (sequence back, target chip shows
+    the real answer)."""
     frame = _render_base_panel()
     draw = ImageDraw.Draw(frame)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
     cy_mid = (cy0 + cy1) // 2
 
-    seq_font = _font(FONT_PATH, CHIP_FONT_SIZE)
-    sequence = round_data["sequence"]
-    seq_entries = [(icon.upper(), CARD_BG, TEXT_COLOR) for icon in sequence]
-    _chip_row(draw, cy_mid - 90, seq_entries, seq_font)
+    show_sequence = phase in ("study", "reveal")
+    if show_sequence:
+        seq_font = _font(FONT_PATH, CHIP_FONT_SIZE)
+        sequence = round_data["sequence"]
+        seq_entries = [(icon.upper(), CARD_BG, TEXT_COLOR) for icon in sequence]
+        _chip_row(draw, cy_mid - 90, seq_entries, seq_font)
+
+    if phase == "study":
+        return frame
 
     target_font = _font(FONT_BOLD_PATH, VALUE_FONT_SIZE)
     target_label = round_data["target"].upper()
-    if not revealed:
+    if phase == "recall":
         target_entries = [(f"{target_label}  ?", CARD_BG, TEXT_COLOR)]
+        cy_target = cy_mid  # center it -- the sequence row above is hidden
     else:
         answer = round_data["correct_answer"].upper()
         target_entries = [(f"{target_label}  -  {answer}", REVEAL_BG, REVEAL_TEXT)]
-    _chip_row(draw, cy_mid + 60, target_entries, target_font, pad_x=40, pad_y=26)
+        cy_target = cy_mid + 60
+    _chip_row(draw, cy_target, target_entries, target_font, pad_x=40, pad_y=26)
     return frame
 
 
@@ -340,19 +361,30 @@ def _render_prediction_beat(round_data, revealed, round_type):
     )
 
 
+# memory is deliberately NOT in this dict -- unlike every other round
+# type here (a plain 2-phase question/reveal), it needs a real 3rd phase
+# (the actual memorize moment) with content that's hidden, not just
+# relabeled, during the question -- see _render_memory_beat's docstring
+# for the real bug this fixes. Handled as its own branch in
+# _render_beat_frame() below instead of forcing it through the shared
+# revealed:bool signature.
 _GAMEPLAY_RENDERERS = {
-    "memory": _render_memory_beat,
     "what_changed": _render_what_changed_beat,
     "risk_or_safe": _render_risk_or_safe_beat,
     "higher_or_lower": _render_higher_or_lower_beat,
     "prediction": _render_prediction_beat,
 }
 
+_MEMORY_PHASE_BY_BEAT = {"rule": "study", "gameplay": "recall", "reveal": "reveal"}
+
 
 def _render_beat_frame(step: dict) -> Image.Image:
     round_type = step["round_type"]
     beat_type = step["beat_type"]
     round_data = json.loads(step["round_data_json"]) if step["round_data_json"] else None
+
+    if round_type == "memory" and round_data and beat_type in _MEMORY_PHASE_BY_BEAT:
+        return _render_memory_beat(round_data, _MEMORY_PHASE_BY_BEAT[beat_type], round_type)
 
     if beat_type in ("gameplay", "reveal") and round_type in _GAMEPLAY_RENDERERS and round_data:
         revealed = beat_type == "reveal"
