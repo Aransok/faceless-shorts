@@ -2025,6 +2025,51 @@ review only) -- roughly a 50% cut with zero change to script quality,
 since the two calls removed were never quality-determining in the
 first place.
 
+## Real bug: game_night's memory round showed its own answer (2026-09-12)
+
+Fixed the game_night dispatch gap above, re-ran it, and it uploaded for
+real (a full 5-round episode, https://youtube.com/watch?v=X-hjdVJ18jQ).
+Owner watched it and caught a real, concrete bug from the actual
+rendered frame: the memory round's "gameplay" beat ("was the leaf one
+of them?") rendered the FULL 6-icon sequence on screen at the same time
+as the question -- the answer was trivially visible just by reading the
+screen, defeating the entire point of a memory round. Worse, the "rule"
+beat (the actual "watch closely" memorize moment) never showed the
+sequence at all -- that beat_type fell through to a plain-text card
+instead of ever reaching the renderer that draws icon chips. The two
+halves of the round were backwards: nothing to memorize during the
+"watch" beat, the full answer during the "guess" beat.
+
+Root cause: `_render_memory_beat()` only had 2 phases (question/reveal,
+shared with every other round type's renderer), always drawing the
+sequence regardless of phase. Fixed by giving memory a real 3rd phase
+instead of forcing it through the shared 2-phase signature: "study"
+(rule beat -- shows the real sequence, no question yet), "recall"
+(gameplay beat -- sequence hidden entirely, only the target chip shows,
+so answering actually requires remembering), "reveal" (sequence back +
+real answer highlighted, unchanged from before). `_render_beat_frame()`
+now routes memory's rule/gameplay/reveal beats through a dedicated
+`_MEMORY_PHASE_BY_BEAT` map instead of the shared `_GAMEPLAY_RENDERERS`
+dict every other round type still uses (those all remain genuinely
+2-phase -- this was memory's own bug, not a shared one).
+
+6 new tests (`tests/test_visuals_game.py`) -- 4 mocked dispatch tests
+(each beat_type routes to the right phase; non-memory-relevant beats
+never touch the memory renderer) plus 2 real (unmocked) Pillow tests
+asserting on actual rendered pixels that the sequence row is genuinely
+absent during "recall", not just relabeled. Real Pillow calls are fast,
+deterministic, local image drawing -- not a network/API call, so this
+stays within CLAUDE.md's "no real network/API calls in tests" rule.
+183 tests total.
+
+Not yet fixed, deliberately out of scope for this pass: game_night still
+has no deliberate viewer-thinking pause time anywhere (see the
+"game night is only ~1-2 min" finding above) -- this fix makes the
+memory round's content correct, not the format's overall pacing. That
+remains the real argument for finishing the Family Game Night
+integration instead of continuing to patch this older format's
+individual rounds one at a time.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
