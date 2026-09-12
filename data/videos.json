@@ -307,5 +307,13 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-12T17:19:40.153144+00:00"
+  },
+  {
+    "video_id": "51a03ec1-be28-43b9-aa55-08086bcd07f2",
+    "youtube_video_id": "5eJH99fM1jM",
+    "uploaded_at": "2026-09-12T12:37:30.211165+00:00",
+    "template": "quiz_longform",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-12T20:08:12.317143+00:00"
   }
 ]
