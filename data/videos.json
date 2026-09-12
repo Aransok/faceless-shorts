@@ -363,5 +363,13 @@
     "template": "programming",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-13T12:57:19.258264+00:00"
+  },
+  {
+    "video_id": "a105f8c0-c5f7-4b24-9cdd-d946bc11a45e",
+    "youtube_video_id": "q4YkSnFvf_4",
+    "uploaded_at": "2026-09-12T18:08:17.520734+00:00",
+    "template": "quiz_longform",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-13T16:07:23.297353+00:00"
   }
 ]
