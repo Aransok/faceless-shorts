@@ -38,16 +38,20 @@ if not _had_real_pipeline_upload:
 class RunDailyTemplateSequenceTest(unittest.TestCase):
     def setUp(self):
         self.plan_patcher = patch.object(orchestrator, "plan")
+        self.plan_game_night_patcher = patch.object(orchestrator, "plan_game_night")
         self.run_video_patcher = patch.object(orchestrator, "run_video_to_completion")
         self.list_by_status_patcher = patch.object(orchestrator, "list_by_status", return_value=[])
         self.mock_plan = self.plan_patcher.start()
+        self.mock_plan_game_night = self.plan_game_night_patcher.start()
         self.mock_run_video = self.run_video_patcher.start()
         self.list_by_status_patcher.start()
         self.addCleanup(self.plan_patcher.stop)
+        self.addCleanup(self.plan_game_night_patcher.stop)
         self.addCleanup(self.run_video_patcher.stop)
         self.addCleanup(self.list_by_status_patcher.stop)
 
         self.mock_plan.side_effect = lambda template, topic_hint=None: f"vid-{template}"
+        self.mock_plan_game_night.side_effect = lambda: "vid-game_night"
         self.mock_run_video.side_effect = lambda video_id: {
             "video_id": video_id, "template": "x", "status": "uploaded", "error": None,
         }
@@ -62,6 +66,17 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         # explicit templates list, only that list's length matters.
         orchestrator.run_daily(count=99, templates=["programming"])
         self.assertEqual(self.mock_plan.call_count, 1)
+
+    def test_game_night_template_dispatches_to_its_own_planner(self):
+        # Real gap found 2026-09-12: run_daily() had no path to CREATE a
+        # new game_night video at all -- plan()'s TEMPLATES dict never
+        # included it, so `--templates game_night` failed instantly with
+        # "unknown template: 'game_night'" even though _advance_one_stage
+        # already knew how to advance an existing one. plan_game_night()
+        # takes no topic_hint (game_night has no topic/hint concept).
+        orchestrator.run_daily(count=1, templates=["game_night"])
+        self.mock_plan_game_night.assert_called_once_with()
+        self.mock_plan.assert_not_called()
 
     def test_no_templates_falls_back_to_default_rotation_by_count(self):
         orchestrator.run_daily(count=3)

@@ -179,7 +179,17 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
         print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()
         try:
-            video_id = plan(template, topic_hint=topic_hints.get(template))
+            # game_night has its own planner (round selection + verified
+            # claims, no topic/hint concept) rather than plan()'s
+            # template-prompt-file flow -- real gap found 2026-09-12: this
+            # dispatch didn't exist at all, so a `--templates game_night`
+            # run failed instantly with "unknown template: 'game_night'"
+            # (plan()'s TEMPLATES dict only ever had facts/programming/
+            # sauce_recipe) even though _advance_one_stage() already knew
+            # how to advance an EXISTING game_night video through voice/
+            # visuals/upload -- there was just no way to ever create one
+            # via run_daily() in the first place.
+            video_id = plan_game_night() if template == "game_night" else plan(template, topic_hint=topic_hints.get(template))
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"
             print(f"plan() failed for {template}: {error_message}")
