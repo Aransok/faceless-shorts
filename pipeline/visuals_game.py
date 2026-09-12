@@ -17,6 +17,7 @@ anyone. See ROADMAP.md Phase 16.
 from __future__ import annotations
 
 import json
+import math
 import shutil
 import subprocess
 import tempfile
@@ -77,6 +78,27 @@ ROUND_LABELS = {
     "prediction": "PREDICTION",
 }
 
+# Real feedback (2026-09-12, both the owner and an outside review): every
+# round type rendered with the exact same brand-teal-to-indigo border, so
+# the whole episode looked like one repeating screen regardless of which
+# game was playing -- "doesn't feel like a game show." A full illustrated-
+# scene visual overhaul is a much bigger project (deliberately deferred,
+# see ROADMAP.md); this is the fast, real part of that fix that's
+# actually shippable now -- each round type gets its own accent gradient,
+# so scrubbing through an episode actually LOOKS different round to
+# round, not just narrated differently. Colors chosen to fit each round's
+# actual feel (memory: warm/attention, what_changed: cool/observational,
+# risk_or_safe: danger-to-safe gradient, higher_or_lower: a versus-feel
+# violet, prediction: a forward-looking green) rather than picked
+# arbitrarily.
+ROUND_ACCENT_COLORS: dict[str | None, tuple[tuple[int, int, int], tuple[int, int, int]]] = {
+    "memory": ((245, 158, 11), (217, 70, 40)),
+    "what_changed": ((6, 182, 212), (20, 184, 166)),
+    "risk_or_safe": ((220, 38, 38), (245, 158, 11)),
+    "higher_or_lower": ((99, 102, 241), (168, 85, 247)),
+    "prediction": ((16, 185, 129), (20, 184, 166)),
+}
+
 
 def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(str(path), size)
@@ -89,13 +111,14 @@ def _text_center_y(draw, text, font, cy):
     return cy - (ascent + descent) / 2 - descent / 2 + descent
 
 
-def _render_base_panel() -> Image.Image:
+def _render_base_panel(round_type: str | None = None) -> Image.Image:
     frame = Image.new("RGB", (WIDTH, HEIGHT), FRAME_BG)
     draw = ImageDraw.Draw(frame)
     x0, y0, x1, y1 = PANEL_BOX
+    color_start, color_end = ROUND_ACCENT_COLORS.get(round_type, (BRAND_TEAL, BRAND_INDIGO))
     paste_gradient_rounded_rect(
         frame, (x0 - BORDER_WIDTH, y0 - BORDER_WIDTH, x1 + BORDER_WIDTH, y1 + BORDER_WIDTH),
-        PANEL_RADIUS + BORDER_WIDTH, BRAND_TEAL, BRAND_INDIGO,
+        PANEL_RADIUS + BORDER_WIDTH, color_start, color_end,
     )
     draw.rounded_rectangle([x0, y0, x1, y1], radius=PANEL_RADIUS, fill=PANEL_BG)
     return frame
@@ -124,7 +147,7 @@ def _content_area() -> tuple[int, int, int, int]:
 def _render_text_beat(script_text: str, round_type: str | None) -> Image.Image:
     """intro/rule/countdown/suspense/outro beats -- a centered text card,
     same shape as visuals_quiz.py's intro/outro card."""
-    frame = _render_base_panel()
+    frame = _render_base_panel(round_type)
     draw = ImageDraw.Draw(frame)
     _draw_round_label(draw, round_type)
 
@@ -159,6 +182,162 @@ def _chip_row(
         x += w + gap
 
 
+# Real feedback (2026-09-12, both the owner and an outside review): the
+# memory round was "basically words on screen" -- a text chip reading
+# "LEAF" is not a visual memory challenge, it's a reading comprehension
+# one. Draw actual glyph shapes for ICON_POOL (pipeline/games/memory.py)
+# instead of text labels -- simple Pillow polygon/ellipse primitives, no
+# external image assets needed, one small function per icon rather than
+# one generic shape, so each is genuinely recognizable at a glance
+# (which is the actual point of a memory game).
+def _draw_star(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    points = []
+    for i in range(10):
+        angle = math.pi / 2 + i * math.pi / 5
+        rad = r if i % 2 == 0 else r * 0.42
+        points.append((cx + rad * math.cos(angle), cy - rad * math.sin(angle)))
+    draw.polygon(points, fill=color)
+
+
+def _draw_diamond(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    draw.polygon([(cx, cy - r), (cx + r, cy), (cx, cy + r), (cx - r, cy)], fill=color)
+
+
+def _draw_heart(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    lobe = r * 0.58
+    draw.ellipse([cx - r, cy - r * 0.5 - lobe * 0.3, cx, cy - r * 0.5 + lobe * 1.2], fill=color)
+    draw.ellipse([cx, cy - r * 0.5 - lobe * 0.3, cx + r, cy - r * 0.5 + lobe * 1.2], fill=color)
+    draw.polygon([(cx - r, cy - r * 0.15), (cx + r, cy - r * 0.15), (cx, cy + r)], fill=color)
+
+
+def _draw_crown(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    base_y = cy + r * 0.5
+    draw.polygon(
+        [
+            (cx - r, base_y), (cx - r, cy - r * 0.1), (cx - r * 0.55, cy + r * 0.25),
+            (cx - r * 0.28, cy - r * 0.7), (cx, cy + r * 0.05), (cx + r * 0.28, cy - r * 0.7),
+            (cx + r * 0.55, cy + r * 0.25), (cx + r, cy - r * 0.1), (cx + r, base_y),
+        ],
+        fill=color,
+    )
+
+
+def _draw_moon(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color, bg_color) -> None:
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=color)
+    offset = r * 0.55
+    draw.ellipse([cx - r + offset, cy - r, cx + r + offset, cy + r], fill=bg_color)
+
+
+def _draw_sun(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    core_r = r * 0.55
+    width = max(2, int(r * 0.12))
+    for i in range(8):
+        angle = i * math.pi / 4
+        x1, y1 = cx + core_r * 1.1 * math.cos(angle), cy + core_r * 1.1 * math.sin(angle)
+        x2, y2 = cx + r * math.cos(angle), cy + r * math.sin(angle)
+        draw.line([(x1, y1), (x2, y2)], fill=color, width=width)
+    draw.ellipse([cx - core_r, cy - core_r, cx + core_r, cy + core_r], fill=color)
+
+
+def _draw_snowflake(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    width = max(2, int(r * 0.1))
+    for i in range(6):
+        angle = i * math.pi / 3
+        x2, y2 = cx + r * math.cos(angle), cy + r * math.sin(angle)
+        draw.line([(cx, cy), (x2, y2)], fill=color, width=width)
+        tick_r, tick_len = r * 0.65, r * 0.2
+        tx, ty = cx + tick_r * math.cos(angle), cy + tick_r * math.sin(angle)
+        perp = angle + math.pi / 2
+        draw.line(
+            [
+                (tx - tick_len * math.cos(perp), ty - tick_len * math.sin(perp)),
+                (tx + tick_len * math.cos(perp), ty + tick_len * math.sin(perp)),
+            ],
+            fill=color, width=width,
+        )
+
+
+def _draw_fire(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    draw.polygon(
+        [
+            (cx, cy - r), (cx + r * 0.55, cy - r * 0.1), (cx + r * 0.35, cy + r * 0.5),
+            (cx, cy + r), (cx - r * 0.35, cy + r * 0.5), (cx - r * 0.55, cy - r * 0.1),
+        ],
+        fill=color,
+    )
+
+
+def _draw_lightning(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    draw.polygon(
+        [
+            (cx + r * 0.15, cy - r), (cx - r * 0.35, cy + r * 0.05), (cx, cy + r * 0.05),
+            (cx - r * 0.15, cy + r), (cx + r * 0.4, cy - r * 0.15), (cx + r * 0.05, cy - r * 0.15),
+        ],
+        fill=color,
+    )
+
+
+def _draw_skull(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color, bg_color) -> None:
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r * 0.6], fill=color)
+    draw.rectangle([cx - r * 0.6, cy + r * 0.1, cx + r * 0.6, cy + r * 0.6], fill=color)
+    eye_r = r * 0.2
+    draw.ellipse([cx - r * 0.5 - eye_r, cy - eye_r * 0.5, cx - r * 0.5 + eye_r, cy + eye_r * 1.5], fill=bg_color)
+    draw.ellipse([cx + r * 0.5 - eye_r, cy - eye_r * 0.5, cx + r * 0.5 + eye_r, cy + eye_r * 1.5], fill=bg_color)
+
+
+def _draw_rocket(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color) -> None:
+    draw.polygon([(cx, cy - r), (cx - r * 0.4, cy), (cx + r * 0.4, cy)], fill=color)
+    draw.rectangle([cx - r * 0.35, cy, cx + r * 0.35, cy + r * 0.7], fill=color)
+    draw.polygon([(cx - r * 0.35, cy + r * 0.4), (cx - r * 0.65, cy + r), (cx - r * 0.35, cy + r * 0.7)], fill=color)
+    draw.polygon([(cx + r * 0.35, cy + r * 0.4), (cx + r * 0.65, cy + r), (cx + r * 0.35, cy + r * 0.7)], fill=color)
+
+
+def _draw_leaf(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, color, bg_color) -> None:
+    draw.ellipse([cx - r * 0.5, cy - r, cx + r * 0.5, cy + r], fill=color)
+    draw.line([(cx, cy - r * 0.8), (cx, cy + r * 0.8)], fill=bg_color, width=max(2, int(r * 0.08)))
+
+
+_ICON_DRAWERS = {
+    "star": lambda d, cx, cy, r, c, bg: _draw_star(d, cx, cy, r, c),
+    "diamond": lambda d, cx, cy, r, c, bg: _draw_diamond(d, cx, cy, r, c),
+    "heart": lambda d, cx, cy, r, c, bg: _draw_heart(d, cx, cy, r, c),
+    "crown": lambda d, cx, cy, r, c, bg: _draw_crown(d, cx, cy, r, c),
+    "moon": _draw_moon,
+    "sun": lambda d, cx, cy, r, c, bg: _draw_sun(d, cx, cy, r, c),
+    "snowflake": lambda d, cx, cy, r, c, bg: _draw_snowflake(d, cx, cy, r, c),
+    "fire": lambda d, cx, cy, r, c, bg: _draw_fire(d, cx, cy, r, c),
+    "lightning bolt": lambda d, cx, cy, r, c, bg: _draw_lightning(d, cx, cy, r, c),
+    "skull": _draw_skull,
+    "rocket": lambda d, cx, cy, r, c, bg: _draw_rocket(d, cx, cy, r, c),
+    "leaf": _draw_leaf,
+}
+
+
+def _draw_icon(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, icon_name: str, color, bg_color) -> None:
+    drawer = _ICON_DRAWERS.get(icon_name)
+    if drawer is None:
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=color)  # unrecognized icon name -- plain circle
+        return
+    drawer(draw, cx, cy, r, color, bg_color)
+
+
+def _icon_badge_row(draw: ImageDraw.ImageDraw, cy: float, icon_names: list[str], badge_r: float = 70, gap: float = 26) -> None:
+    """A row of circular badges, each holding a real drawn icon glyph
+    plus a small caption underneath -- the memory round's sequence,
+    replacing what used to be a row of plain text-word chips."""
+    label_font = _font(FONT_PATH, 22)
+    badge_d = badge_r * 2
+    total_w = len(icon_names) * badge_d + gap * max(0, len(icon_names) - 1)
+    x = WIDTH / 2 - total_w / 2 + badge_r
+    for name in icon_names:
+        draw.ellipse([x - badge_r, cy - badge_r, x + badge_r, cy + badge_r], fill=CARD_BG)
+        _draw_icon(draw, x, cy, badge_r * 0.62, name, TEXT_COLOR, CARD_BG)
+        label = name.upper()
+        lw = draw.textlength(label, font=label_font)
+        draw.text((x - lw / 2, cy + badge_r + 14), label, font=label_font, fill=DIM_TEXT)
+        x += badge_d + gap
+
+
 def _render_memory_beat(round_data: dict, phase: str, round_type: str) -> Image.Image:
     """Real bug fixed here (2026-09-12, caught by the owner watching the
     actual rendered episode): the old two-phase (question/reveal) version
@@ -174,7 +353,7 @@ def _render_memory_beat(round_data: dict, phase: str, round_type: str) -> Image.
     sequence hidden, only the target chip shows, so answering it requires
     genuinely remembering), "reveal" (sequence back, target chip shows
     the real answer)."""
-    frame = _render_base_panel()
+    frame = _render_base_panel(round_type)
     draw = ImageDraw.Draw(frame)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
@@ -182,29 +361,32 @@ def _render_memory_beat(round_data: dict, phase: str, round_type: str) -> Image.
 
     show_sequence = phase in ("study", "reveal")
     if show_sequence:
-        seq_font = _font(FONT_PATH, CHIP_FONT_SIZE)
-        sequence = round_data["sequence"]
-        seq_entries = [(icon.upper(), CARD_BG, TEXT_COLOR) for icon in sequence]
-        _chip_row(draw, cy_mid - 90, seq_entries, seq_font)
+        _icon_badge_row(draw, cy_mid - 100, round_data["sequence"])
 
     if phase == "study":
         return frame
 
-    target_font = _font(FONT_BOLD_PATH, VALUE_FONT_SIZE)
-    target_label = round_data["target"].upper()
-    if phase == "recall":
-        target_entries = [(f"{target_label}  ?", CARD_BG, TEXT_COLOR)]
-        cy_target = cy_mid  # center it -- the sequence row above is hidden
-    else:
-        answer = round_data["correct_answer"].upper()
-        target_entries = [(f"{target_label}  -  {answer}", REVEAL_BG, REVEAL_TEXT)]
-        cy_target = cy_mid + 60
-    _chip_row(draw, cy_target, target_entries, target_font, pad_x=40, pad_y=26)
+    target_r = 90
+    target_cy = cy_mid if phase == "recall" else cy_mid + 150
+    target_cx = WIDTH / 2 - 150
+    badge_color = REVEAL_BG if phase == "reveal" else CARD_BG
+    icon_color = REVEAL_TEXT if phase == "reveal" else TEXT_COLOR
+    draw.ellipse(
+        [target_cx - target_r, target_cy - target_r, target_cx + target_r, target_cy + target_r],
+        fill=badge_color,
+    )
+    _draw_icon(draw, target_cx, target_cy, target_r * 0.62, round_data["target"], icon_color, badge_color)
+
+    suffix = "?" if phase == "recall" else round_data["correct_answer"].upper()
+    suffix_font = _font(FONT_BOLD_PATH, VALUE_FONT_SIZE)
+    text_color = REVEAL_TEXT if phase == "reveal" else TEXT_COLOR
+    text_y = _text_center_y(draw, suffix, suffix_font, target_cy)
+    draw.text((target_cx + target_r + 34, text_y), suffix, font=suffix_font, fill=text_color)
     return frame
 
 
 def _render_what_changed_beat(round_data: dict, revealed: bool, round_type: str) -> Image.Image:
-    frame = _render_base_panel()
+    frame = _render_base_panel(round_type)
     draw = ImageDraw.Draw(frame)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
@@ -252,7 +434,7 @@ def _render_risk_or_safe_beat(round_data: dict, revealed: bool, round_type: str)
     highlighted neutrally once the real weighted draw is known, labeled
     with what actually happened (HIT/MISS), not a win/loss judgment of
     anyone."""
-    frame = _render_base_panel()
+    frame = _render_base_panel(round_type)
     draw = ImageDraw.Draw(frame)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
@@ -292,7 +474,7 @@ def _render_comparison_beat(
     """Shared layout for higher_or_lower and prediction -- both are a
     "known value" vs. "guess this one" versus card, just with different
     field names in round_data."""
-    frame = _render_base_panel()
+    frame = _render_base_panel(round_type)
     draw = ImageDraw.Draw(frame)
     _draw_round_label(draw, round_type)
     cx0, cy0, cx1, cy1 = _content_area()
