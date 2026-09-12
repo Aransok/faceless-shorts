@@ -2070,6 +2070,62 @@ remains the real argument for finishing the Family Game Night
 integration instead of continuing to patch this older format's
 individual rounds one at a time.
 
+## game_night scaled to a real 10+ minute episode (2026-09-12)
+
+Owner's explicit ask after watching two rendered episodes and getting
+independent outside review (ChatGPT correctly diagnosed the deeper
+"doesn't feel like a game show" visual problem -- see that discussion --
+but a full visual-asset-engine rebuild is a multi-week project; this
+pass is the scoped, shippable-today piece): "good and working video at
+least 10 mins." Two real, load-bearing changes:
+
+1. **30 rounds instead of 5**, via a new WEIGHTED pool
+   (`plan_game.py`'s `LONGFORM_ROUND_POOL`) instead of the plain 5-type
+   shuffle. Deliberately NOT an even split across all 5 round types --
+   memory/what_changed/risk_or_safe are fully algorithmic (zero LLM
+   calls) while higher_or_lower/prediction each cost real Claude calls
+   (a claim generation + a fact-verification call per attempt, up to
+   `VERIFY_MAX_ATTEMPTS` retries). An even 30-round split would mean 12
+   LLM-touching rounds (a real ~6x cost jump for one episode); this pool
+   caps LLM-touching rounds at 6 regardless of total round count, so the
+   extra length comes almost entirely from free content -- roughly the
+   Claude cost of one and a half Shorts videos for a full 10+ minute
+   episode, not six.
+
+2. **Raised `GAME_NIGHT_MIN_BEAT_SECONDS` floors** (`voice.py`):
+   countdown 1.5->2.5s, gameplay 3.5->6.0s, reveal 4.0->5.0s, plus a new
+   2.5s floor for "suspense" (previously unfloored -- that beat, e.g.
+   "let's find out...", used to vanish in well under a second). This is
+   the fix for the format feeling rushed, not just short: gameplay in
+   particular is the actual moment a viewer would try to guess before
+   the reveal.
+
+**Real bug found and fixed while building this**: `select_rounds()`'s
+count<=len(pool) branch was a bare shuffle with no adjacency check,
+silently relying on every caller passing an all-distinct pool (true
+until now -- only the 5 distinct `ROUND_TYPES` ever existed as a pool).
+A first attempt at a fix (retry-shuffling up to 200 times, checking each
+result) still failed in practice against the REAL production pool
+(three types each ~27% of 30 entries) -- random retries aren't reliable
+odds against multiple large, similarly-sized groups, caught by the new
+test suite before ever reaching a real run. Replaced with a proper
+guaranteed-correct algorithm (a max-heap "cooldown" rearrangement,
+the standard solution to this exact problem) instead of hoping a random
+shuffle gets lucky, with a random per-type tiebreaker so the result
+still varies episode to episode rather than following a fixed pattern.
+
+14 new tests across `tests/test_games_base.py` (the select_rounds fix,
+including the exact production pool composition) and
+`tests/test_plan_game.py` (the pool's cost-cap property and round
+count). 192 tests total.
+
+Not yet done: this addresses length and pacing, not the deeper visual
+critique (every round still renders as a text/chip card on the same
+dark panel, regardless of game type) -- that's the larger, separately-
+scoped "visual asset engine" idea from the outside review, intentionally
+deferred rather than attempted in the same pass as a hard duration
+requirement.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

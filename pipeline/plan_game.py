@@ -22,7 +22,29 @@ from pipeline.rotation import pick_rotating
 from pipeline.state import create_video, create_video_steps, get_video, get_video_steps, update_video
 
 TEMPLATE = "game_night"
-DEFAULT_ROUND_COUNT = 5
+
+# Real owner feedback (2026-09-12): a 5-round episode rendered to only
+# ~2 minutes -- nowhere near "at least 10 mins" long-form. Raised to 30
+# rounds, via a WEIGHTED pool rather than the plain 5-type ROUND_TYPES
+# shuffle, specifically to keep the real cost impact small:
+# memory/what_changed/risk_or_safe are fully algorithmic (zero LLM
+# calls), while higher_or_lower/prediction each cost real Claude calls
+# (a claim generation + a fact-verification call, per attempt, up to
+# VERIFY_MAX_ATTEMPTS retries -- see games/base.py). Naively cycling all
+# 5 types evenly across 30 rounds would mean 12 LLM-touching rounds
+# instead of the old episode's 2 -- a real ~6x cost jump for one
+# episode. This pool caps LLM-touching rounds at 6 regardless of
+# DEFAULT_ROUND_COUNT, getting the extra length almost entirely from
+# free content instead -- roughly the Claude cost of one and a half
+# Shorts videos for a full 10+ minute episode.
+LONGFORM_ROUND_POOL = (
+    "memory", "memory", "memory", "memory", "memory", "memory", "memory", "memory",
+    "what_changed", "what_changed", "what_changed", "what_changed", "what_changed", "what_changed", "what_changed", "what_changed",
+    "risk_or_safe", "risk_or_safe", "risk_or_safe", "risk_or_safe", "risk_or_safe", "risk_or_safe", "risk_or_safe", "risk_or_safe",
+    "higher_or_lower", "higher_or_lower", "higher_or_lower",
+    "prediction", "prediction", "prediction",
+)
+DEFAULT_ROUND_COUNT = len(LONGFORM_ROUND_POOL)
 
 _MODULES = {
     "higher_or_lower": higher_or_lower,
@@ -75,7 +97,7 @@ def _generate_one_round(round_type: str, avoid_topics: list[str], round_index: i
 
 
 def plan_game_night(round_count: int = DEFAULT_ROUND_COUNT) -> str:
-    round_types = select_rounds(round_count)
+    round_types = select_rounds(round_count, pool=LONGFORM_ROUND_POOL)
     avoid_topics: list[str] = []
     all_beats: list[dict] = []
     actual_round_types: list[str] = []
