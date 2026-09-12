@@ -92,6 +92,24 @@ _FACTS_FIELD_PATTERN = re.compile(
 _STEPS_COUNT_PATTERN = re.compile(r"STEPS:\s*(\d+)")
 
 
+class ClaudeUsageLimitError(RuntimeError):
+    """The claude CLI call failed specifically because the account's
+    usage limit was reached — distinct from any other CLI failure (bad
+    prompt, CLI not installed, transient crash) so call_llm() can fall
+    back to a free backend ONLY for this one specific, recoverable
+    condition instead of masking a real bug behind a lower-quality
+    fallback response."""
+
+
+# Matched against combined stdout+stderr of a failed claude CLI call.
+# Confirmed wording (2026-09) is "Claude AI usage limit reached" / "usage
+# limit reached", but matching the broader "usage limit" substring (and
+# "rate limit" for the API-key auth path, which phrases it differently)
+# is deliberately looser so a minor wording change upstream doesn't
+# silently stop the fallback from ever triggering.
+_USAGE_LIMIT_PATTERN = re.compile(r"usage limit|rate.?limit exceeded", re.IGNORECASE)
+
+
 def _call_claude_code(prompt: str) -> str:
     claude_path = shutil.which("claude")
     if claude_path is None:
@@ -115,6 +133,9 @@ def _call_claude_code(prompt: str) -> str:
         shell=(os.name == "nt"),
     )
     if result.returncode != 0:
+        combined_output = f"{result.stdout}\n{result.stderr}"
+        if _USAGE_LIMIT_PATTERN.search(combined_output):
+            raise ClaudeUsageLimitError(f"claude CLI usage limit reached: {combined_output.strip()[:500]}")
         raise RuntimeError(f"claude CLI failed (exit {result.returncode}): {result.stderr}")
     return result.stdout
 
@@ -131,13 +152,56 @@ def _call_ollama(prompt: str) -> str:
     return response.json()["response"]
 
 
-def call_llm(prompt: str) -> str:
-    backend = os.environ.get("LLM_BACKEND", "claude_code")
+def _call_groq(prompt: str) -> str:
+    """Groq's free-tier API (no credit card, rate-limited but genuinely
+    free — see CLAUDE.md's "no paid APIs by default" rule) serving open
+    Llama models. Used as the automatic fallback when LLM_FALLBACK_BACKEND
+    is set and the primary backend hits ClaudeUsageLimitError, since
+    ollama needs a locally-running model server this project's CI runner
+    doesn't have, but Groq is a plain hosted HTTPS API."""
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("GROQ_API_KEY not set — required for LLM_BACKEND/LLM_FALLBACK_BACKEND=groq")
+    model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+    response = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={"model": model, "messages": [{"role": "user", "content": prompt}]},
+        timeout=120,
+    )
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]
+
+
+def _dispatch_llm(backend: str, prompt: str) -> str:
     if backend == "claude_code":
         return _call_claude_code(prompt)
     if backend == "ollama":
         return _call_ollama(prompt)
-    raise ValueError(f"unknown LLM_BACKEND: {backend!r} (expected 'claude_code' or 'ollama')")
+    if backend == "groq":
+        return _call_groq(prompt)
+    raise ValueError(f"unknown LLM backend: {backend!r} (expected 'claude_code', 'ollama', or 'groq')")
+
+
+def call_llm(prompt: str) -> str:
+    """Dispatches to LLM_BACKEND (default claude_code). When the primary
+    backend is claude_code and it fails specifically because the account's
+    usage limit was hit, and LLM_FALLBACK_BACKEND names a different
+    backend, retries this one call on the fallback instead of failing the
+    whole video — a usage-limit day shouldn't mean zero videos produced
+    when a free backend could still generate them. Any other failure
+    (bad prompt, CLI missing, transient crash) is NOT treated as
+    fallback-eligible: only the usage-limit condition is a "this backend
+    is exhausted for today" signal, not "this backend is broken"."""
+    backend = os.environ.get("LLM_BACKEND", "claude_code")
+    try:
+        return _dispatch_llm(backend, prompt)
+    except ClaudeUsageLimitError as exc:
+        fallback = os.environ.get("LLM_FALLBACK_BACKEND", "").strip()
+        if not fallback or fallback == backend:
+            raise
+        print(f"warning: {exc} -- falling back to LLM_FALLBACK_BACKEND={fallback!r} for this call")
+        return _dispatch_llm(fallback, prompt)
 
 
 def _split_queries(raw: str) -> list[str]:
