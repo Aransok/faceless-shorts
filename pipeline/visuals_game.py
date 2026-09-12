@@ -594,7 +594,20 @@ def render_game_video(steps: list[dict], output_path: Path) -> Path:
         result = subprocess.run(
             [
                 ffmpeg_path, "-y", "-framerate", str(FPS), "-i", str(tmp_dir / "%05d.png"),
-                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_path),
+                # Real feedback (2026-09-12): video quality looked visibly
+                # compressed/blurry. Root cause: this encode (and every
+                # other one in the pipeline) never set a quality target,
+                # so libx264 fell back to its own default (CRF 23, preset
+                # medium) -- mediocre for flat-color/sharp-text/gradient
+                # content like this, which shows compression artifacts
+                # (banding, soft edges) more readily than photographic
+                # footage. assemble.py then re-encodes AGAIN on top of
+                # this (unavoidable -- it composites the CTA overlay),
+                # compounding the loss. CRF 18 is close to visually
+                # lossless; "slow" trades encode time for real quality at
+                # that CRF, which is the right trade for a batch job with
+                # no real-time constraint.
+                "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p", str(output_path),
             ],
             capture_output=True, text=True,
         )

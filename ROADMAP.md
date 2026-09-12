@@ -2173,6 +2173,37 @@ round types, narration-before-gameplay pacing untouched. This pass is
 real, visible, shippable-today progress on the visual-identity
 complaint specifically -- not the full outside-review rebuild.
 
+## Real, pipeline-wide video quality bug: no encode ever set a quality target (2026-09-12)
+
+Owner: "the quality is bad" (video/image quality specifically, not
+audio or script). Checked every `ffmpeg`/libx264 encode call in the
+whole pipeline -- ALL FIVE (`visuals_code.py`, `visuals_facts.py`,
+`visuals_quiz.py`, `visuals_game.py`, and `assemble.py`'s final mux)
+had `-c:v libx264` with no `-crf`/`-preset` at all, silently falling
+back to libx264's own defaults (CRF 23, preset medium) -- mediocre,
+and this project's flat-color/sharp-text/gradient content (chip cards,
+code panels, quiz cards, the new game_night icon badges) shows
+compression artifacts (banding, soft edges) far more readily than
+photographic B-roll footage does. `assemble.py`'s final pass then
+re-encodes AGAIN on top of whatever `visuals_*.py` already produced
+(unavoidable -- compositing the CTA overlay needs a real filter pass,
+not a stream copy), compounding the loss on every single video this
+channel has ever uploaded, not just game_night -- the game_night
+complaint just happened to surface a pipeline-wide gap.
+
+Added `-preset slow -crf 18` to all 5 encode calls -- CRF 18 is close
+to visually lossless, "slow" trades encode time for real quality at
+that CRF, the right trade for a batch job with no real-time
+constraint. Verified with a real local ffmpeg encode (not just reading
+the code) before shipping. No test coverage existed for these
+subprocess calls before or after (they're real ffmpeg invocations, not
+pure logic) -- 198 tests still pass unchanged.
+
+Not yet done: no A/B comparison of file size or actual before/after
+visual difference on a real uploaded video -- the next real render is
+what confirms this fixes the reported blurriness rather than just
+being a reasonable-sounding change.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

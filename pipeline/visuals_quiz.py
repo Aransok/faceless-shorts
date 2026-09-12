@@ -320,7 +320,11 @@ def render_quiz_video(steps: list[dict], output_path: Path) -> Path:
         result = subprocess.run(
             [
                 ffmpeg_path, "-y", "-framerate", str(FPS), "-i", str(tmp_dir / "%05d.png"),
-                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(output_path),
+                # See assemble.py's matching comment (real 2026-09-12
+                # quality complaint) -- no encode in this pipeline set a
+                # quality target before, defaulting to libx264's own CRF
+                # 23/preset medium.
+                "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p", str(output_path),
             ],
             capture_output=True, text=True,
         )

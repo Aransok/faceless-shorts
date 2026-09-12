@@ -619,7 +619,15 @@ def render_multi_step(
                 "-y",
                 "-framerate", str(FPS),
                 "-i", str(tmp_dir / "%05d.png"),
+                # See assemble.py/visuals_game.py's matching comment (real
+                # 2026-09-12 quality complaint) -- no encode in this
+                # pipeline set a quality target before, defaulting to
+                # libx264's own CRF 23/preset medium. CRF 18 is close to
+                # visually lossless; "slow" is the right trade for a batch
+                # job with no real-time constraint.
                 "-c:v", "libx264",
+                "-preset", "slow",
+                "-crf", "18",
                 "-pix_fmt", "yuv420p",
                 str(output_path),
             ],
