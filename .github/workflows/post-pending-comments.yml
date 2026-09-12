@@ -17,6 +17,16 @@ on:
 permissions:
   contents: write
 
+# Shares one concurrency group with every other workflow that writes
+# state.db -- see daily-shorts.yml's comment for the real 2026-09-12
+# incident this prevents (two state.db-writing workflows racing and
+# silently losing a run's state changes, including a completed upload).
+# Runs hourly, so it may occasionally queue behind a long daily-shorts
+# run -- an hour's delay on a comment post is a fine trade for never
+# corrupting/losing a state.db write.
+concurrency:
+  group: faceless-shorts-state-writer
+
 jobs:
   post-pending-comments:
     runs-on: ubuntu-latest

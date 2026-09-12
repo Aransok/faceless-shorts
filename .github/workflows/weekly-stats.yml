@@ -17,6 +17,18 @@ on:
 permissions:
   contents: write
 
+# Shares one concurrency group with every other workflow that writes
+# repo state (state.db writers: daily-shorts.yml, sync-analytics.yml,
+# weekly-quiz.yml, post-pending-comments.yml) -- see daily-shorts.yml's
+# comment for the real 2026-09-12 incident this class of fix prevents.
+# This workflow only commits reports/ (text, not a binary DB), so its
+# own push conflicts would actually auto-resolve via rebase, but there's
+# no reason to let it race the others just because it happens to be
+# safe to retry -- one shared queue is simpler than reasoning about
+# which combination of file types is safe to race.
+concurrency:
+  group: faceless-shorts-state-writer
+
 jobs:
   weekly-report:
     runs-on: ubuntu-latest

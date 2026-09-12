@@ -21,6 +21,13 @@ on:
 permissions:
   contents: write
 
+# Shares one concurrency group with every other workflow that writes
+# state.db -- see daily-shorts.yml's comment for the real 2026-09-12
+# incident this prevents (two state.db-writing workflows racing and
+# silently losing a run's state changes, including a completed upload).
+concurrency:
+  group: faceless-shorts-state-writer
+
 jobs:
   run-quiz:
     runs-on: ubuntu-latest

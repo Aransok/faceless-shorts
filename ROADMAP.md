@@ -1875,6 +1875,65 @@ failed). All mocked (subprocess.run, requests.post) -- no real
 network/CLI calls, per CLAUDE.md's testing rules. 163 tests total now
 passing.
 
+## Real incident: concurrent state.db writers raced and lost a run (2026-09-12)
+
+Triggered a manual Daily Shorts run (`workflow_dispatch`, run #17) and a
+Sync Analytics run within seconds of each other, since neither had run
+that day yet. Sync Analytics finished first and pushed its own
+state.db update. Daily Shorts' own run took ~20 minutes (real
+generation across 5 videos), and when its "Commit updated state" step
+tried to push at the end, the push was rejected (Sync Analytics' commit
+had landed in between) -- exactly the known race this step's retry loop
+was already built for (see the "Commit updated state" step's own
+comment, and the earlier real incident it references). But this time
+`git pull --rebase` hit a **binary-file conflict in state.db itself**
+(both runs independently modified the same SQLite file) -- and unlike a
+text-file conflict, there's no auto-mergeable resolution for that, so
+the rebase just aborted and the whole step exited 1, with the retry
+loop never getting a chance to run its 2nd/3rd attempt.
+
+**Real cost**: Daily Shorts run #17's ENTIRE state.db update was lost --
+never committed anywhere, since the runner's filesystem (holding the
+only copy of that locally-modified state.db) was torn down once the job
+ended. That update included a real, successful YouTube upload (1 of the
+run's 5 videos passed authenticity review and uploaded live) -- the
+video itself is genuinely live on the channel, but the pipeline's own
+record of it (its state.db row, its `data/videos.json` analytics-log
+entry, its `youtube_video_id`) no longer exists anywhere. It'll never
+get its view/like stats synced automatically, and future duplicate-topic
+checks won't know it exists. Not recoverable after the fact -- the
+mapping from its internal video_id to its real youtube_video_id only
+ever existed in the lost commit, never printed to the job log.
+
+**Real fix**: added `concurrency: {group: faceless-shorts-state-writer}`
+to all 5 workflows that write repo state (`daily-shorts.yml`,
+`sync-analytics.yml`, `weekly-quiz.yml`, `post-pending-comments.yml`,
+`weekly-stats.yml`) -- GitHub Actions queues every run sharing a
+concurrency group to run strictly one at a time instead of letting them
+race, which is the actual fix here, not a smarter retry: there IS no
+correct way to auto-merge two independent binary edits to the same
+SQLite file after the fact, so the right fix is making sure it never
+happens rather than handling it better when it does. The existing
+rebase-and-retry loops stay as-is (still correct for the case where a
+push lands from something outside this concurrency group, e.g. a manual
+commit), just no longer load-bearing for the common case.
+
+Also worth noting honestly: of run #17's 5 videos, 4 failed authenticity
+review (not lost, just genuinely rejected) -- 1 facts, 1 sauce_recipe
+each hit a same-point-repeated-twice pattern (the exact "Say it once"
+issue named in yesterday's persona.md hardening, still recurring), and
+another facts video invented a specific historical timeline detail (the
+exact "invented historical anecdote" pattern also named). The persona.md
+changes are a real, no-cost mitigation, but this run is early evidence
+they reduce, not eliminate, these patterns -- the reviewer is still
+correctly catching them, just at a rate (4/5 this run) that doesn't yet
+look meaningfully better than before the hardening. Small sample (n=5,
+noisy), not conclusive either way -- worth re-checking against a bigger
+batch before concluding the hardening needs more than persona.md can
+give it (e.g. a stronger per-template pet-peeves addition, or accepting
+this as the real cost of REVIEW_MAX_REWRITES=1's cost/convergence
+trade-off).
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

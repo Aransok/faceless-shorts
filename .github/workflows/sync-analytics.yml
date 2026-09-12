@@ -13,6 +13,16 @@ on:
 permissions:
   contents: write
 
+# Shares one concurrency group with every other workflow that writes
+# state.db (daily-shorts.yml, weekly-quiz.yml, post-pending-comments.yml,
+# weekly-stats.yml) so they queue strictly one at a time instead of
+# racing -- see daily-shorts.yml's comment for the real 2026-09-12
+# incident (this workflow's own push collided with daily-shorts.yml's
+# 20-minute-later one and silently lost that run's state changes,
+# including a real completed upload) that this fixes.
+concurrency:
+  group: faceless-shorts-state-writer
+
 jobs:
   sync-analytics:
     runs-on: ubuntu-latest
