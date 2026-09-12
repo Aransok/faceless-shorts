@@ -41,6 +41,26 @@ on:
 permissions:
   contents: write
 
+# Real incident (2026-09-12): this workflow and Sync Analytics both got
+# triggered within seconds of each other, and both write state.db.
+# Sync Analytics pushed first; this run's own 20-minute-later push was
+# rejected, and `git pull --rebase` can't auto-resolve a binary-file
+# conflict (state.db is SQLite, not text) -- it just aborts, so the
+# ENTIRE run's state changes were silently lost, including a real
+# YouTube upload that happened during the run (the video stayed live,
+# but the pipeline's own record of it never got committed). The retry
+# loop below was built for "another push landed, replay mine on top,"
+# not "the other push touched the exact same binary file" -- those are
+# a different failure mode with no auto-merge possible. Sharing one
+# concurrency group across every workflow that writes state.db (see the
+# matching block in sync-analytics.yml, weekly-quiz.yml,
+# post-pending-comments.yml, weekly-stats.yml) queues them to run
+# strictly one at a time instead of racing, which is the actual fix --
+# not a smarter retry, since there's no correct way to auto-merge two
+# independent binary edits after the fact.
+concurrency:
+  group: faceless-shorts-state-writer
+
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
