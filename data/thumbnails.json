@@ -269,5 +269,14 @@
     "video_id": "a105f8c0-c5f7-4b24-9cdd-d946bc11a45e",
     "variant": "question_panel",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/a105f8c0-c5f7-4b24-9cdd-d946bc11a45e_quiz_thumbnail.jpg"
+  },
+  {
+    "video_id": "c49e9592-a632-424a-a991-2bfa6d3d3f8e",
+    "chosen_timestamp": 3.5,
+    "candidate_timestamps": [
+      3.5,
+      1.8
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/c49e9592-a632-424a-a991-2bfa6d3d3f8e_thumbnail.jpg"
   }
 ]

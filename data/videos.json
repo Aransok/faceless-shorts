@@ -371,5 +371,13 @@
     "template": "quiz_longform",
     "approach": null,
     "scheduled_publish_at": "2026-09-13T16:07:23.297353+00:00"
+  },
+  {
+    "video_id": "c49e9592-a632-424a-a991-2bfa6d3d3f8e",
+    "youtube_video_id": "RDWPpJYQrs8",
+    "uploaded_at": "2026-09-12T19:24:51.480651+00:00",
+    "template": "game_night",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-13T19:27:28.994893+00:00"
   }
 ]

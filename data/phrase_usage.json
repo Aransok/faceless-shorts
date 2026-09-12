@@ -51,16 +51,16 @@
     "Reflective, like you're still a little surprised by it yourself."
   ],
   "game_night_intro": [
-    "Alright, it's game night. Let's see how this one goes."
+    "Welcome back for another round of game night."
   ],
   "game_night_outro": [
-    "That's a wrap on tonight's rounds. Stick around for more of these."
+    "That's the episode. Subscribe if you're into these."
   ],
   "music_track": [
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "save_for_later_early"
   ],
   "code_theme": [
     "solarized-dark",
