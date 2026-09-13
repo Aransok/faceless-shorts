@@ -13,9 +13,23 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.upload import _CTA_COMMENTS, _generate_cta_comment, post_cta_comment
+from pipeline.upload import _CTA_COMMENTS, CTA_COMMENT_PROBABILITY, _generate_cta_comment, post_cta_comment, upload
 
 _VIDEO = {"topic": "a topic", "hook": "a hook", "script_text": "a script"}
+
+_UPLOAD_VIDEO = {
+    "id": "vid-1",
+    "status": "approved",
+    "final_path": "/fake/path.mp4",
+    "template": "facts",
+    "title": "a title",
+    "description": "a description",
+    "tags": "tag1, tag2",
+    "topic": "a topic",
+    "hook": "a hook",
+    "script_text": "a script",
+    "approach": "storytelling_hook",
+}
 
 
 class GenerateCtaCommentTest(unittest.TestCase):
@@ -61,6 +75,54 @@ class PostCtaCommentTest(unittest.TestCase):
         insert_calls = youtube.commentThreads.return_value.insert.call_args_list
         posted_text = insert_calls[-1].kwargs["body"]["snippet"]["topLevelComment"]["snippet"]["textOriginal"]
         self.assertIn(posted_text, _CTA_COMMENTS)
+
+
+class UploadCtaCommentProbabilityTest(unittest.TestCase):
+    """Real feedback (2026-09-13): a CTA comment on literally every
+    upload read as spammy. upload() now rolls once per video and either
+    attempts a comment or marks the video done (cta_comment_posted=1)
+    without ever calling the comment machinery -- no real YouTube/LLM
+    calls, everything upload() touches is mocked."""
+
+    def setUp(self):
+        patchers = {
+            "get_video": mock.patch("pipeline.upload.get_video", return_value=dict(_UPLOAD_VIDEO)),
+            "path_exists": mock.patch("pipeline.upload.Path.exists", return_value=True),
+            "load_credentials": mock.patch("pipeline.upload._load_credentials"),
+            "build": mock.patch("pipeline.upload.build"),
+            "media_upload": mock.patch("pipeline.upload.MediaFileUpload"),
+            "update_video": mock.patch("pipeline.upload.update_video"),
+            "log_uploaded": mock.patch("pipeline.upload._log_uploaded_video"),
+            "upload_thumbnail": mock.patch("pipeline.upload.upload_thumbnail"),
+            "post_cta_comment": mock.patch("pipeline.upload.post_cta_comment"),
+        }
+        self.mocks = {name: p.start() for name, p in patchers.items()}
+        for p in patchers.values():
+            self.addCleanup(p.stop)
+
+        youtube_client = mock.Mock()
+        self.mocks["build"].return_value = youtube_client
+        self.mocks["build"].return_value.videos.return_value.insert.return_value.execute.return_value = {
+            "id": "yt-123"
+        }
+
+        env_patcher = mock.patch.dict("os.environ", {"UPLOAD_VISIBILITY": "public"})
+        env_patcher.start()
+        self.addCleanup(env_patcher.stop)
+
+    def test_losing_the_roll_skips_comment_and_marks_done_immediately(self):
+        with mock.patch("pipeline.upload.random.random", return_value=CTA_COMMENT_PROBABILITY):
+            # random() >= CTA_COMMENT_PROBABILITY -- losing roll
+            upload("vid-1")
+        self.mocks["post_cta_comment"].assert_not_called()
+        cta_calls = [c for c in self.mocks["update_video"].call_args_list if c.kwargs.get("cta_comment_posted") == 1]
+        self.assertEqual(len(cta_calls), 1)
+
+    def test_winning_the_roll_attempts_the_comment(self):
+        with mock.patch("pipeline.upload.random.random", return_value=0.0):
+            # random() < CTA_COMMENT_PROBABILITY (any positive probability) -- winning roll
+            upload("vid-1")
+        self.mocks["post_cta_comment"].assert_called_once()
 
 
 if __name__ == "__main__":

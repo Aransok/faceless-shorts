@@ -2241,6 +2241,37 @@ concurrency groups only govern Actions runs, not arbitrary git pushes
 -- this has to be an operating habit, documented here so it isn't
 forgotten between sessions.
 
+## CTA comments no longer post on every single video (2026-09-13)
+
+Owner reviewed the channel's real comment feed and flagged it: the
+bot's own CTA comment on literally every upload read as spammy/low-
+effort -- made worse by two different videos showing the exact same
+canned fallback line ("More of these coming — subscribed yet?") back
+to back, which is exactly what a real creator commenting for real
+never does.
+
+`upload.py`'s `upload()` now rolls a single coin flip per video
+(`CTA_COMMENT_PROBABILITY = 0.35`) right when the video goes live,
+before deciding whether to attempt a comment at all. A losing roll
+marks `cta_comment_posted=1` immediately (no comment ever attempted)
+so `post_pending_cta_comments()`'s later catch-up pass — which exists
+for scheduled/private uploads that go public hours later — never
+reconsiders it and effectively re-rolls the same video. The decision
+is made exactly once, shared by both the immediate-post path (public
+visibility) and the catch-up path, not independently in each.
+
+2 new tests (mocking every YouTube/LLM call `upload()` touches):
+losing the roll skips the comment and marks the video done
+immediately; winning it attempts the comment as before. 201 tests
+total.
+
+Not addressed here (owner's explicit call, scoped to frequency, not
+the duplicate-wording issue also visible in the same screenshot): the
+small canned fallback pool (`_CTA_COMMENTS`) can still coincidence
+into the same exact line on two different videos when the LLM-backed
+comment generation fails on both — a real, separate, smaller issue if
+it keeps showing up now that comments are 65% rarer overall.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
