@@ -379,5 +379,13 @@
     "template": "game_night",
     "approach": null,
     "scheduled_publish_at": "2026-09-13T19:27:28.994893+00:00"
+  },
+  {
+    "video_id": "408e5251-9323-4f18-817b-fabe6a705e28",
+    "youtube_video_id": "pHZDg4gpUvo",
+    "uploaded_at": "2026-09-13T10:37:58.055197+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T22:21:44.379686+00:00"
   }
 ]
