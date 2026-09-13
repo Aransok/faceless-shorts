@@ -15,7 +15,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from googleapiclient.errors import HttpError
 
-from pipeline.thumbnails import THUMBNAIL_SET_RETRY_DELAYS, upload_thumbnail
+from pipeline.thumbnails import (
+    QUIZ_ACCENT,
+    QUIZ_DARK_BG,
+    THUMBNAIL_SET_RETRY_DELAYS,
+    _render_thumb_challenge_hook,
+    _render_thumb_question_panel,
+    _render_thumb_stat_challenge,
+    upload_thumbnail,
+)
+
+_OLD_GRADIENT_COLORS = ((20, 184, 166), (99, 102, 241))  # pipeline.brand.TEAL, INDIGO
 
 
 class _FakeResp:
@@ -74,6 +84,43 @@ class UploadThumbnailRetryTest(unittest.TestCase):
             upload_thumbnail("vid1", youtube)
         self.assertEqual(ctx.exception.resp.status, 403)
         self.mock_sleep.assert_not_called()
+
+
+class SingleAccentColorTest(unittest.TestCase):
+    """Real (unmocked) Pillow rendering, checking actual pixel content --
+    2026-09-13's redesign replaced every two-color TEAL/INDIGO gradient
+    accent in these 3 renderers with one solid accent color (owner-shared
+    creator research: a busy multi-color thumbnail gives the eye nowhere
+    obvious to land). Assert on the real rendered pixels, not just that
+    the code no longer calls the gradient helper."""
+
+    def _colors_present(self, img):
+        return set(img.getdata())
+
+    def test_challenge_hook_has_no_gradient_colors(self):
+        img = _render_thumb_challenge_hook("A TEST HEADLINE", 10)
+        colors = self._colors_present(img)
+        for gradient_color in _OLD_GRADIENT_COLORS:
+            self.assertNotIn(gradient_color, colors)
+        self.assertIn(QUIZ_ACCENT, colors)
+        self.assertIn(QUIZ_DARK_BG, colors)
+
+    def test_stat_challenge_has_no_gradient_colors(self):
+        img = _render_thumb_stat_challenge("A TEST HEADLINE", 10)
+        colors = self._colors_present(img)
+        for gradient_color in _OLD_GRADIENT_COLORS:
+            self.assertNotIn(gradient_color, colors)
+        self.assertIn(QUIZ_ACCENT, colors)
+
+    def test_question_panel_has_no_gradient_colors(self):
+        fake_video = {"id": "vid-1", "hook": "A TEST HEADLINE"}
+        fake_steps = [{"card_type": "question", "script_text": "A real test question?"}]
+        with patch("pipeline.thumbnails.get_video_steps", return_value=fake_steps):
+            img = _render_thumb_question_panel(fake_video, 10)
+        colors = self._colors_present(img)
+        for gradient_color in _OLD_GRADIENT_COLORS:
+            self.assertNotIn(gradient_color, colors)
+        self.assertIn(QUIZ_ACCENT, colors)
 
 
 if __name__ == "__main__":

@@ -21,7 +21,6 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from PIL import Image, ImageDraw, ImageFont
 
-from pipeline.brand import INDIGO as BRAND_INDIGO, TEAL as BRAND_TEAL, make_gradient_image, paste_gradient_rounded_rect
 from pipeline.state import get_video, get_video_steps
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -41,6 +40,16 @@ QUIZ_FONT_SIZE = 92
 QUIZ_SUBTITLE_FONT_SIZE = 48
 QUIZ_DARK_BG = (14, 14, 13)
 QUIZ_WHITE = (255, 255, 255)
+
+# Owner-shared creator research (2026-09-13): a thumbnail with red text,
+# red code syntax, AND a red arrow gives the eye nowhere obvious to
+# look; a single, deliberate accent color against a dark, uncluttered
+# background reads far clearer than a busy multi-color composition.
+# Replaces the two-color TEAL->INDIGO gradients these renderers used to
+# lean on for every accent (fine for in-video chrome, seen for seconds
+# at full size; too busy for a thumbnail read as a tiny tile for a
+# fraction of a second) with exactly one solid accent color.
+QUIZ_ACCENT = (255, 230, 0)  # neon yellow -- reads clearly on the dark bg at thumbnail size
 
 # YouTube's stated thumbnail minimum is expressed as a 16:9 1280x720
 # frame, but Shorts thumbnails are actually displayed vertically — we
@@ -197,10 +206,12 @@ def _draw_outlined_centered(draw, lines, font, cx, top_y, line_height, outline=3
 
 
 def _render_thumb_challenge_hook(headline: str, question_count: int) -> Image.Image:
-    """Concept 1: full gradient background, the real per-video hook as a
-    bold challenge-framed headline, question count as a subtitle."""
-    img = Image.new("RGB", (QUIZ_THUMB_WIDTH, QUIZ_THUMB_HEIGHT))
-    paste_gradient_rounded_rect(img, (0, 0, QUIZ_THUMB_WIDTH, QUIZ_THUMB_HEIGHT), 0, BRAND_TEAL, BRAND_INDIGO)
+    """Concept 1: dark background (not a two-color gradient -- see
+    QUIZ_ACCENT's own comment), the real per-video hook as a bold
+    challenge-framed headline in high-contrast white, question count as
+    a subtitle in the single accent color -- exactly one bright color on
+    the whole canvas, everything else white/black/dark."""
+    img = Image.new("RGB", (QUIZ_THUMB_WIDTH, QUIZ_THUMB_HEIGHT), QUIZ_DARK_BG)
     draw = ImageDraw.Draw(img)
 
     hook_font = ImageFont.truetype(str(FONT_BOLD_PATH), QUIZ_FONT_SIZE)
@@ -218,7 +229,7 @@ def _render_thumb_challenge_hook(headline: str, question_count: int) -> Image.Im
 
     _draw_outlined_centered(draw, lines, hook_font, QUIZ_THUMB_WIDTH // 2, top_y, line_height)
     sub_w = draw.textlength(subtitle_text, font=sub_font)
-    draw.text(((QUIZ_THUMB_WIDTH - sub_w) / 2, top_y + total_h + gap), subtitle_text, font=sub_font, fill=QUIZ_WHITE)
+    draw.text(((QUIZ_THUMB_WIDTH - sub_w) / 2, top_y + total_h + gap), subtitle_text, font=sub_font, fill=QUIZ_ACCENT)
     return img
 
 
@@ -262,13 +273,12 @@ def _render_thumb_stat_challenge(headline: str, question_count: int) -> Image.Im
     num_w = draw.textlength(number_text, font=number_font)
     top_y = max(_STAT_MARGIN_V, (QUIZ_THUMB_HEIGHT - block_h) // 2)
 
-    # Number rendered as a gradient-filled cutout via the mask trick used
-    # for panel borders elsewhere — paste the gradient through the glyph
-    # shape instead of a flat fill.
-    mask = Image.new("L", (int(num_w) + 20, n_ascent + n_descent), 0)
-    ImageDraw.Draw(mask).text((10, 0), number_text, font=number_font, fill=255)
-    grad_img = make_gradient_image(mask.width, mask.height, BRAND_TEAL, BRAND_INDIGO)
-    img.paste(grad_img, (int((QUIZ_THUMB_WIDTH - mask.width) / 2), top_y), mask)
+    # The number is the single accent-colored element on this canvas
+    # (see QUIZ_ACCENT) -- a flat fill, not the old two-color gradient,
+    # so the eye has exactly one bright thing to land on.
+    draw.text(
+        ((QUIZ_THUMB_WIDTH - num_w) / 2, top_y), number_text, font=number_font, fill=QUIZ_ACCENT,
+    )
 
     _draw_outlined_centered(
         draw, lines, headline_font, QUIZ_THUMB_WIDTH // 2, top_y + (n_ascent + n_descent) + 40, line_height, outline=2
@@ -296,8 +306,12 @@ def _render_thumb_question_panel(video: dict, question_count: int) -> Image.Imag
     p_ascent, p_descent = panel_font.getmetrics()
     p_line_height = int((p_ascent + p_descent) * 1.3)
     panel_h = len(panel_lines) * p_line_height + 60
-    paste_gradient_rounded_rect(
-        img, (panel_x0 - 4, panel_y0 - 4, panel_x0 + panel_w + 4, panel_y0 + panel_h + 4), 20, BRAND_TEAL, BRAND_INDIGO,
+    # Single solid accent border (not the old two-color gradient) --
+    # same "one bright color on the canvas" rule as the other two
+    # variants, drawn as a slightly larger rounded rect behind the panel
+    # so it reads as a border.
+    draw.rounded_rectangle(
+        [panel_x0 - 4, panel_y0 - 4, panel_x0 + panel_w + 4, panel_y0 + panel_h + 4], radius=20, fill=QUIZ_ACCENT,
     )
     draw.rounded_rectangle([panel_x0, panel_y0, panel_x0 + panel_w, panel_y0 + panel_h], radius=16, fill=(24, 25, 22))
     for i, line in enumerate(panel_lines):

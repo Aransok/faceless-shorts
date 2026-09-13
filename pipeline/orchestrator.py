@@ -29,9 +29,23 @@ from pipeline.voice import voice
 # (see ROADMAP.md's growth-diagnosis session, 2026-09-10) showed facts and
 # sauce_recipe running 2.8-4x programming's views on the same channel, same
 # review pipeline -- weighted 2:2:1 toward facts/sauce_recipe over
-# programming instead of the old even 3-way split. Order deliberately
-# avoids two same-template slots back to back.
-TEMPLATES = ("facts", "sauce_recipe", "programming", "facts", "sauce_recipe")
+# programming for that reason.
+#
+# Nudged to 2:1:2 (2026-09-13): owner-shared creator research argues
+# views alone understate a technical template's real value -- advertisers
+# on developer/programming content pay far more per 1000 views than on
+# general trivia/food content. pipeline/winner_analyzer.py's own
+# estimated_value_per_video() (an RPM ESTIMATE, not this channel's
+# measured earnings -- see that module's docstring for why) confirms the
+# direction on this channel's real view data: programming currently
+# estimates to ~$7.71/video against sauce_recipe's ~$2.95 and facts'
+# ~$1.76, even at a fraction of the views. Not a full reversal to even
+# weight or programming-first -- facts' much higher absolute views still
+# matter for algorithm/subscriber momentum, and the RPM figures are
+# industry estimates, not measured. A modest, easily-reverted nudge
+# rather than betting the whole rotation on an unverified number. Order
+# still deliberately avoids two same-template slots back to back.
+TEMPLATES = ("facts", "programming", "sauce_recipe", "programming", "facts")
 
 # A previous run stopped here (killed, crashed, or just ended) but the
 # video isn't done and isn't waiting on a human — safe to keep driving.

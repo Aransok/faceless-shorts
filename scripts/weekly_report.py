@@ -15,8 +15,81 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.stats import weekly_report_data
+from pipeline.winner_analyzer import (
+    CLASSIFICATIONS,
+    TEMPLATE_RPM_ESTIMATE,
+    avg_views_by_template,
+    classified_rows,
+    describe_common_pattern,
+    estimated_value_per_video,
+    winner_characteristics,
+)
 
 REPORTS_DIR = Path(__file__).resolve().parent.parent / "reports"
+
+
+def _build_winner_section() -> list[str]:
+    """Owner-shared creator-research ask (2026-09-13): don't just show
+    which video got the most views this week -- classify performance
+    against a rolling baseline and surface what winners have in common.
+    Uses classified_rows()'s own eligibility window (skips anything
+    inside the 5-day "algorithm freeze"), not the weekly `days` window
+    above -- a winner needs enough real, settled data to judge, which
+    can span more than 7 days on a low-frequency channel."""
+    rows = classified_rows()
+    lines = ["## Performance classification (all eligible uploads, not just this week)", ""]
+    if not rows:
+        lines.append("No videos are past the 5-day freeze window with synced stats yet.")
+        lines.append("")
+        return lines
+    lines.append(f"{len(rows)} eligible video(s) (uploaded 5+ days ago, stats synced).")
+    lines.append("")
+    lines.append("| classification | count |")
+    lines.append("|---|---|")
+    for classification in CLASSIFICATIONS:
+        count = sum(1 for r in rows if r["classification"] == classification)
+        lines.append(f"| {classification} | {count} |")
+    lines.append("")
+
+    winners = winner_characteristics(rows)
+    lines.append("### Winners / breakouts")
+    lines.append("")
+    if not winners:
+        lines.append("None yet.")
+    else:
+        lines.append("| video | class | template | approach | views | vs baseline | engagement | beats | avg s/beat |")
+        lines.append("|---|---|---|---|---|---|---|---|---|")
+        for w in winners:
+            lines.append(
+                f"| {w['youtube_video_id']} | {w['classification']} | {w['template']} | {w['approach'] or '(none)'} | "
+                f"{w['views']} | {w['views_vs_baseline']}x | {w['engagement_rate']:.1%} | "
+                f"{w['item_count'] if w['item_count'] is not None else '-'} | "
+                f"{w['visual_density'] if w['visual_density'] is not None else '-'} |"
+            )
+    lines.append("")
+    lines.append(f"**Pattern:** {describe_common_pattern(winners, rows)}")
+    lines.append("")
+
+    lines.append("### Estimated value per template (RPM estimate, NOT measured earnings)")
+    lines.append("")
+    lines.append(
+        "Real per-video revenue needs the YouTube Analytics API's monetary "
+        "scope (not authorized -- see pipeline/winner_analyzer.py). Below "
+        "uses industry-genre RPM estimates against this channel's own real "
+        "average views, to weigh alongside raw view counts -- not a real "
+        "earnings figure."
+    )
+    lines.append("")
+    avg_views = avg_views_by_template(rows)
+    value_by_template = estimated_value_per_video(rows)
+    lines.append("| template | avg views | RPM estimate | estimated value/video |")
+    lines.append("|---|---|---|---|")
+    for template, value in sorted(value_by_template.items(), key=lambda kv: -kv[1]):
+        lines.append(
+            f"| {template} | {avg_views[template]:.0f} | ${TEMPLATE_RPM_ESTIMATE.get(template, 0):.2f} | ${value:.2f} |"
+        )
+    lines.append("")
+    return lines
 
 
 def build_report(days: int = 7) -> str:
@@ -50,6 +123,8 @@ def build_report(days: int = 7) -> str:
             f"| {r['youtube_video_id']} | {r['template']} | {r['approach'] or '(none)'} | "
             f"{r['views']} | {r['likes']} | {r['comments']} | {r['uploaded_at']} |"
         )
+    lines.append("")
+    lines.extend(_build_winner_section())
     return "\n".join(lines) + "\n"
 
 

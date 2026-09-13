@@ -31,6 +31,13 @@ def recent_uploads(days: int = 7) -> list[dict]:
     return [r for r in _load_video_log() if datetime.fromisoformat(r["uploaded_at"]) >= cutoff]
 
 
+def all_uploads() -> list[dict]:
+    """Every logged upload, no day-window filter -- pipeline/winner_analyzer.py
+    needs the full history (its own freshness/baseline logic decides what's
+    eligible), not just a fixed recent window the way the weekly report does."""
+    return _load_video_log()
+
+
 def fetch_statistics(youtube_video_ids: list[str]) -> dict[str, dict]:
     """{youtube_video_id: {"views", "likes", "comments"}} — batches up to
     50 IDs per call, YouTube's real limit for videos.list."""

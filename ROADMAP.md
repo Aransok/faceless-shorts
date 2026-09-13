@@ -2436,6 +2436,93 @@ redesign (single-accent-color rule, forced left-right eye-path layout),
 and reweighting the daily template rotation toward higher-RPM technical
 topics.
 
+## Winner analyzer, RPM-aware rotation, single-accent thumbnails (2026-09-13)
+
+Owner asked to actually build the 4 items flagged as future work in the
+previous entry, after confirming (via a real scope decision) to ship
+these with data already legitimately collectable rather than open a new
+YouTube Analytics API OAuth scope for retention/subs-gained/real
+revenue -- that stays a deferred, explicitly-flagged decision, not
+something added silently. See CLAUDE.md's own rule on confirming OAuth
+scope changes before writing that code.
+
+**`pipeline/winner_analyzer.py` (new).** Classifies every eligible
+upload as NORMAL/PROMISING/WINNER/BREAKOUT against a per-template
+trailing view baseline (falls back to the whole pool's average below
+`MIN_TEMPLATE_SAMPLE=3` same-template samples -- one lucky/unlucky video
+shouldn't swing a 2-video baseline). "Eligible" excludes anything
+younger than `FRESH_WINDOW_HOURS=120` (the owner-shared research's "3 to
+5 days before YouTube's algorithm settles on a stable audience, don't
+judge or react before then") -- the concrete, real place the "5-day
+algorithm freeze" idea landed, since this pipeline has no automated
+post-publish thumbnail/metadata swap feature to gate in the first
+place. For winners, surfaces the real structural fields already
+captured by metadata.py's existing "genome" tagging (template, approach,
+`genome_item_count`/`genome_visual_density` -- beat count and average
+seconds per beat, real numbers, not guesses) instead of just naming the
+top video by views, per the owner's own explicit ask. `describe_common_
+pattern()` only speaks up when at least 2 winners genuinely share a
+template+approach combination, and always states the real sample size --
+this channel doesn't have the volume yet for a confident causal claim,
+and the module says so rather than manufacturing false confidence from
+2-3 data points.
+
+Also computes `estimated_value_per_video()` from `TEMPLATE_RPM_ESTIMATE`
+-- INDUSTRY-genre RPM midpoints from the owner-shared research
+($22/$20 for programming/quiz_longform's technical-audience ads, $2.25
+for facts/sauce_recipe/game_night's general-interest ads), multiplied
+against this channel's own real average views per template. Labeled
+everywhere as an estimate, not measured earnings (real per-video revenue
+needs the Analytics API scope above). On this channel's real data it
+already shows the research's core point concretely: programming
+estimates to ~$7.71/video against sauce_recipe's ~$2.95, despite far
+fewer average views (351 vs 1312) -- fewer views, more estimated value.
+
+`scripts/weekly_report.py` now includes both as new sections (offline --
+reads only already-synced state.db/videos.json, no live API call, unlike
+the report's existing "this week" section which does fetch live stats).
+
+`pipeline/orchestrator.py`'s `TEMPLATES` rotation nudged from 2:2:1
+(facts:sauce_recipe:programming) to 2:1:2, backed by the estimated-value
+numbers above -- a modest, easily-reverted nudge (not a full reversal to
+even weighting or programming-first), since the RPM figures are
+industry estimates, not this channel's measured earnings, and facts'
+much higher absolute views still matter for algorithm/subscriber
+momentum. `tests/test_orchestrator.py`'s existing test derives its
+expectation from `orchestrator.TEMPLATES` directly, so it needed no
+change.
+
+**Thumbnails (`pipeline/thumbnails.py`)**: applied the owner-shared
+"one deliberate accent color, not a busy multi-color canvas" rule to
+all 3 quiz_longform thumbnail renderers, which previously leaned on a
+two-color TEAL->INDIGO gradient for every accent (fine as in-video
+chrome seen for seconds at full size, too busy for a thumbnail read as
+a tiny tile for a fraction of a second). Replaced with `QUIZ_ACCENT`
+(a single solid neon yellow) in all three: the subtitle text
+(`challenge_hook`), the big number (`stat_challenge`, previously a
+gradient-filled glyph cutout, now a flat fill), and the panel border
+(`question_panel`). `question_panel`'s layout already matched the
+"anchor left (the real question), tension/payoff right (the big '?')"
+eye-path rule, so that variant needed no layout change. Verified with 3
+real rendered samples actually viewed as images (not just read as
+code), plus 3 new tests asserting on real (unmocked) rendered pixels
+that the old gradient colors are genuinely gone and the new accent color
+is genuinely present.
+
+The regular Shorts thumbnail path (`generate_thumbnail()` -- facts/
+programming/sauce_recipe/game_night) still extracts a still frame from
+the rendered video rather than a designed graphic -- its own docstring
+already calls this "v2, a later improvement once this simple version is
+proven." Building that designed-graphic v2 is real, separate, larger
+work (a new render path across 4 templates, needing its own careful
+verification) rather than something to fold into this pass alongside
+everything else above -- flagged here rather than rushed, same
+"build one thing, verify it, then expand" discipline this project
+applied to Family Game Night earlier this session.
+
+22 new tests (`tests/test_winner_analyzer.py`'s 19, plus 3 real-pixel
+thumbnail tests -- see above), 229 total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
