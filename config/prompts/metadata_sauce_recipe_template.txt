@@ -19,6 +19,15 @@ Requirements:
   Put the strongest real search term EARLY in the title — someone
   searching "quick chimichurri recipe" should see that phrase (or close
   to it) near the front. Do not put hashtags in the title.
+  - Never write a title that just SUMMARIZES the video ("3 No-Cook
+    Sauces") — it gives the viewer the whole answer with nothing left to
+    watch for. Lead with the surprising/contrarian detail instead (a
+    sauce that looks wrong until one step, an ingredient that sounds
+    fake) — never invent a detail the video doesn't actually show.
+  - At most 3 distinct focal concepts, and read it back silently before
+    finalizing — if it stumbles to parse, simplify rather than keep
+    every precise qualifier. Aim well under 100 characters when the
+    content allows it, without padding a shorter title with filler.
 - DESCRIPTION, in this exact structure:
   1. First line restates the hook in different words AND works real
      search terms in naturally (this is what shows before "...more" gets

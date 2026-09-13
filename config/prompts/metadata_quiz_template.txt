@@ -15,6 +15,13 @@ Requirements:
   "Python Questions" should appear near the front of the title, not
   buried after a long clever setup, since that's what search actually
   matches against.
+  - Prefer a real stakes/threat framing when the quiz content actually
+    supports it ("This Question Fails Most Senior Devs" beats "Python
+    Quiz #12") over a flat, positive label — never invent a claim (a
+    real interview question, a real failure rate) the quiz doesn't
+    actually back up. At most 3 distinct focal concepts, and read it
+    back silently before finalizing — simplify anything that stumbles
+    to parse rather than keep every precise qualifier.
 - DESCRIPTION: 3-5 sentences. Open with what the quiz actually covers
   (specific enough that someone can tell if it's their level) — this
   first line is what search weights most heavily, so work in the real

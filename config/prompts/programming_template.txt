@@ -14,6 +14,11 @@ Requirements:
   not just restating a fact. This is non-negotiable — YouTube's
   inauthentic-content policy penalizes videos that look interchangeable or
   template-generated with no real point of view.
+- The FIRST line of narration must state the actual gotcha/stakes
+  directly — "This function has a bug that fools senior devs" not
+  "Picture this..." or "Here's a story about..." or any scene-setting
+  before the point. The viewer decides whether to keep watching in the
+  first couple seconds; a story-opening wind-up wastes that window.
 - Break the demo into 2-4 STEPS. Each step is one beat of the story, and
   each has its own CODE (what's on screen during that step) and its own
   SCRIPT (the narration spoken during that step, timed to match). A

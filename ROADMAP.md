@@ -2396,6 +2396,46 @@ visual/asset redesign the 107-section spec is really about (procedural
 illustrated scenes, per-game-type animation, Shorts-native renderers) --
 correctly out of scope for "ship what's already built."
 
+## Title/hook prompt rules from outside creator research (2026-09-13)
+
+Owner shared a creator interview's concrete, testable claims about
+title/hook mechanics (summary titles underperform contrarian/stakes-
+framed ones; the first line must pay off the hook directly, not set a
+scene; a title juggling more than ~3 ideas reads as cluttered). Unlike
+the earlier pasted growth-strategy text this session (analytics
+feedback loops, a "winner analyzer", a research-then-generate pipeline)
+which is a genuinely separate, much larger future project, these are
+narrow, low-risk PROMPT changes to the exact templates that already
+generate titles/hooks — no new architecture, easy to ship now.
+
+Added to all 3 metadata prompt templates (`metadata_template.txt`,
+`metadata_sauce_recipe_template.txt`, `metadata_quiz_template.txt`):
+ban pure-summary titles ("Top 3 X", "How X Works" — a title that already
+gives the answer has no reason left to click), prefer real negative/
+stakes framing the video actually supports over a flat positive one,
+cap at 3 focal concepts, a "read it back silently, simplify anything
+that stumbles to parse" rhythm check, and a soft "aim well under 100
+chars, don't pad" guideline (100 stays the hard-enforced limit in
+`metadata.py`'s `_enforce_limits()` — this is prompt guidance only, not
+a new backstop). Added to `facts_template.txt`/`programming_template.txt`:
+the first line of narration/hook must state the actual gotcha/stakes
+directly, not open with scene-setting ("Picture this...", "Here's a
+story about...") — the first couple seconds are what most viewers use
+to decide whether to keep watching.
+
+Every rule here is scoped to STRENGTHEN a claim the video's real
+content already supports, never to invent one — a title claiming a bug/
+threat/stakes the script doesn't actually contain would just be a new
+authenticity problem instead of a growth win. Prompt-only change, no
+code touched; 207 tests unaffected (nothing asserts on prompt text).
+
+Deliberately NOT done here (real code/architecture work, each deserving
+its own scoped pass, not bundled into a prompt tweak): a 5-day lockout
+on automated thumbnail/metadata swaps post-publish, thumbnail visual
+redesign (single-accent-color rule, forced left-right eye-path layout),
+and reweighting the daily template rotation toward higher-RPM technical
+topics.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

@@ -19,6 +19,27 @@ Requirements:
   Think about what someone would actually type into YouTube search for
   this exact topic, not just what sounds catchy. Do not put hashtags in
   the title — they belong in the description.
+  - Never write a title that SUMMARIZES what the video teaches ("Top 3
+    Python List Gotchas", "How Python Memory Management Works") — a
+    summary title tells the viewer they already have the answer, so
+    there's no reason left to click. Create a real, specific gap the
+    viewer has to watch to close, or take a genuinely surprising/
+    contrarian stance the video actually backs up.
+  - When the video's content genuinely supports it, prefer a negative/
+    stakes framing over a positive one ("Your Python Code Has a Silent
+    Memory Leak" beats "Learn Python Memory Safely", "This Pointer
+    Gotcha Fools Most Devs" beats "Master C Pointers") — but never
+    invent a bug, threat, or stakes the video doesn't actually contain
+    just to make the title punchier.
+  - At most 3 distinct focal concepts — a title juggling more ideas than
+    that reads as cluttered, not intriguing.
+  - Read the title back silently (not out loud) before finalizing: if it
+    stumbles, needs a second pass to parse, or has an awkward acronym or
+    double preposition, simplify the phrasing rather than keep every
+    technical qualifier. Short and rhythmic beats precise and clunky.
+  - Aim well under 100 characters when the content allows it — most
+    phones truncate a title long before YouTube's hard limit — but never
+    pad a shorter title with filler words just to look fuller.
 - DESCRIPTION: 2-4 short lines. First line restates the hook in
   different words AND works the real search terms for this topic in
   naturally (this is what shows before "...more" gets clicked, so it
