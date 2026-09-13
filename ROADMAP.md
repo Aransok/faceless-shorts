@@ -2743,6 +2743,32 @@ change and the workflow YAML fixes need none, since they're a default
 value and CI script text respectively, not new application logic. 253
 tests total, all passing.
 
+## Real bug: family_game_segments_json was unwritable in production (2026-09-13)
+
+The re-triggered family_game_night run (after the Groq/rebase fixes
+above) failed in 49 seconds with `ValueError: unknown video field(s):
+['family_game_segments_json']`. Root cause: `init_db()` got a real
+`ALTER TABLE videos ADD COLUMN family_game_segments_json TEXT`
+migration when the column was added, but `update_video()` validates
+`**fields` against a SEPARATE, hardcoded `_COLUMNS` tuple, not against
+a live schema query -- and that tuple never got the new column added.
+Every write to it raised "unknown field", 100% of the time, everywhere
+-- not a timing/environment issue.
+
+Every test covering the new family_game_night code (tests/test_plan_
+family_game.py, tests/test_render_family_game.py) mocks `create_video`/
+`update_video` entirely, per this project's own "no real DB writes"
+testing convention -- so nothing caught a hardcoded-allowlist gap like
+this until a real production run did. Added `family_game_segments_json`
+to `_COLUMNS`, plus a new regression test
+(`tests/test_state.py::test_every_add_column_migration_is_writable_via_
+update_video`) that exercises the REAL `update_video()` against a real
+temp SQLite DB for this field specifically -- the one test in the suite
+that would have caught this before it shipped, closing the actual gap
+in test coverage, not just the one field.
+
+254 tests total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

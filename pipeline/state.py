@@ -59,6 +59,7 @@ _COLUMNS = (
     "likes",
     "comment_count",
     "stats_synced_at",
+    "family_game_segments_json",
     "created_at",
     "updated_at",
 )

@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.state import create_video, create_video_steps, init_db, recent_beats, recent_cta_types, update_video
+from pipeline.state import create_video, create_video_steps, get_video, init_db, recent_beats, recent_cta_types, update_video
 
 
 class StateHelpersTest(unittest.TestCase):
@@ -75,6 +75,21 @@ class StateHelpersTest(unittest.TestCase):
     def test_recent_cta_types_empty_when_nothing_recorded(self):
         create_video("facts", topic="a", db_path=self.db_path)
         self.assertEqual(recent_cta_types(db_path=self.db_path), [])
+
+    def test_every_add_column_migration_is_writable_via_update_video(self):
+        # Real production bug (2026-09-13): family_game_segments_json got
+        # a real ALTER TABLE migration in init_db() but was never added to
+        # _COLUMNS, update_video()'s separate hardcoded allowlist -- so
+        # every real write to it raised "unknown video field(s)" despite
+        # the column genuinely existing. Every test elsewhere mocks
+        # update_video() entirely, so nothing caught this until a real
+        # production run did. Exercise the real function against a real
+        # (temp) DB for every column init_db() knows how to migrate, not
+        # just the ones a specific feature's own tests happen to mock.
+        video_id = create_video("family_game_night", topic="a topic", db_path=self.db_path)
+        update_video(video_id, db_path=self.db_path, family_game_segments_json='[{"kind": "host"}]')
+        video = get_video(video_id, db_path=self.db_path)
+        self.assertEqual(video["family_game_segments_json"], '[{"kind": "host"}]')
 
 
 if __name__ == "__main__":
