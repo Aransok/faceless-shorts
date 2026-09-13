@@ -290,5 +290,15 @@
     "method": "card",
     "template": "programming",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/e03d37bc-540b-4a63-916e-26e2bb76ba35_thumbnail.jpg"
+  },
+  {
+    "video_id": "43a452ae-3678-466f-a839-488503bc3cf8",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/43a452ae-3678-466f-a839-488503bc3cf8_thumbnail.jpg"
   }
 ]
