@@ -2665,6 +2665,84 @@ verification step is a `--templates family_game_night` GitHub Actions
 run, watched end to end the same way every other new format on this
 project has been.
 
+## Real production failure: today's triggered runs (2026-09-13)
+
+Owner asked to run all three tracks (daily Shorts, family_game_night,
+quiz) today and see them uploaded. Three real, independent failures,
+found from the actual job logs, not guessed:
+
+**1. Groq's default model was deprecated, silently breaking BOTH Groq
+uses at once.** Groq deprecated `llama-3.3-70b-versatile` on
+2026-06-17 (console.groq.com/docs/deprecations); every call to it now
+404s with "model does not exist." Since `LLM_FALLBACK_BACKEND=groq`
+AND `BULK_LLM_BACKEND=groq` both used the same broken default, a Claude
+usage-limit hit had nowhere left to fall back to (both backends failed),
+and metadata generation degraded to Claude on every video instead of
+the cheap backend it's supposed to use. `pipeline/plan.py`'s
+`GROQ_MODEL` default (and `config/.env.example`'s documented default)
+changed to `openai/gpt-oss-120b` -- Groq's own stated replacement for
+llama-3.3-70b-versatile's general-purpose role, confirmed via web
+search (multiple independent real-world fixes converged on the same
+model). This alone should have caught the day's Claude usage-limit hit
+instead of cascading into two full video failures.
+
+**2. A real git rebase conflict left the state-commit retry loop
+permanently stuck.** The family_game_night run's own `git pull
+--rebase` hit a genuine CONTENT conflict in `data/phrase_usage.json`
+(not just a stale parent) against another run that had pushed while
+this one sat queued behind the shared concurrency group. The retry
+loop's `git pull --rebase` failing on a real conflict leaves the repo
+mid-rebase -- every later attempt in the same 3-attempt loop then fails
+identically, since nothing about the stuck state changes between
+attempts. All 5 workflows sharing this exact script block
+(`daily-shorts.yml`, `weekly-quiz.yml`, `post-pending-comments.yml`,
+`sync-analytics.yml`, `weekly-stats.yml`) now run `git rebase --abort`
+on a failed rebase before the loop's next attempt, so each attempt gets
+a genuinely clean shot instead of retrying a state that can't recover
+itself. This doesn't solve the deeper "two SQLite/JSON writers collide"
+problem (still no real auto-merge for that, see the 2026-09-12 incident
+already documented above) -- it just stops one real conflict from
+silently eating all 3 retry attempts. Contributing operational factor,
+not a code bug: firing several overlapping workflow_dispatch calls by
+hand and then cancelling/re-queueing mid-flight (done today, see the
+session's own handling) left one run's checkout pinned to a stale SHA
+from queue time rather than run-start time -- the shared concurrency
+group already exists specifically so this class of collision doesn't
+need to happen; letting it serialize runs naturally rather than
+manually juggling the queue is the real operating lesson here.
+
+**3. Not a bug: YouTube's own daily upload quota.** One video in
+today's run failed at the actual `videos.insert()` call with
+`uploadLimitExceeded` ("The user has exceeded the number of videos
+they may upload"). This is a real YouTube API account-level limit, not
+a pipeline defect -- firing multiple video-producing workflows back to
+back in one session pushes into it faster than the normal one-run-a-day
+schedule would. No code fix applies here; it resets on YouTube's own
+schedule.
+
+**Also**: `pipeline/thumbnails.py`'s new card path
+(`_generate_thumbnail_from_card()`) had NO log entry at all in
+`data/thumbnails.json`, unlike the older frame-extraction path -- real
+gap found while trying to verify a thumbnail-quality report from the
+owner: there was no way to tell from the log alone whether a given
+video actually got the new designed card or silently fell back to
+frame extraction, only the absence of a fallback warning to reason
+from. Added `_log_thumbnail_card()` (method="card") alongside the
+existing frame-path log (now tagged method="frame" for the same
+reason). This didn't resolve the owner's visual complaint -- CI's
+`assets/output/*` is gitignored and torn down with the runner, so
+today's actual generated thumbnail image no longer exists anywhere to
+inspect after the fact, and this sandbox's egress policy blocks
+fetching the live YouTube thumbnail directly to check. Needs a
+screenshot or the specific video link from the owner to actually
+diagnose, rather than a guessed fix.
+
+1 new test (the thumbnail card logging one, using a real temp log path,
+never the project's own `data/thumbnails.json`) -- the Groq model
+change and the workflow YAML fixes need none, since they're a default
+value and CI script text respectively, not new application logic. 253
+tests total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

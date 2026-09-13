@@ -172,7 +172,15 @@ def _call_groq(prompt: str) -> str:
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
         raise RuntimeError("GROQ_API_KEY not set — required for LLM_BACKEND/LLM_FALLBACK_BACKEND=groq")
-    model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+    # Real production failure (2026-09-13): every Groq call 404'd with
+    # "model does not exist" -- Groq deprecated llama-3.3-70b-versatile
+    # on 2026-06-17 (see console.groq.com/docs/deprecations), so the old
+    # default silently broke both LLM_FALLBACK_BACKEND (Claude usage-
+    # limit fallback) and BULK_LLM_BACKEND (metadata/CTA) at once, with
+    # no warning beyond a 404 in the job log. openai/gpt-oss-120b is
+    # Groq's own stated replacement for llama-3.3-70b-versatile's
+    # general-purpose "versatile" role.
+    model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={"Authorization": f"Bearer {api_key}"},

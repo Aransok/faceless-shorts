@@ -98,7 +98,14 @@ jobs:
               exit 0
             fi
             echo "push rejected (attempt $attempt/3) -- rebasing onto latest main"
-            git pull --rebase
+            # A genuine content conflict (not just a stale parent) leaves
+            # the repo stuck mid-rebase -- every later attempt in this loop
+            # would then fail identically without this. Real incident
+            # 2026-09-13: a rebase conflict on data/phrase_usage.json left
+            # the repo mid-rebase after attempt 1, silently dooming attempts
+            # 2-3 too. Abort back to a clean state so each attempt gets a
+            # real chance against whatever is on main by then.
+            git pull --rebase || git rebase --abort
           done
 
           echo "state push failed after 3 attempts"

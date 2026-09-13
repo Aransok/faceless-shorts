@@ -6,6 +6,7 @@ the YouTube API client itself)."""
 
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -15,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from googleapiclient.errors import HttpError
 
+import pipeline.thumbnails as thumbnails_module
 from pipeline.thumbnails import (
     DEFAULT_BADGE_TEXT,
     QUIZ_DARK_BG,
@@ -23,6 +25,7 @@ from pipeline.thumbnails import (
     TEMPLATE_BADGE_TEXT,
     THUMBNAIL_ACCENT,
     THUMBNAIL_SET_RETRY_DELAYS,
+    _generate_thumbnail_from_card,
     _render_shorts_card,
     _render_thumb_challenge_hook,
     _render_thumb_question_panel,
@@ -172,6 +175,26 @@ class ShortsCardTest(unittest.TestCase):
         long_hook = "This is a deliberately very long hook sentence that should still wrap and shrink to fit cleanly"
         img = _render_shorts_card({"template": "facts", "hook": long_hook})
         self.assertEqual(img.size, (SHORTS_CARD_WIDTH, SHORTS_CARD_HEIGHT))
+
+    def test_generate_thumbnail_from_card_logs_a_debuggable_record(self):
+        # Real gap found 2026-09-13: this path had no log entry at all,
+        # so a real production run left no way to tell from
+        # data/thumbnails.json whether a video got the new card or
+        # silently fell back to frame extraction. tmp log path, never
+        # the real project file.
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            log_path = Path(tmp) / "thumbnails.json"
+            with patch.object(thumbnails_module, "THUMBNAIL_LOG_PATH", log_path), \
+                 patch.object(thumbnails_module, "OUTPUT_DIR", Path(tmp)):
+                out_path = _generate_thumbnail_from_card("vid-1", {"template": "programming", "hook": "a real hook"})
+            self.assertTrue(out_path.exists())
+            records = json.loads(log_path.read_text(encoding="utf-8"))
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["video_id"], "vid-1")
+            self.assertEqual(records[0]["method"], "card")
+            self.assertEqual(records[0]["template"], "programming")
 
 
 class GenerateThumbnailFallbackTest(unittest.TestCase):

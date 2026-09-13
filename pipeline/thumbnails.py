@@ -137,6 +137,7 @@ def _log_thumbnail_pick(video_id: str, chosen: float, candidates: list[float], o
     records.append(
         {
             "video_id": video_id,
+            "method": "frame",
             "chosen_timestamp": round(chosen, 2),
             "candidate_timestamps": [round(t, 2) for t in candidates],
             "thumbnail_path": str(out_path),
@@ -312,6 +313,20 @@ def _render_shorts_card(video: dict) -> Image.Image:
     return img
 
 
+def _log_thumbnail_card(video_id: str, template: str, out_path: Path) -> None:
+    # Real gap found 2026-09-13: this path had NO log entry at all, so
+    # after a real production run there was no way to tell from
+    # data/thumbnails.json whether a given video actually got the new
+    # designed card or silently fell back to frame extraction -- had to
+    # reason it out from the ABSENCE of a fallback warning in the job
+    # log instead of a direct record. Same log file as the frame path
+    # (_log_thumbnail_pick), a "method" field distinguishes the two.
+    THUMBNAIL_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    records = json.loads(THUMBNAIL_LOG_PATH.read_text(encoding="utf-8")) if THUMBNAIL_LOG_PATH.exists() else []
+    records.append({"video_id": video_id, "method": "card", "template": template, "thumbnail_path": str(out_path)})
+    THUMBNAIL_LOG_PATH.write_text(json.dumps(records, indent=2), encoding="utf-8")
+
+
 def _generate_thumbnail_from_card(video_id: str, video: dict) -> Path:
     img = _render_shorts_card(video)
     out_path = OUTPUT_DIR / f"{video_id}_thumbnail.jpg"
@@ -321,6 +336,7 @@ def _generate_thumbnail_from_card(video_id: str, video: dict) -> Path:
     size = out_path.stat().st_size
     if size > MAX_BYTES:
         raise RuntimeError(f"thumbnail for {video_id} is {size} bytes, over the 2MB limit")
+    _log_thumbnail_card(video_id, video.get("template"), out_path)
     return out_path
 
 
