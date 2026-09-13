@@ -267,5 +267,117 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-11T19:53:14.548521+00:00"
+  },
+  {
+    "video_id": "7a2e0717-9185-44c5-b4d4-9aa7f7aa0144",
+    "youtube_video_id": "Tj_mVJqy55w",
+    "uploaded_at": "2026-09-11T16:45:09.886559+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-11T22:57:52.961062+00:00"
+  },
+  {
+    "video_id": "ff27cc2e-72f0-40df-b848-d97ab784a048",
+    "youtube_video_id": "iIQThQZ_k1I",
+    "uploaded_at": "2026-09-11T16:55:19.885477+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-12T02:05:54.047455+00:00"
+  },
+  {
+    "video_id": "524566f5-c5f6-44fd-8d2f-0ddf04111585",
+    "youtube_video_id": "mCWYjHSZPoQ",
+    "uploaded_at": "2026-09-11T17:17:51.264524+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-12T05:05:45.526961+00:00"
+  },
+  {
+    "video_id": "e378f8fc-d4ed-409b-ab00-e6bf367d9905",
+    "youtube_video_id": "YMknqKPWjPs",
+    "uploaded_at": "2026-09-12T10:09:32.608280+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-12T13:28:26.021366+00:00"
+  },
+  {
+    "video_id": "f3d23398-0e76-4f99-8b5e-ebdd2f1245bb",
+    "youtube_video_id": "6RIxzJPk98E",
+    "uploaded_at": "2026-09-12T10:19:17.231725+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-12T17:19:40.153144+00:00"
+  },
+  {
+    "video_id": "51a03ec1-be28-43b9-aa55-08086bcd07f2",
+    "youtube_video_id": "5eJH99fM1jM",
+    "uploaded_at": "2026-09-12T12:37:30.211165+00:00",
+    "template": "quiz_longform",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-12T20:08:12.317143+00:00"
+  },
+  {
+    "video_id": "60a53b10-fd50-46d5-b6ef-946d7838efb4",
+    "youtube_video_id": "X-hjdVJ18jQ",
+    "uploaded_at": "2026-09-12T12:46:39.830536+00:00",
+    "template": "game_night",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-12T22:53:14.620470+00:00"
+  },
+  {
+    "video_id": "eb6e2e4a-23da-4932-af97-b0b1395d077c",
+    "youtube_video_id": "_N5NEYSGYbA",
+    "uploaded_at": "2026-09-12T13:09:09.211922+00:00",
+    "template": "game_night",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-13T00:58:58.251705+00:00"
+  },
+  {
+    "video_id": "c5c404fd-0cab-4082-afdf-10fdbf2aa049",
+    "youtube_video_id": "J8qi0B3h1Zo",
+    "uploaded_at": "2026-09-12T13:49:10.403085+00:00",
+    "template": "game_night",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-13T04:51:36.406973+00:00"
+  },
+  {
+    "video_id": "250eb4da-1553-4465-aabc-c55dca5ecdab",
+    "youtube_video_id": "fvsL68k7b54",
+    "uploaded_at": "2026-09-12T17:04:33.827533+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T07:27:37.587492+00:00"
+  },
+  {
+    "video_id": "dafdf22c-b230-47b0-9bf7-da9d6bb786de",
+    "youtube_video_id": "uLICxp2FibY",
+    "uploaded_at": "2026-09-12T17:13:18.608291+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T09:29:45.011162+00:00"
+  },
+  {
+    "video_id": "73a04f15-1a82-40b5-9294-250305dce678",
+    "youtube_video_id": "xgnOU196KM8",
+    "uploaded_at": "2026-09-12T17:19:25.011451+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-13T12:57:19.258264+00:00"
+  },
+  {
+    "video_id": "a105f8c0-c5f7-4b24-9cdd-d946bc11a45e",
+    "youtube_video_id": "q4YkSnFvf_4",
+    "uploaded_at": "2026-09-12T18:08:17.520734+00:00",
+    "template": "quiz_longform",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-13T16:07:23.297353+00:00"
+  },
+  {
+    "video_id": "c49e9592-a632-424a-a991-2bfa6d3d3f8e",
+    "youtube_video_id": "RDWPpJYQrs8",
+    "uploaded_at": "2026-09-12T19:24:51.480651+00:00",
+    "template": "game_night",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-13T19:27:28.994893+00:00"
   }
 ]
