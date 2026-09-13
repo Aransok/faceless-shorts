@@ -16,12 +16,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from googleapiclient.errors import HttpError
 
 from pipeline.thumbnails import (
-    QUIZ_ACCENT,
+    DEFAULT_BADGE_TEXT,
     QUIZ_DARK_BG,
+    SHORTS_CARD_HEIGHT,
+    SHORTS_CARD_WIDTH,
+    TEMPLATE_BADGE_TEXT,
+    THUMBNAIL_ACCENT,
     THUMBNAIL_SET_RETRY_DELAYS,
+    _render_shorts_card,
     _render_thumb_challenge_hook,
     _render_thumb_question_panel,
     _render_thumb_stat_challenge,
+    generate_thumbnail,
     upload_thumbnail,
 )
 
@@ -102,7 +108,7 @@ class SingleAccentColorTest(unittest.TestCase):
         colors = self._colors_present(img)
         for gradient_color in _OLD_GRADIENT_COLORS:
             self.assertNotIn(gradient_color, colors)
-        self.assertIn(QUIZ_ACCENT, colors)
+        self.assertIn(THUMBNAIL_ACCENT, colors)
         self.assertIn(QUIZ_DARK_BG, colors)
 
     def test_stat_challenge_has_no_gradient_colors(self):
@@ -110,7 +116,7 @@ class SingleAccentColorTest(unittest.TestCase):
         colors = self._colors_present(img)
         for gradient_color in _OLD_GRADIENT_COLORS:
             self.assertNotIn(gradient_color, colors)
-        self.assertIn(QUIZ_ACCENT, colors)
+        self.assertIn(THUMBNAIL_ACCENT, colors)
 
     def test_question_panel_has_no_gradient_colors(self):
         fake_video = {"id": "vid-1", "hook": "A TEST HEADLINE"}
@@ -120,7 +126,81 @@ class SingleAccentColorTest(unittest.TestCase):
         colors = self._colors_present(img)
         for gradient_color in _OLD_GRADIENT_COLORS:
             self.assertNotIn(gradient_color, colors)
-        self.assertIn(QUIZ_ACCENT, colors)
+        self.assertIn(THUMBNAIL_ACCENT, colors)
+
+
+class ShortsCardTest(unittest.TestCase):
+    """Real (unmocked) Pillow rendering of the v2 designed Shorts
+    thumbnail (2026-09-13) -- replaces frame extraction as the default
+    for facts/programming/sauce_recipe/game_night."""
+
+    def _colors_present(self, img):
+        return set(img.getdata())
+
+    def test_renders_at_the_real_9_16_canvas_size(self):
+        img = _render_shorts_card({"template": "facts", "hook": "A real hook"})
+        self.assertEqual(img.size, (SHORTS_CARD_WIDTH, SHORTS_CARD_HEIGHT))
+
+    def test_uses_the_single_accent_color_and_dark_background(self):
+        img = _render_shorts_card({"template": "programming", "hook": "A real hook"})
+        colors = self._colors_present(img)
+        self.assertIn(THUMBNAIL_ACCENT, colors)
+        self.assertIn(QUIZ_DARK_BG, colors)
+
+    def test_every_known_template_has_its_own_badge_text(self):
+        for template, badge in TEMPLATE_BADGE_TEXT.items():
+            with self.subTest(template=template):
+                # Doesn't raise, and produces a real image -- the badge
+                # text itself is drawn, not asserted pixel-by-pixel here.
+                img = _render_shorts_card({"template": template, "hook": "A real hook"})
+                self.assertEqual(img.size, (SHORTS_CARD_WIDTH, SHORTS_CARD_HEIGHT))
+
+    def test_unknown_template_falls_back_to_default_badge(self):
+        # Doesn't raise for a template with no curated badge text --
+        # DEFAULT_BADGE_TEXT covers it rather than a KeyError.
+        img = _render_shorts_card({"template": "some_future_template", "hook": "A real hook"})
+        self.assertEqual(img.size, (SHORTS_CARD_WIDTH, SHORTS_CARD_HEIGHT))
+        self.assertTrue(DEFAULT_BADGE_TEXT)
+
+    def test_missing_hook_raises(self):
+        with self.assertRaises(ValueError):
+            _render_shorts_card({"template": "facts", "hook": ""})
+        with self.assertRaises(ValueError):
+            _render_shorts_card({"template": "facts", "hook": None})
+
+    def test_long_hook_still_fits_within_four_lines(self):
+        long_hook = "This is a deliberately very long hook sentence that should still wrap and shrink to fit cleanly"
+        img = _render_shorts_card({"template": "facts", "hook": long_hook})
+        self.assertEqual(img.size, (SHORTS_CARD_WIDTH, SHORTS_CARD_HEIGHT))
+
+
+class GenerateThumbnailFallbackTest(unittest.TestCase):
+    """generate_thumbnail() tries the designed card first and falls back
+    to frame extraction on ANY failure (CLAUDE.md's fail-soft rule) --
+    no real network/file I/O, both underlying generators are mocked."""
+
+    def setUp(self):
+        self.video = {"id": "vid1", "template": "facts", "hook": "a hook", "final_path": "/fake/path.mp4"}
+        self.get_video_patcher = patch("pipeline.thumbnails.get_video", return_value=self.video)
+        self.get_video_patcher.start()
+        self.addCleanup(self.get_video_patcher.stop)
+
+    def test_uses_the_card_path_when_it_succeeds(self):
+        card_path = Path("/tmp/card.jpg")
+        with patch("pipeline.thumbnails._generate_thumbnail_from_card", return_value=card_path) as mock_card, \
+             patch("pipeline.thumbnails._generate_thumbnail_from_frame") as mock_frame:
+            result = generate_thumbnail("vid1")
+        self.assertEqual(result, card_path)
+        mock_card.assert_called_once()
+        mock_frame.assert_not_called()
+
+    def test_falls_back_to_frame_extraction_when_the_card_raises(self):
+        frame_path = Path("/tmp/frame.jpg")
+        with patch("pipeline.thumbnails._generate_thumbnail_from_card", side_effect=RuntimeError("font issue")), \
+             patch("pipeline.thumbnails._generate_thumbnail_from_frame", return_value=frame_path) as mock_frame:
+            result = generate_thumbnail("vid1")
+        self.assertEqual(result, frame_path)
+        mock_frame.assert_called_once()
 
 
 if __name__ == "__main__":

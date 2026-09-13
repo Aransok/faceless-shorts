@@ -2523,6 +2523,51 @@ applied to Family Game Night earlier this session.
 22 new tests (`tests/test_winner_analyzer.py`'s 19, plus 3 real-pixel
 thumbnail tests -- see above), 229 total, all passing.
 
+## Shorts thumbnail v2: designed cards, not frame grabs (2026-09-13)
+
+Owner asked to also build the Shorts thumbnail redesign flagged as
+separate/larger work in the previous entry ("real, separate, larger
+work... flagged here rather than rushed") -- also clarified a real
+misunderstanding about the 5-day freeze from the winner-analyzer entry
+above: it does NOT pause uploads. The daily/weekly schedule is
+completely unaffected; it only means the winner-analyzer's WINNER/
+BREAKOUT classification ignores a video's view count until it's 5+ days
+old, since early view counts are still unstable and would just be noise
+to classify against.
+
+`pipeline/thumbnails.py`'s `generate_thumbnail()` (facts/programming/
+sauce_recipe/game_night -- quiz_longform already had designed
+thumbnails, untouched here) now tries a new designed branded card
+FIRST, falling back to the original frame-extraction path (renamed to
+`_generate_thumbnail_from_frame()`, logic unchanged) on ANY exception --
+missing hook text, a font problem, anything -- per CLAUDE.md's "fail
+soft, not hard" rule. A thumbnail bug should never block an otherwise-
+working upload.
+
+`_render_shorts_card()`: a real 9:16 canvas (1280 wide, matching
+YouTube's stated thumbnail minimum -- same reasoning MIN_WIDTH's own
+comment already gave), the video's real hook as a bold top-anchored
+headline (white, black-outlined, auto-shrunk to fit within 4 lines for
+hooks of very different lengths), and ONE accent-colored badge below it
+naming the video's category (`TEMPLATE_BADGE_TEXT`: "FACT CHECK", "CODE
+BUG", "SAUCE SECRETS", "GAME NIGHT") -- the same single-accent-color
+rule and `THUMBNAIL_ACCENT` constant already applied to the quiz
+thumbnails earlier this session (renamed from `QUIZ_ACCENT` since it's
+shared branding now, not quiz-specific), giving the whole channel one
+consistent visual identity across every template rather than a
+per-template palette. Top-to-bottom eye path (headline first, badge as
+the payoff/category tag below it) rather than the old frame-extraction
+path's zero compositional control at all.
+
+Verified with 4 real rendered samples (one per template) actually
+viewed as images, not just read as code -- all four render cleanly:
+high contrast, single accent color, correct auto-shrink behavior on
+both a 6-word and a 15-word hook. 8 new tests (real, unmocked Pillow
+rendering for the card itself; mocked for generate_thumbnail()'s
+try-card/fall-back-to-frame branching, since that part is pure control
+flow, not something that needs real rendering to verify). 237 tests
+total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

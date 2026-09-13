@@ -49,7 +49,7 @@ QUIZ_WHITE = (255, 255, 255)
 # lean on for every accent (fine for in-video chrome, seen for seconds
 # at full size; too busy for a thumbnail read as a tiny tile for a
 # fraction of a second) with exactly one solid accent color.
-QUIZ_ACCENT = (255, 230, 0)  # neon yellow -- reads clearly on the dark bg at thumbnail size
+THUMBNAIL_ACCENT = (255, 230, 0)  # neon yellow -- reads clearly on the dark bg at thumbnail size
 
 # YouTube's stated thumbnail minimum is expressed as a 16:9 1280x720
 # frame, but Shorts thumbnails are actually displayed vertically — we
@@ -145,10 +145,13 @@ def _log_thumbnail_pick(video_id: str, chosen: float, candidates: list[float], o
     THUMBNAIL_LOG_PATH.write_text(json.dumps(records, indent=2), encoding="utf-8")
 
 
-def generate_thumbnail(video_id: str) -> Path:
-    video = get_video(video_id)
-    if video is None:
-        raise ValueError(f"no video with id {video_id}")
+def _generate_thumbnail_from_frame(video_id: str, video: dict) -> Path:
+    """The original v1 path (Phase 10 #2): a still frame extracted from
+    the video's own rendered final file. Kept as the fail-soft fallback
+    for generate_thumbnail() below -- see CLAUDE.md's "fail soft, not
+    hard" rule -- rather than removed outright, since it needs nothing
+    from state.db beyond final_path/template and has already been
+    running in production."""
     final_path = video["final_path"]
     if not final_path or not Path(final_path).exists():
         raise ValueError(f"no final video file on disk for {video_id}")
@@ -167,6 +170,26 @@ def generate_thumbnail(video_id: str) -> Path:
 
     _log_thumbnail_pick(video_id, chosen, candidates, out_path)
     return out_path
+
+
+def generate_thumbnail(video_id: str) -> Path:
+    """v2 (2026-09-13): a designed branded card is now the default for
+    every Shorts template -- packaging research the owner shared argues
+    packaging matters more than incremental video-render polish, and a
+    frame grabbed from mid-video has no control over composition/
+    contrast/eye-path at all. Falls back to the original frame-
+    extraction path (see CLAUDE.md's "fail soft" rule) on ANY failure --
+    a missing hook, a font issue, anything -- rather than let a thumbnail
+    bug block the whole upload."""
+    video = get_video(video_id)
+    if video is None:
+        raise ValueError(f"no video with id {video_id}")
+
+    try:
+        return _generate_thumbnail_from_card(video_id, video)
+    except Exception as exc:
+        print(f"warning: designed thumbnail card failed for {video_id} ({exc}) -- falling back to frame extraction")
+    return _generate_thumbnail_from_frame(video_id, video)
 
 
 def _wrap_thumb_text(draw, text: str, font, max_width: int) -> list[str]:
@@ -205,9 +228,92 @@ def _draw_outlined_centered(draw, lines, font, cx, top_y, line_height, outline=3
         draw.text((x, y), line, font=font, fill=QUIZ_WHITE)
 
 
+# Shorts card (v2, 2026-09-13): real 9:16 canvas (not a 16:9 frame like
+# the quiz thumbnails above), 1280 wide to clear YouTube's stated
+# thumbnail minimum -- same reasoning as MIN_WIDTH's own comment.
+SHORTS_CARD_WIDTH = 1280
+SHORTS_CARD_HEIGHT = round(SHORTS_CARD_WIDTH * 16 / 9)
+SHORTS_HEADLINE_MAX_SIZE = 108
+SHORTS_HEADLINE_MIN_SIZE = 56
+SHORTS_BADGE_FONT_SIZE = 44
+
+# A short, punchy category label per template -- the "single accent
+# badge" the owner-shared research described (a concrete tag, not
+# another line of prose) -- rather than a generic "SHORTS" stamp on
+# every video regardless of content.
+TEMPLATE_BADGE_TEXT = {
+    "facts": "FACT CHECK",
+    "programming": "CODE BUG",
+    "sauce_recipe": "SAUCE SECRETS",
+    "game_night": "GAME NIGHT",
+}
+DEFAULT_BADGE_TEXT = "WATCH NOW"
+
+
+def _render_shorts_card(video: dict) -> Image.Image:
+    """The real per-video hook as a bold headline (top-anchored, per the
+    owner-shared research's left-to-right/top-to-bottom eye-path rule --
+    the headline is the first thing scanned), one accent-colored badge
+    naming the video's category as the single bright element on an
+    otherwise dark/white/black canvas -- same "one deliberate accent
+    color" rule already applied to the quiz thumbnails above, not a
+    separate style invented for this one."""
+    hook = (video.get("hook") or "").strip().rstrip(".!? ").upper()
+    if not hook:
+        raise ValueError("no hook text to build a thumbnail headline from")
+
+    img = Image.new("RGB", (SHORTS_CARD_WIDTH, SHORTS_CARD_HEIGHT), QUIZ_DARK_BG)
+    draw = ImageDraw.Draw(img)
+    max_width = SHORTS_CARD_WIDTH - 140
+
+    # Shrink the headline until it fits in 4 lines or hits the size
+    # floor -- same bounded-shrink idiom as _render_thumb_stat_challenge
+    # above, since a hook can run anywhere from 3 to 12+ words.
+    size = SHORTS_HEADLINE_MAX_SIZE
+    while True:
+        font = ImageFont.truetype(str(FONT_BOLD_PATH), size)
+        lines = _wrap_thumb_text(draw, hook, font, max_width)
+        if len(lines) <= 4 or size <= SHORTS_HEADLINE_MIN_SIZE:
+            break
+        size -= 6
+
+    ascent, descent = font.getmetrics()
+    line_height = int((ascent + descent) * 1.2)
+    total_h = len(lines) * line_height
+    top_y = int(SHORTS_CARD_HEIGHT * 0.32) - total_h // 2
+    _draw_outlined_centered(draw, lines, font, SHORTS_CARD_WIDTH // 2, top_y, line_height, outline=4)
+
+    badge_text = TEMPLATE_BADGE_TEXT.get(video.get("template"), DEFAULT_BADGE_TEXT)
+    badge_font = ImageFont.truetype(str(FONT_BOLD_PATH), SHORTS_BADGE_FONT_SIZE)
+    pad_x, pad_y = 44, 26
+    b_ascent, b_descent = badge_font.getmetrics()
+    badge_w = draw.textlength(badge_text, font=badge_font) + 2 * pad_x
+    badge_h = (b_ascent + b_descent) + 2 * pad_y
+    badge_x0 = (SHORTS_CARD_WIDTH - badge_w) / 2
+    badge_y0 = SHORTS_CARD_HEIGHT * 0.68
+    draw.rounded_rectangle(
+        [badge_x0, badge_y0, badge_x0 + badge_w, badge_y0 + badge_h], radius=badge_h / 2, fill=THUMBNAIL_ACCENT,
+    )
+    text_w = draw.textlength(badge_text, font=badge_font)
+    draw.text((badge_x0 + (badge_w - text_w) / 2, badge_y0 + pad_y - 4), badge_text, font=badge_font, fill=QUIZ_DARK_BG)
+    return img
+
+
+def _generate_thumbnail_from_card(video_id: str, video: dict) -> Path:
+    img = _render_shorts_card(video)
+    out_path = OUTPUT_DIR / f"{video_id}_thumbnail.jpg"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out_path, quality=92)
+
+    size = out_path.stat().st_size
+    if size > MAX_BYTES:
+        raise RuntimeError(f"thumbnail for {video_id} is {size} bytes, over the 2MB limit")
+    return out_path
+
+
 def _render_thumb_challenge_hook(headline: str, question_count: int) -> Image.Image:
     """Concept 1: dark background (not a two-color gradient -- see
-    QUIZ_ACCENT's own comment), the real per-video hook as a bold
+    THUMBNAIL_ACCENT's own comment), the real per-video hook as a bold
     challenge-framed headline in high-contrast white, question count as
     a subtitle in the single accent color -- exactly one bright color on
     the whole canvas, everything else white/black/dark."""
@@ -229,7 +335,7 @@ def _render_thumb_challenge_hook(headline: str, question_count: int) -> Image.Im
 
     _draw_outlined_centered(draw, lines, hook_font, QUIZ_THUMB_WIDTH // 2, top_y, line_height)
     sub_w = draw.textlength(subtitle_text, font=sub_font)
-    draw.text(((QUIZ_THUMB_WIDTH - sub_w) / 2, top_y + total_h + gap), subtitle_text, font=sub_font, fill=QUIZ_ACCENT)
+    draw.text(((QUIZ_THUMB_WIDTH - sub_w) / 2, top_y + total_h + gap), subtitle_text, font=sub_font, fill=THUMBNAIL_ACCENT)
     return img
 
 
@@ -274,10 +380,10 @@ def _render_thumb_stat_challenge(headline: str, question_count: int) -> Image.Im
     top_y = max(_STAT_MARGIN_V, (QUIZ_THUMB_HEIGHT - block_h) // 2)
 
     # The number is the single accent-colored element on this canvas
-    # (see QUIZ_ACCENT) -- a flat fill, not the old two-color gradient,
+    # (see THUMBNAIL_ACCENT) -- a flat fill, not the old two-color gradient,
     # so the eye has exactly one bright thing to land on.
     draw.text(
-        ((QUIZ_THUMB_WIDTH - num_w) / 2, top_y), number_text, font=number_font, fill=QUIZ_ACCENT,
+        ((QUIZ_THUMB_WIDTH - num_w) / 2, top_y), number_text, font=number_font, fill=THUMBNAIL_ACCENT,
     )
 
     _draw_outlined_centered(
@@ -311,7 +417,7 @@ def _render_thumb_question_panel(video: dict, question_count: int) -> Image.Imag
     # variants, drawn as a slightly larger rounded rect behind the panel
     # so it reads as a border.
     draw.rounded_rectangle(
-        [panel_x0 - 4, panel_y0 - 4, panel_x0 + panel_w + 4, panel_y0 + panel_h + 4], radius=20, fill=QUIZ_ACCENT,
+        [panel_x0 - 4, panel_y0 - 4, panel_x0 + panel_w + 4, panel_y0 + panel_h + 4], radius=20, fill=THUMBNAIL_ACCENT,
     )
     draw.rounded_rectangle([panel_x0, panel_y0, panel_x0 + panel_w, panel_y0 + panel_h], radius=16, fill=(24, 25, 22))
     for i, line in enumerate(panel_lines):
