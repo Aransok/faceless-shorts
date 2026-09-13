@@ -55,6 +55,19 @@ VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")
 PUBLISH_GAP_MIN_HOURS = 2.0
 PUBLISH_GAP_MAX_HOURS = 4.0
 
+# Real feedback (2026-09-13, owner reviewing the actual channel's
+# comment feed): a bot comment on literally EVERY upload read as
+# spammy/low-effort, especially once the fallback pool's small size
+# meant the exact same canned line ("More of these coming — subscribed
+# yet?") showed up on two different videos in a row — a real creator
+# doesn't comment on every single one of their own uploads. Decided
+# once per video, at upload time, so the immediate-post path (public
+# visibility) and the later catch-up path (post_pending_cta_comments,
+# for scheduled/private uploads) always agree — never re-rolled on
+# retry, and a video that lost the roll is marked done immediately
+# (cta_comment_posted=1) so the catch-up job never reconsiders it.
+CTA_COMMENT_PROBABILITY = 0.35
+
 
 def _load_credentials() -> Credentials:
     if TOKEN_PATH.exists():
@@ -202,6 +215,12 @@ def upload(video_id: str) -> str:
         # the whole upload() call.
         print(f"warning: thumbnail upload failed for {video_id}: {exc}")
 
+    # One decision per video, made now -- see CTA_COMMENT_PROBABILITY.
+    # A video that loses the roll is marked done immediately so
+    # post_pending_cta_comments()'s later catch-up pass never revisits
+    # it and effectively re-rolls.
+    if random.random() >= CTA_COMMENT_PROBABILITY:
+        update_video(video_id, cta_comment_posted=1)
     # Only attempt this immediately when the video is ALREADY public
     # (visibility == "public", not "scheduled"/"private") -- confirmed for
     # real that commentThreads.insert always fails on a still-private
@@ -209,7 +228,7 @@ def upload(video_id: str) -> str:
     # public), so trying it right after a scheduled upload was a
     # guaranteed, wasted failure every single time. The scheduled/private
     # case is caught later by post_pending_cta_comments().
-    if visibility == "public":
+    elif visibility == "public":
         try:
             post_cta_comment(video, youtube_video_id, youtube)
             update_video(video_id, cta_comment_posted=1)
