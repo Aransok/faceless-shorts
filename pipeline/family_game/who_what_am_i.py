@@ -84,7 +84,13 @@ def generate_round(avoid_topics: list[str], round_index: int, difficulty: str = 
     round_ = make_round(
         game_type=GAME_TYPE,
         difficulty=difficulty,
-        title="Who / What Am I?",
+        # Content-specific, not the constant literal this used to be --
+        # real bug (2026-09-13): every who_what_am_i round had the exact
+        # same title regardless of answer, so once an episode could pick
+        # this type more than once (LONGFORM_GAME_POOL's scale-up), the
+        # quality gate's cross-round duplicate-title check flagged EVERY
+        # episode, every time, even when the actual content differed.
+        title=f"Who / What Am I? ({answer})",
         instructions="Guess what's being described before the final clue.",
         presentation_data=presentation_data,
         answer=answer,

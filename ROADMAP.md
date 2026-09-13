@@ -2272,6 +2272,130 @@ into the same exact line on two different videos when the LLM-backed
 comment generation fails on both — a real, separate, smaller issue if
 it keeps showing up now that comments are 65% rarer overall.
 
+## Family Game Night: shipping the finished engine, not another patch (2026-09-13)
+
+Owner pasted a full 107-section product redesign spec for Family Game
+Night (real illustrated scenes, per-game renderers, analytics feedback
+loops, Shorts/long-form funnel, the works). The spec's own Section 107
+is explicit: inspect what already exists before writing anything new,
+don't blindly patch the current implementation, don't build the whole
+thing in one shot. Following that literally instead of starting fresh:
+
+**Finding: most of the "redesign" was already built and never
+shipped.** `pipeline/family_game/` (a separate, unfinished engine begun
+2026-09-10, phases tracked in `FAMILY_GAME_NIGHT_SPEC.md`, phases 1-7
+already done per the Phase 21 entry above) already implements the new
+spec's core mechanical asks: a real HOST_TIME/PLAYER_TIME timing model
+with genuine narration-independent thinking time (`base.py`), a
+deterministic scene-diff game with the answer coming from real scene
+state, never LLM memory (`spot_the_difference.py` -- exactly what the
+new spec's section 7 demands), a per-round-type quality gate with
+bounded regeneration (`quality_gate.py`), and an episode composer that
+already refuses to repeat a game type back to back
+(`episode.py`). Only ONE of its 7 game-type modules
+(`higher_or_lower.py`) makes any LLM call at all -- every other type is
+either a curated pool or a procedural scene diff. It was never wired
+into the daily orchestrator and Phase 8 (a real end-to-end render,
+actually watched) was left undone -- which is why the OLDER
+`pipeline/games/`-based `game_night` track kept getting patched
+in-place all this session (memory-round spoiler bug, visual identity,
+CRF/encode quality) instead of being replaced outright.
+
+Given a live, revenue-affecting channel, the owner chose to finish and
+ship this already-mostly-built engine first, then treat the actual
+visual/asset overhaul (procedural illustrated scenes, per-game
+renderers with real animation, the new spec's Section 99 "first
+target") as a separate follow-on project on a now-solid foundation,
+rather than starting brand-new work on top of something never fully
+validated.
+
+**Phase 8 (end-to-end validation), done for real, not assumed.** This
+sandbox has no Claude/Groq credentials and its outbound network can't
+reach edge_tts's websocket endpoint (`speech.platform.bing.com`) at
+all -- confirmed by actually trying, not assumed -- so a full real-audio
+render has to happen in GitHub Actions, same as this project's other
+network-dependent stages always have. What COULD be verified here for
+real (composition, quality gate, timing math, actual generated content
+across many runs) was: `compose_episode_with_quality_gate()` +
+`flatten_episode_to_segments()` genuinely produce a complete, quality-
+gated, watchable-shaped episode with real content, only the
+`higher_or_lower.call_llm`/`verify_claim` boundary mocked (no
+Claude/Groq available here) per CLAUDE.md's "mock the network boundary,
+not the logic" testing rule.
+
+**Scaled from a ~6-round/~4 minute episode to a real 10-15 minute one**
+(`episode.py`), using the exact same trick that got the OLDER
+`games/`-based track to "at least 10 mins" back in Phase 21: a big
+WEIGHTED pool (`LONGFORM_GAME_POOL`, 20 entries) instead of a fixed
+5-slot plan, fed through `select_rounds()` (reused as-is from
+`pipeline/games/base.py`, not reimplemented) for the no-adjacent-repeat
+guarantee. Since `higher_or_lower` is the ONLY LLM-touching type in
+this whole package, it's capped at 2 regardless of episode length --
+real measured cost stays close to what the old 5-round format spent on
+one round, not scaled up with everything else. A new
+`_difficulty_for_position()` curve (easy first 20%, hard last 20%,
+medium between) replaces the old fixed-per-slot difficulty mapping with
+section 63/64's "escalating difficulty across the whole episode"
+instead. Measured (not guessed) against 15 real generated episodes:
+~13.0 minutes average (12.7-13.0 range), squarely inside the 10-15
+minute target.
+
+**Three real bugs the scale-up exposed, not introduced by it, but
+guaranteed to fire on every single episode once a type could repeat:**
+1. `who_what_am_i.py` gave every round the exact same literal title
+   ("Who / What Am I?") regardless of answer -- harmless when the type
+   only ever appeared once per episode, guaranteed duplicate-title
+   noise once it could appear twice. Title now includes the answer.
+2. `memory_challenge.py` titled every round by sequence LENGTH alone
+   (`"{length}-icon sequence"`), and `SEQUENCE_LENGTH_CHOICES` only has
+   4 values -- with 5 memory_challenge rounds/episode, pigeonhole
+   guarantees a title collision every time even though the actual
+   sequence/question differs. Title now includes the real question.
+3. `spot_the_difference.py` had only 3 `SCENE_TEMPLATES`, but the new
+   pool can pick it 4 times/episode -- also a guaranteed pigeonhole
+   collision. Added 2 more templates (bedroom, park bench).
+
+**A fourth, structural gap**: neither `episode.compose_episode()` nor
+`quality_gate.compose_episode_with_quality_gate()` ever told a game
+module what THIS episode had already used earlier in the same loop --
+`avoid_topics_by_type` only ever carried cross-episode history a caller
+fed in up front. Both now track `used_by_type` across the composition
+loop and fold each round's own title+answer into that type's avoid list
+for every later same-type round in the same episode.
+
+**A fifth, quality-gate-specific false positive**: `check_episode()`'s
+duplicate-answer check flagged `memory_challenge`/`higher_or_lower`
+constantly once they could repeat -- both types' `answer` field is
+literally binary (`yes`/`no`, `higher`/`lower`), so with several rounds
+per episode a shared answer is near-guaranteed by chance and carries no
+real "did we regenerate the same content" signal (that signal lives in
+`title`, checked separately). Added a small `_GENERIC_ANSWERS`
+exclusion set rather than trying to make binary-answer types produce
+richer answer values just to satisfy this check.
+
+**19 new/changed tests, 207 total across the suite, all passing.**
+Verified with zero real LLM calls (the same `higher_or_lower` LLM/
+verify boundary this package's own tests always mock) plus, separately,
+15 real end-to-end `compose_episode_with_quality_gate()` runs in this
+session (not part of the committed test suite -- ad hoc verification,
+same spirit as this project's "watch the real output" discipline)
+confirming the fixes actually eliminated the guaranteed false-positive
+warnings, leaving only one residual warning that is a test-mock
+artifact (a fixed canned `higher_or_lower` LLM response used for local
+verification, not a real behavior -- real Claude calls vary the
+category per call and will see the forwarded avoid-topics in the
+prompt).
+
+**Not done yet, deliberately left for the next pass**: production
+wiring (a new template name so the untouched, still-live `game_night`
+rotation isn't disturbed until this engine's watched a real render;
+state.db schema for storing composed segments; a render stage that
+calls `render_episode()` and still gets the music bed + CTA overlay
+`assemble.py` already gives every other template); and the actual
+visual/asset redesign the 107-section spec is really about (procedural
+illustrated scenes, per-game-type animation, Shorts-native renderers) --
+correctly out of scope for "ship what's already built."
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

@@ -64,7 +64,13 @@ def generate_round(avoid_topics: list[str], round_index: int, difficulty: str = 
     round_ = make_round(
         game_type=GAME_TYPE,
         difficulty=difficulty,
-        title=f"{length}-icon sequence",
+        # Includes the actual question, not just the sequence LENGTH --
+        # real bug (2026-09-13): SEQUENCE_LENGTH_CHOICES only has 4
+        # values, so titling by length alone gave every episode with 5+
+        # memory_challenge rounds (LONGFORM_GAME_POOL's scale-up) a
+        # guaranteed duplicate-title warning by the pigeonhole principle,
+        # even though the actual sequence/question almost always differs.
+        title=f"{length}-icon sequence: was the {target} in it?",
         instructions=f"Was the {target} one of the {length} icons shown?",
         presentation_data=presentation_data,
         answer=correct_answer,

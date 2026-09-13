@@ -64,7 +64,29 @@ SCENE_TEMPLATES = (
             "sign count": (1, 2, 3),
         },
     },
+    {
+        "subject": "a bedroom",
+        "attributes": {
+            "lamp count": (1, 2),
+            "pillow color": ("white", "blue", "gray", "yellow"),
+            "window open": ("yes", "no"),
+            "poster count": (1, 2, 3),
+        },
+    },
+    {
+        "subject": "a park bench",
+        "attributes": {
+            "bird count": (0, 1, 2, 3),
+            "bench color": ("green", "brown", "gray"),
+            "trash can present": ("yes", "no"),
+            "flower count": (2, 4, 6),
+        },
+    },
 )
+# 2026-09-13: went from 3 templates to 5 -- LONGFORM_GAME_POOL now picks
+# this type up to 4 times per episode (was always exactly once), and 3
+# templates made a same-episode repeat GUARANTEED by the pigeonhole
+# principle regardless of how well avoid_topics forwarding worked.
 
 
 def generate_round(avoid_topics: list[str], round_index: int, difficulty: str = "medium") -> tuple[dict, list[dict]]:

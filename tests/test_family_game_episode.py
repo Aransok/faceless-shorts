@@ -71,15 +71,20 @@ class EpisodeComposerTest(unittest.TestCase):
             episode = episode_module.compose_episode()
             self.assertEqual(episode["games"][-1]["game_type"], "rapid_fire")
 
-    def test_main_rounds_never_repeat_a_game_type(self):
+    def test_main_rounds_never_repeat_a_game_type_adjacently(self):
+        # Not "never repeats at all" -- LONGFORM_GAME_POOL (2026-09-13)
+        # deliberately weights a handful of types to fill a 10+ minute
+        # episode, so the same type appearing twice non-adjacently is
+        # expected. select_rounds()'s own guarantee (no two ADJACENT
+        # entries share a type) is the real property to check here.
         for _ in range(20):
             episode = episode_module.compose_episode()
             main_round_types = [g["game_type"] for g in episode["games"][:-1]]
-            self.assertEqual(len(main_round_types), len(set(main_round_types)))
+            self.assertTrue(all(main_round_types[i] != main_round_types[i + 1] for i in range(len(main_round_types) - 1)))
 
-    def test_episode_has_six_rounds_total(self):
+    def test_episode_has_main_round_count_plus_closer_rounds_total(self):
         episode = episode_module.compose_episode()
-        self.assertEqual(len(episode["games"]), len(episode_module.MAIN_ROUND_PLAN) + 1)
+        self.assertEqual(len(episode["games"]), episode_module.MAIN_ROUND_COUNT + 1)
 
     def test_theme_comes_from_the_pool(self):
         for _ in range(20):
@@ -93,15 +98,33 @@ class EpisodeComposerTest(unittest.TestCase):
     def test_difficulty_follows_the_configured_curve(self):
         episode = episode_module.compose_episode()
         difficulties = [g["difficulty"] for g in episode["games"]]
-        expected = [slot["difficulty"] for slot in episode_module.MAIN_ROUND_PLAN] + [episode_module.CLOSING_DIFFICULTY]
+        expected = [
+            episode_module._difficulty_for_position(i, episode_module.MAIN_ROUND_COUNT)
+            for i in range(episode_module.MAIN_ROUND_COUNT)
+        ] + [episode_module.CLOSING_DIFFICULTY]
         self.assertEqual(difficulties, expected)
 
+    def test_difficulty_curve_starts_easy_ends_hard(self):
+        # Real property the position-based curve exists to guarantee --
+        # section 63/64's "escalating difficulty" -- independent of
+        # exactly which game types select_rounds() happened to pick.
+        episode = episode_module.compose_episode()
+        main_difficulties = [g["difficulty"] for g in episode["games"][:-1]]
+        self.assertEqual(main_difficulties[0], "easy")
+        self.assertEqual(main_difficulties[-1], "hard")
+
     def test_avoid_topics_by_type_is_passed_to_the_right_module_only(self):
+        # setdefault, not plain assignment -- a game type can now be
+        # picked several times in one episode (LONGFORM_GAME_POOL), and
+        # every call after the first also carries this same episode's
+        # own earlier rounds folded in (see compose_episode()'s
+        # used_by_type); only the FIRST call's avoid_topics should equal
+        # exactly what the caller fed in, with nothing added yet.
         seen_avoid_topics = {}
 
         def spy_generate_round(game_type):
             def generate_round(avoid_topics, round_index, difficulty="medium"):
-                seen_avoid_topics[game_type] = avoid_topics
+                seen_avoid_topics.setdefault(game_type, avoid_topics)
                 return _fake_generate_round(game_type)(avoid_topics, round_index, difficulty)
             return generate_round
 
@@ -134,6 +157,30 @@ class EpisodeComposerTest(unittest.TestCase):
         self.assertGreater(len(player_segments), 0)
         for s in player_segments:
             self.assertGreater(s["duration_seconds"], 0)
+
+
+class LongformGamePoolTest(unittest.TestCase):
+    """Covers the real cost-control property this pool exists for
+    (2026-09-13: same requirement/trick as pipeline/plan_game.py's
+    LONGFORM_ROUND_POOL) -- the one LLM-touching game type in this whole
+    package (higher_or_lower) stays capped regardless of how long the
+    episode gets."""
+
+    def test_main_round_count_matches_pool_size(self):
+        self.assertEqual(episode_module.MAIN_ROUND_COUNT, len(episode_module.LONGFORM_GAME_POOL))
+
+    def test_higher_or_lower_stays_a_small_minority(self):
+        llm_touching = episode_module.LONGFORM_GAME_POOL.count("higher_or_lower")
+        self.assertLessEqual(llm_touching, 2)
+
+    def test_pool_is_long_enough_for_a_real_ten_plus_minute_episode(self):
+        self.assertGreaterEqual(len(episode_module.LONGFORM_GAME_POOL), 20)
+
+    def test_select_rounds_on_the_real_pool_never_repeats_adjacently(self):
+        for _ in range(20):
+            rounds = episode_module.select_rounds(episode_module.MAIN_ROUND_COUNT, episode_module.LONGFORM_GAME_POOL)
+            self.assertEqual(len(rounds), episode_module.MAIN_ROUND_COUNT)
+            self.assertTrue(all(rounds[i] != rounds[i + 1] for i in range(len(rounds) - 1)), rounds)
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ the composer) isn't forced through this layer to get a valid episode.
 from __future__ import annotations
 
 from pipeline.family_game.base import HOST_TIME, PLAYER_TIME, validate_round
-from pipeline.family_game.episode import GAME_MODULES, MAIN_ROUND_PLAN, CLOSING_DIFFICULTY, CLOSING_GAME_TYPE
+from pipeline.family_game.episode import GAME_MODULES, MAIN_ROUND_COUNT, CLOSING_DIFFICULTY, CLOSING_GAME_TYPE
 from pipeline.family_game.episode import INTRO_TEMPLATE, OUTRO_TEMPLATE, THEME_POOL, THEME_ROTATION_SLOT, THEME_ROTATION_WINDOW
 from pipeline.family_game.episode import _select_rounds_plan
 from pipeline.rotation import pick_rotating
@@ -104,6 +104,17 @@ def generate_round_with_quality_gate(
     )
 
 
+# Some game types' `answer` field is inherently a small fixed set
+# (memory_challenge/higher_or_lower are literally binary), not the
+# game's actual distinguishing content -- that lives in `title` instead
+# (the sequence/question, the category+items compared). Real false
+# positive found 2026-09-13: once LONGFORM_GAME_POOL let a binary-answer
+# type appear 2-5 times per episode, at least one same-answer collision
+# became near-guaranteed by the pigeonhole principle, flagging almost
+# every real episode for something that isn't actually repeated content.
+_GENERIC_ANSWERS = frozenset({"yes", "no", "higher", "lower"})
+
+
 def check_episode(episode: dict) -> tuple[bool, list[str]]:
     """Cross-round checks section 18 names ("duplicate answer patterns",
     "repeated game too similar to recent round") that no single round's
@@ -120,7 +131,9 @@ def check_episode(episode: dict) -> tuple[bool, list[str]]:
     for game in episode["games"]:
         answer_key = str(game["round"]["answer"]).strip().lower()
         title_key = str(game["round"]["title"]).strip().lower()
-        if answer_key in answers_seen:
+        if answer_key in _GENERIC_ANSWERS:
+            pass
+        elif answer_key in answers_seen:
             problems.append(f"duplicate answer {game['round']['answer']!r} shared by {answers_seen[answer_key]!r} and {game['game_type']!r} rounds")
         else:
             answers_seen[answer_key] = game["game_type"]
@@ -148,11 +161,18 @@ def compose_episode_with_quality_gate(avoid_topics_by_type: dict[str, list[str]]
     theme = pick_rotating(THEME_ROTATION_SLOT, list(THEME_POOL), THEME_ROTATION_WINDOW)
     rounds_plan = _select_rounds_plan()
 
+    # used_by_type: same within-episode repeat tracking as
+    # episode.compose_episode() (2026-09-13) -- a game type can now be
+    # picked several times per episode (LONGFORM_GAME_POOL), so each
+    # round's own title/answer gets folded into that type's avoid list
+    # for every later round of the same type in this episode.
+    used_by_type: dict[str, list[str]] = {}
     games = []
     for round_index, (game_type, difficulty) in enumerate(rounds_plan):
         module = GAME_MODULES[game_type]
-        avoid_topics = avoid_topics_by_type.get(game_type, [])
+        avoid_topics = avoid_topics_by_type.get(game_type, []) + used_by_type.get(game_type, [])
         round_, segments = generate_round_with_quality_gate(module, avoid_topics, round_index, difficulty)
+        used_by_type.setdefault(game_type, []).extend([round_["title"], str(round_["answer"])])
         games.append({"game_type": game_type, "difficulty": difficulty, "round": round_, "segments": segments})
 
     theme_lowered = theme[0].lower() + theme[1:]

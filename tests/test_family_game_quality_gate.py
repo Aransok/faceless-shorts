@@ -131,10 +131,29 @@ class CheckEpisodeTest(unittest.TestCase):
         ok, problems = qg.check_episode(self._episode(("a", r1, s1), ("b", r2, s2)))
         self.assertFalse(ok)
 
+    def test_generic_binary_answers_are_never_flagged_as_duplicates(self):
+        # memory_challenge/higher_or_lower's `answer` field is literally
+        # "yes"/"no"/"higher"/"lower" -- once a binary-answer type can
+        # appear several times per episode (LONGFORM_GAME_POOL), flagging
+        # a shared answer here is noise, not a real repeated-content
+        # signal (the real content lives in `title`, checked separately).
+        r1, s1 = _valid_round_and_segments(game_type="memory_challenge", answer="yes", title="title one")
+        r2, s2 = _valid_round_and_segments(game_type="memory_challenge", answer="Yes", title="title two")
+        ok, problems = qg.check_episode(self._episode(("memory_challenge", r1, s1), ("memory_challenge", r2, s2)))
+        self.assertTrue(ok, problems)
+
 
 def _fake_module(game_type: str):
+    # answer/title vary by round_index -- a real game module never
+    # returns the identical answer every time it's called, and since
+    # 2026-09-13's episode.py scale-up a single game_type can now appear
+    # several times in one episode (LONGFORM_GAME_POOL), so a fake that
+    # ignored round_index here would manufacture a duplicate-answer
+    # warning on every single run, not just the deliberate one below.
     def generate_round(avoid_topics, round_index, difficulty="medium"):
-        return _valid_round_and_segments(game_type=game_type, answer=f"{game_type} answer", title=f"{game_type} title")
+        return _valid_round_and_segments(
+            game_type=game_type, answer=f"{game_type} answer {round_index}", title=f"{game_type} title {round_index}",
+        )
     return SimpleNamespace(generate_round=generate_round)
 
 
@@ -155,7 +174,7 @@ class ComposeEpisodeWithQualityGateTest(unittest.TestCase):
     def test_produces_a_complete_episode_with_no_quality_warnings(self):
         episode = qg.compose_episode_with_quality_gate()
         self.assertEqual(episode["quality_warnings"], [])
-        self.assertEqual(len(episode["games"]), len(qg.MAIN_ROUND_PLAN) + 1)
+        self.assertEqual(len(episode["games"]), qg.MAIN_ROUND_COUNT + 1)
 
     def test_flags_a_real_cross_round_duplicate(self):
         # Force every game type's fake module to return the SAME answer,
