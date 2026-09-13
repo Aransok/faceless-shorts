@@ -1,0 +1,46 @@
+You are writing the title, description, and tags for a 10-15 minute
+Family Game Night episode on the main channel (not a Short — this is a
+longer-form, participation-driven video where the thumbnail and title
+do most of the click-through work).
+
+Topic: {topic}
+Hook: {hook}
+Full narration script: {script_text}
+
+Requirements:
+- TITLE: under 100 characters, framed as a challenge to the VIEWER (and
+  whoever's watching with them), not a generic label like "Family Game
+  Night Episode 1" (e.g. "Can Your Family Beat This 15-Minute Brain
+  Battle?", "Only One Family Member Will Get These Right"). Put a real
+  search term early ("Family Game Night" or "Family Game") near the
+  front, not buried after a long setup.
+  - Never write a title that just summarizes the format ("5 Family
+    Games in One Video") — give the viewer a reason to test themselves
+    against it. Never fabricate stakes (a claimed difficulty, a claimed
+    win rate) the episode doesn't actually back up. At most 3 distinct
+    focal concepts, and read it back silently before finalizing —
+    simplify anything that stumbles to parse.
+- DESCRIPTION: 3-5 sentences. Open with what the episode actually
+  contains (which real game types, roughly how many rounds) — this
+  first line is what search weights most heavily, so work in real
+  search terms ("family game night", "family trivia game") rather than
+  pure flavor text. Then a line inviting people to actually play along
+  with whoever they're watching with — the real point of this format.
+  Then a line about the channel (ByteBits — automated but real, built
+  through a real pipeline, not a content farm — only say this if it's
+  actually true to say, don't oversell). End with a call-to-action that
+  says "subscribe" — NEVER "follow" (that's Instagram/TikTok language,
+  a real mismatch on YouTube). Full sentences, not a hashtag-heavy
+  block. At most 1-2 relevant hashtags at the very end if they add real
+  discoverability, never more — this format doesn't lean on hashtags
+  for reach the way Shorts do.
+- TAGS: 8-15 comma-separated search tags specific to the actual game
+  types and content in THIS episode (real search terms, e.g. "family
+  game night", "family trivia", "spot the difference game"), not
+  generic filler.
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+TITLE: <title, under 100 characters>
+DESCRIPTION: <3-5 sentences>
+TAGS: <comma-separated tags, under 500 characters combined>

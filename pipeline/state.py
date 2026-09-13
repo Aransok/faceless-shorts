@@ -154,6 +154,19 @@ def init_db(db_path: Path = DB_PATH) -> None:
             conn.execute("ALTER TABLE videos ADD COLUMN comment_count INTEGER")
         if "stats_synced_at" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN stats_synced_at TEXT")
+        # family_game_night (2026-09-13): the composed episode's full
+        # segment list (pipeline/family_game/episode.py's
+        # flatten_episode_to_segments() output -- HOST_TIME narration
+        # beats + PLAYER_TIME real-silence beats) doesn't fit the
+        # video_steps table's shape (one narrated beat per row, no
+        # concept of a silent real-duration-only segment), and splitting
+        # it into a new parallel table isn't worth it for a value that's
+        # only ever read once, by render_family_game.py's own render
+        # stage. Stored as one JSON blob instead, same "generalized JSON
+        # payload" pattern video_steps.round_data_json already uses for
+        # variably-shaped per-round content.
+        if "family_game_segments_json" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN family_game_segments_json TEXT")
 
         # video_steps: both templates break a video into narrated beats so
         # the visual can change exactly when the narration describing that

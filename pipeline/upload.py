@@ -43,6 +43,7 @@ CATEGORY_ID = {
     "programming": "28",  # Science & Technology
     "facts": "24",  # Entertainment
     "quiz_longform": "27",  # Education
+    "family_game_night": "24",  # Entertainment
 }
 
 VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")

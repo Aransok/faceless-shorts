@@ -39,19 +39,23 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
     def setUp(self):
         self.plan_patcher = patch.object(orchestrator, "plan")
         self.plan_game_night_patcher = patch.object(orchestrator, "plan_game_night")
+        self.plan_family_game_night_patcher = patch.object(orchestrator, "plan_family_game_night")
         self.run_video_patcher = patch.object(orchestrator, "run_video_to_completion")
         self.list_by_status_patcher = patch.object(orchestrator, "list_by_status", return_value=[])
         self.mock_plan = self.plan_patcher.start()
         self.mock_plan_game_night = self.plan_game_night_patcher.start()
+        self.mock_plan_family_game_night = self.plan_family_game_night_patcher.start()
         self.mock_run_video = self.run_video_patcher.start()
         self.list_by_status_patcher.start()
         self.addCleanup(self.plan_patcher.stop)
         self.addCleanup(self.plan_game_night_patcher.stop)
+        self.addCleanup(self.plan_family_game_night_patcher.stop)
         self.addCleanup(self.run_video_patcher.stop)
         self.addCleanup(self.list_by_status_patcher.stop)
 
         self.mock_plan.side_effect = lambda template, topic_hint=None: f"vid-{template}"
         self.mock_plan_game_night.side_effect = lambda: "vid-game_night"
+        self.mock_plan_family_game_night.side_effect = lambda: "vid-family_game_night"
         self.mock_run_video.side_effect = lambda video_id: {
             "video_id": video_id, "template": "x", "status": "uploaded", "error": None,
         }
@@ -76,6 +80,14 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         # takes no topic_hint (game_night has no topic/hint concept).
         orchestrator.run_daily(count=1, templates=["game_night"])
         self.mock_plan_game_night.assert_called_once_with()
+        self.mock_plan.assert_not_called()
+
+    def test_family_game_night_template_dispatches_to_its_own_planner(self):
+        # Same gap, same fix, for the newer family_game_night track
+        # (2026-09-13) -- wired up front this time rather than repeating
+        # the game_night gap a second time.
+        orchestrator.run_daily(count=1, templates=["family_game_night"])
+        self.mock_plan_family_game_night.assert_called_once_with()
         self.mock_plan.assert_not_called()
 
     def test_no_templates_falls_back_to_default_rotation_by_count(self):
@@ -132,6 +144,45 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
 
         self.assertEqual(self.mock_plan.call_count, 1)
         self.assertEqual(self.mock_plan.call_args_list[0].kwargs.get("topic_hint"), "a hint")
+
+
+class AdvanceOneStageScriptedDispatchTest(unittest.TestCase):
+    """family_game_night's "scripted" stage calls render_family_game_night()
+    (does narration+render+split in one stage, see that module's own
+    docstring) instead of the generic voice() every other template uses
+    -- no real render/DB calls, get_video()/voice()/render_family_game_night()
+    all mocked."""
+
+    def setUp(self):
+        self.get_video_patcher = patch.object(orchestrator, "get_video")
+        self.voice_patcher = patch.object(orchestrator, "voice")
+        self.render_family_game_patcher = patch.object(orchestrator, "render_family_game_night")
+        self.mock_get_video = self.get_video_patcher.start()
+        self.mock_voice = self.voice_patcher.start()
+        self.mock_render_family_game = self.render_family_game_patcher.start()
+        self.addCleanup(self.get_video_patcher.stop)
+        self.addCleanup(self.voice_patcher.stop)
+        self.addCleanup(self.render_family_game_patcher.stop)
+
+    def _set_video(self, template: str, status: str = "scripted"):
+        video = {"id": "vid-1", "status": status, "template": template}
+        self.mock_get_video.side_effect = lambda video_id: {**video, "status": "scripted"}
+
+    def test_family_game_night_scripted_calls_render_family_game_not_voice(self):
+        self._set_video("family_game_night")
+        orchestrator._advance_one_stage("vid-1")
+        self.mock_render_family_game.assert_called_once_with("vid-1")
+        self.mock_voice.assert_not_called()
+
+    def test_other_templates_scripted_still_call_voice(self):
+        for template in ("facts", "programming", "sauce_recipe", "game_night", "quiz_longform"):
+            with self.subTest(template=template):
+                self.mock_voice.reset_mock()
+                self.mock_render_family_game.reset_mock()
+                self._set_video(template)
+                orchestrator._advance_one_stage("vid-1")
+                self.mock_voice.assert_called_once_with("vid-1")
+                self.mock_render_family_game.assert_not_called()
 
 
 if __name__ == "__main__":

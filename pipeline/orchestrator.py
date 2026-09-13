@@ -14,8 +14,10 @@ from pipeline.assemble import assemble
 from pipeline.captions import captions
 from pipeline.metadata import generate_metadata
 from pipeline.plan import plan
+from pipeline.plan_family_game import plan_family_game_night
 from pipeline.plan_game import plan_game_night
 from pipeline.plan_quiz import plan_quiz
+from pipeline.render_family_game import render_family_game_night
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
 from pipeline.visuals_code import visuals_code
@@ -82,11 +84,22 @@ def _advance_one_stage(video_id: str) -> str:
     video = get_video(video_id)
     status = video["status"]
     template = video["template"]
-    stage_name = _STAGE_NAMES.get(status, status)
+    # family_game_night's "scripted" stage does both narration AND
+    # rendering in one call (see render_family_game.py's own docstring
+    # for why) and jumps straight to "visuals_ready" -- there's no
+    # separate "voiced" status for this template, so the generic
+    # "scripted"->"voice" label in _STAGE_NAMES would be misleading here.
+    if status == "scripted" and template == "family_game_night":
+        stage_name = "render_family_game"
+    else:
+        stage_name = _STAGE_NAMES.get(status, status)
 
     t0 = time.monotonic()
     if status == "scripted":
-        voice(video_id)
+        if template == "family_game_night":
+            render_family_game_night(video_id)
+        else:
+            voice(video_id)
     elif status == "voiced":
         if template == "programming":
             visuals_code(video_id)
@@ -193,17 +206,24 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
         print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()
         try:
-            # game_night has its own planner (round selection + verified
-            # claims, no topic/hint concept) rather than plan()'s
-            # template-prompt-file flow -- real gap found 2026-09-12: this
-            # dispatch didn't exist at all, so a `--templates game_night`
-            # run failed instantly with "unknown template: 'game_night'"
-            # (plan()'s TEMPLATES dict only ever had facts/programming/
-            # sauce_recipe) even though _advance_one_stage() already knew
-            # how to advance an EXISTING game_night video through voice/
-            # visuals/upload -- there was just no way to ever create one
-            # via run_daily() in the first place.
-            video_id = plan_game_night() if template == "game_night" else plan(template, topic_hint=topic_hints.get(template))
+            # game_night/family_game_night each have their own planner
+            # (round selection + verified claims, no topic/hint concept)
+            # rather than plan()'s template-prompt-file flow -- real gap
+            # found 2026-09-12 for game_night: this dispatch didn't exist
+            # at all, so a `--templates game_night` run failed instantly
+            # with "unknown template: 'game_night'" (plan()'s TEMPLATES
+            # dict only ever had facts/programming/sauce_recipe) even
+            # though _advance_one_stage() already knew how to advance an
+            # EXISTING game_night video through voice/visuals/upload --
+            # there was just no way to ever create one via run_daily() in
+            # the first place. family_game_night gets the same dispatch
+            # up front this time, rather than repeating that gap.
+            if template == "game_night":
+                video_id = plan_game_night()
+            elif template == "family_game_night":
+                video_id = plan_family_game_night()
+            else:
+                video_id = plan(template, topic_hint=topic_hints.get(template))
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"
             print(f"plan() failed for {template}: {error_message}")

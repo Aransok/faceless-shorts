@@ -18,6 +18,9 @@ METADATA_QUIZ_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "metadata_quiz
 METADATA_SAUCE_RECIPE_PROMPT_PATH = (
     PROJECT_ROOT / "config" / "prompts" / "metadata_sauce_recipe_template.txt"
 )
+METADATA_FAMILY_GAME_PROMPT_PATH = (
+    PROJECT_ROOT / "config" / "prompts" / "metadata_family_game_template.txt"
+)
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -167,10 +170,17 @@ def generate_metadata(video_id: str) -> dict:
 
     is_quiz = video["template"] == "quiz_longform"
     is_sauce_recipe = video["template"] == "sauce_recipe"
+    is_family_game = video["template"] == "family_game_night"
     if is_quiz:
         prompt_path = METADATA_QUIZ_PROMPT_PATH
     elif is_sauce_recipe:
         prompt_path = METADATA_SAUCE_RECIPE_PROMPT_PATH
+    elif is_family_game:
+        # Its own prompt (not the quiz one) -- "questions"/quiz framing
+        # doesn't fit a game-show format with several different game
+        # types, and it needs its own "play along with whoever you're
+        # watching with" framing the quiz prompt has no reason to have.
+        prompt_path = METADATA_FAMILY_GAME_PROMPT_PATH
     else:
         prompt_path = METADATA_PROMPT_PATH
     prompt_body = prompt_path.read_text(encoding="utf-8")

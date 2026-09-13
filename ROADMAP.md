@@ -2590,6 +2590,81 @@ been added by the same mistaken assumption. 1 new regression test
 the card function is never even called for any of them). 238 tests
 total.
 
+## family_game_night wired into the orchestrator (2026-09-13)
+
+Owner asked to finish wiring the already-validated `pipeline/family_game/`
+engine into production, as a NEW template (`family_game_night`) rather
+than replacing the live `game_night` rotation slot -- the owner's own
+call from the engine-scaling entry above, kept: ship this once it's been
+watched end to end via a real GitHub Actions run (this sandbox still has
+no path to real TTS/Claude/Groq -- confirmed again by trying, same
+limitation as before), not silently swap the daily rotation.
+
+**The real architectural problem this had to solve**: every other
+template splits into separate `voice()` (narration only) then
+`visuals_*()` (silent video only) stages, later muxed by `assemble()`.
+family_game's HOST_TIME/PLAYER_TIME model needs real narration
+interleaved with real PLAYER_TIME silence in lockstep with the matching
+visual frame -- `family_game/render.py`'s `render_episode()` already
+does that correctly in ONE pass (built and verified earlier this
+session). Re-deriving that same timeline twice across two independently
+-timed stages would be real, risky rework of shared infrastructure every
+other template also depends on.
+
+**The fix**: one new combined stage, not a rearchitecture.
+`pipeline/plan_family_game.py`'s `plan_family_game_night()` composes an
+episode via the already-quality-gated engine and stores the flattened
+segment list as one JSON blob (`state.py`'s new
+`family_game_segments_json` column -- doesn't fit `video_steps`' one-
+narrated-beat-per-row shape, same "generalized JSON payload" pattern
+`round_data_json` already uses). `pipeline/render_family_game.py`'s
+`render_family_game_night()` calls `render_episode()` once, then splits
+the single muxed output back into a silent video-only file (stream copy,
+no re-encode) and an audio-only file -- exactly the shape `assemble()`
+already expects from every other template's `voice()`/`visuals_*()`
+pair, so `assemble()`, `captions()`, `generate_metadata()`, and
+`upload()` all needed ONLY template-list additions, zero logic changes:
+- `pipeline/orchestrator.py`: `_advance_one_stage()`'s "scripted"
+  status calls `render_family_game_night()` instead of `voice()` for
+  this one template, jumping straight to "visuals_ready" (no separate
+  "voiced" status exists for it). `run_daily()` dispatches
+  `plan_family_game_night()` for this template, same fix shape as the
+  real game_night dispatch gap found 2026-09-12 -- wired up front this
+  time instead of repeating that gap.
+- `pipeline/assemble.py`: added to `MUSIC_TEMPLATES` (real ambient
+  music bed under the PLAYER_TIME silence, not just narration).
+- `pipeline/captions.py`: added to the quiz_longform/game_night "skip
+  captions, the on-screen game cards already carry the content" branch
+  -- same reasoning game_night's own real owner feedback already
+  established for this format shape.
+- `pipeline/metadata.py` + new `config/prompts/metadata_family_game_
+  template.txt`: its own metadata prompt (not the quiz one -- "play
+  along with whoever you're watching with" framing, several game types
+  not "questions", no #Shorts).
+- `pipeline/upload.py`: `CATEGORY_ID["family_game_night"] = "24"`
+  (Entertainment, same as facts).
+- `pipeline/thumbnails.py` needed NO change -- already correctly routes
+  to frame extraction for any template outside `VERTICAL_CARD_TEMPLATES`
+  (see the bug-fix entry above), which family_game_night's landscape
+  1920x1080 render already falls into by construction.
+
+**A real bug caught and fixed along the way, not shipped further**: see
+the dedicated entry above -- `game_night` was being routed through the
+new vertical Shorts thumbnail card, a real mismatch for its landscape
+render, caught while auditing every per-template branch point for this
+wiring (not reported by the owner).
+
+15 new tests across 3 new test files
+(`tests/test_plan_family_game.py`, `tests/test_render_family_game.py`,
+new prompt-selection tests in `tests/test_metadata.py`) plus 2 new
+`tests/test_orchestrator.py` tests covering the dispatch changes. 252
+tests total, all passing. Not independently verified with a real render
+in this sandbox (no TTS/LLM network path here, same limitation
+documented in the engine-scaling entry above) -- the next real
+verification step is a `--templates family_game_night` GitHub Actions
+run, watched end to end the same way every other new format on this
+project has been.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
