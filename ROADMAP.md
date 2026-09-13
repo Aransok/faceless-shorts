@@ -2568,6 +2568,28 @@ try-card/fall-back-to-frame branching, since that part is pure control
 flow, not something that needs real rendering to verify). 237 tests
 total, all passing.
 
+## Real bug caught before it shipped further: landscape templates routed through the vertical thumbnail card (2026-09-13)
+
+Caught while starting the family_game_night wiring below, not reported
+by the owner: the previous entry's Shorts thumbnail card is a 9:16
+canvas, and `generate_thumbnail()`'s `else` branch applied it to EVERY
+non-quiz_longform template -- including `game_night`
+(`pipeline/visuals_game.py`), which renders LANDSCAPE 1920x1080, same
+as quiz_longform. A vertical thumbnail on a landscape video displays
+cropped/matted almost everywhere outside the Shorts feed.
+
+Fixed by making orientation eligibility explicit rather than inferred
+from "not quiz_longform": `VERTICAL_CARD_TEMPLATES` (facts, programming,
+sauce_recipe -- genuinely 1080x1920) is the only allowlist
+`generate_thumbnail()` checks before even attempting the card; every
+other template (game_night, quiz_longform, and family_game_night below)
+goes straight to frame extraction, which has no orientation assumption
+at all. Removed `game_night` from `TEMPLATE_BADGE_TEXT`, where it had
+been added by the same mistaken assumption. 1 new regression test
+(parametrized over game_night/quiz_longform/family_game_night, asserts
+the card function is never even called for any of them). 238 tests
+total.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

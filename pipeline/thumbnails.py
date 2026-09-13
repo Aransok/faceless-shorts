@@ -185,10 +185,11 @@ def generate_thumbnail(video_id: str) -> Path:
     if video is None:
         raise ValueError(f"no video with id {video_id}")
 
-    try:
-        return _generate_thumbnail_from_card(video_id, video)
-    except Exception as exc:
-        print(f"warning: designed thumbnail card failed for {video_id} ({exc}) -- falling back to frame extraction")
+    if video.get("template") in VERTICAL_CARD_TEMPLATES:
+        try:
+            return _generate_thumbnail_from_card(video_id, video)
+        except Exception as exc:
+            print(f"warning: designed thumbnail card failed for {video_id} ({exc}) -- falling back to frame extraction")
     return _generate_thumbnail_from_frame(video_id, video)
 
 
@@ -240,14 +241,26 @@ SHORTS_BADGE_FONT_SIZE = 44
 # A short, punchy category label per template -- the "single accent
 # badge" the owner-shared research described (a concrete tag, not
 # another line of prose) -- rather than a generic "SHORTS" stamp on
-# every video regardless of content.
+# every video regardless of content. Only the real VERTICAL Shorts
+# templates belong here -- see VERTICAL_CARD_TEMPLATES below for why
+# game_night/quiz_longform (both landscape 1920x1080) must never reach
+# this 9:16 card at all, not just lack a badge label for it.
 TEMPLATE_BADGE_TEXT = {
     "facts": "FACT CHECK",
     "programming": "CODE BUG",
     "sauce_recipe": "SAUCE SECRETS",
-    "game_night": "GAME NIGHT",
 }
 DEFAULT_BADGE_TEXT = "WATCH NOW"
+
+# Real bug caught before shipping further (2026-09-13): this card is a
+# 9:16 canvas. game_night (pipeline/visuals_game.py) and quiz_longform
+# both render LANDSCAPE 1920x1080 -- a vertical thumbnail on a landscape
+# video displays cropped/matted almost everywhere outside the Shorts
+# feed. generate_thumbnail() below only attempts the card for templates
+# listed here; everything else goes straight to frame extraction,
+# which has no orientation assumption at all (it scales whatever the
+# real rendered video's own aspect ratio already is).
+VERTICAL_CARD_TEMPLATES = frozenset(TEMPLATE_BADGE_TEXT)
 
 
 def _render_shorts_card(video: dict) -> Image.Image:

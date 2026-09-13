@@ -202,6 +202,23 @@ class GenerateThumbnailFallbackTest(unittest.TestCase):
         self.assertEqual(result, frame_path)
         mock_frame.assert_called_once()
 
+    def test_landscape_templates_never_attempt_the_vertical_card(self):
+        # Real regression caught before shipping (2026-09-13): game_night
+        # (and quiz_longform) render LANDSCAPE 1920x1080 -- routing them
+        # through the 9:16 card would produce a mismatched, cropped-
+        # looking thumbnail. They must go straight to frame extraction,
+        # never even attempt the card.
+        for landscape_template in ("game_night", "quiz_longform", "family_game_night"):
+            with self.subTest(template=landscape_template):
+                self.video["template"] = landscape_template
+                frame_path = Path("/tmp/frame.jpg")
+                with patch("pipeline.thumbnails._generate_thumbnail_from_card") as mock_card, \
+                     patch("pipeline.thumbnails._generate_thumbnail_from_frame", return_value=frame_path) as mock_frame:
+                    result = generate_thumbnail("vid1")
+                self.assertEqual(result, frame_path)
+                mock_card.assert_not_called()
+                mock_frame.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
