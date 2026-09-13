@@ -278,5 +278,17 @@
       1.8
     ],
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/c49e9592-a632-424a-a991-2bfa6d3d3f8e_thumbnail.jpg"
+  },
+  {
+    "video_id": "e6958532-0ec2-45c2-8e2d-10a5681e9cf1",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/e6958532-0ec2-45c2-8e2d-10a5681e9cf1_thumbnail.jpg"
+  },
+  {
+    "video_id": "e03d37bc-540b-4a63-916e-26e2bb76ba35",
+    "method": "card",
+    "template": "programming",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/e03d37bc-540b-4a63-916e-26e2bb76ba35_thumbnail.jpg"
   }
 ]

@@ -387,5 +387,21 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-13T22:21:44.379686+00:00"
+  },
+  {
+    "video_id": "e6958532-0ec2-45c2-8e2d-10a5681e9cf1",
+    "youtube_video_id": "l0y1zHE0Dlg",
+    "uploaded_at": "2026-09-13T17:31:35.113113+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-14T01:56:48.529479+00:00"
+  },
+  {
+    "video_id": "e03d37bc-540b-4a63-916e-26e2bb76ba35",
+    "youtube_video_id": "OG4B9nzw3hI",
+    "uploaded_at": "2026-09-13T17:36:34.019592+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-14T05:53:45.343965+00:00"
   }
 ]
