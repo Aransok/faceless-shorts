@@ -419,5 +419,21 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-14T12:00:06.953322+00:00"
+  },
+  {
+    "video_id": "ae712123-71db-4b42-a5ba-fd8df5e84045",
+    "youtube_video_id": "attLdV-gDis",
+    "uploaded_at": "2026-09-14T09:01:06.101697+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-14T15:51:10.423788+00:00"
+  },
+  {
+    "video_id": "22634040-23ea-490a-a08f-3a9ced493532",
+    "youtube_video_id": "jl82Z0qD3Ag",
+    "uploaded_at": "2026-09-14T09:09:01.878726+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-14T19:41:19.562522+00:00"
   }
 ]
