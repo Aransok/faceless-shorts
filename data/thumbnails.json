@@ -300,5 +300,11 @@
       0.0
     ],
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/43a452ae-3678-466f-a839-488503bc3cf8_thumbnail.jpg"
+  },
+  {
+    "video_id": "efa8ff61-50b1-45ae-af86-872ded456e7e",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/efa8ff61-50b1-45ae-af86-872ded456e7e_thumbnail.jpg"
   }
 ]

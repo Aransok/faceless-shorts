@@ -411,5 +411,13 @@
     "template": "family_game_night",
     "approach": null,
     "scheduled_publish_at": "2026-09-14T08:09:53.736915+00:00"
+  },
+  {
+    "video_id": "efa8ff61-50b1-45ae-af86-872ded456e7e",
+    "youtube_video_id": "e0ePdutqWPw",
+    "uploaded_at": "2026-09-14T08:43:08.813544+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-14T12:00:06.953322+00:00"
   }
 ]
