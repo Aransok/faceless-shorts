@@ -1,0 +1,75 @@
+name: Rotate Content Approach
+
+# The feedback loop config.yaml's own comment always described but
+# nothing ever implemented (2026-09-14): current_approach had been
+# manually fixed to storytelling_hook since launch, with no other
+# approach ever actually tried -- no comparative performance data for
+# anything to learn from. scripts/rotate_approach.py picks the real
+# best-performing approach once pipeline/winner_analyzer.py has enough
+# eligible samples for at least 2 of them, otherwise rotates to
+# whichever approach hasn't run recently so real comparative data
+# starts accumulating. Reads only local state.db/data/videos.json (no
+# YouTube API call, no secrets needed) -- sync-analytics.yml is what
+# keeps those real view counts fresh.
+
+on:
+  schedule:
+    # Sunday, ahead of the coming week's videos -- :15 past the hour,
+    # not :00, same reasoning as every other cron in this repo (GitHub's
+    # documented top-of-hour scheduling congestion).
+    - cron: "15 8 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Shares one concurrency group with every other workflow that writes
+# repo state -- see daily-shorts.yml's comment for the real 2026-09-12
+# incident this class of fix prevents. config.yaml is a small text file
+# so a conflict here would likely auto-resolve via rebase anyway, but
+# there's no reason to let it race the others just because it happens
+# to be low-risk.
+concurrency:
+  group: faceless-shorts-state-writer
+
+jobs:
+  rotate-approach:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Rotate approach
+        run: python scripts/rotate_approach.py
+
+      - name: Commit updated config
+        run: |
+          git config user.name "faceless-shorts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add config.yaml data/phrase_usage.json
+          if git diff --cached --quiet; then
+            echo "no config changes to commit"
+            exit 0
+          fi
+          git commit -m "Rotate content approach [skip ci]"
+
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed config on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt/3) -- rebasing onto latest main"
+            # Same stuck-mid-rebase fix as every other workflow in this
+            # repo (real incident 2026-09-13) -- abort back to a clean
+            # state so each attempt gets a real chance.
+            git pull --rebase || git rebase --abort
+          done
+
+          echo "config push failed after 3 attempts"
+          exit 1

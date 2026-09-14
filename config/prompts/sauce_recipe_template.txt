@@ -56,6 +56,16 @@ Requirements:
   so aim for the lower half if you want to land comfortably under 60
   seconds. Conversational pace, no filler, no "did you know" openers, no
   numbering out loud ("sauce one...").
+- The very first line must state the hook/payoff directly, not set a
+  scene first — "Picture this..." or "Here's a story about..." burns the
+  first couple seconds (when most viewers decide whether to keep
+  watching) on nothing the video actually needs. Phrase it as the
+  CONSEQUENCE or the surprise, not a flat description of the sauce — a
+  description gives away the whole point immediately.
+  - BAD (flat description): "This is a three-ingredient garlic butter
+    sauce."
+  - GOOD (consequence/surprise stated first): "This sauce looks
+    completely wrong until you add one ingredient."
 - For each sauce, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual cooking action or dish
   being described, not generic kitchen filler. For each sauce, give:

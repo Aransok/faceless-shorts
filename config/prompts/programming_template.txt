@@ -19,6 +19,13 @@ Requirements:
   "Picture this..." or "Here's a story about..." or any scene-setting
   before the point. The viewer decides whether to keep watching in the
   first couple seconds; a story-opening wind-up wastes that window.
+  - Phrase it as the CONSEQUENCE, not a flat description of what the
+    code does — a description gives away the whole point immediately;
+    a consequence makes the viewer want to see why before you explain.
+    - BAD (flat description): "This function uses a mutable default
+      argument."
+    - GOOD (consequence stated first): "This function remembers every
+      call you've ever made to it — and that's not a feature."
 - Break the demo into 2-4 STEPS. Each step is one beat of the story, and
   each has its own CODE (what's on screen during that step) and its own
   SCRIPT (the narration spoken during that step, timed to match). A

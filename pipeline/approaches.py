@@ -35,6 +35,41 @@ def get_current_approach() -> str:
     return approach
 
 
+# Below this many eligible same-approach samples, a comparison is too
+# noisy to trust -- same reasoning as winner_analyzer.py's own
+# MIN_TEMPLATE_SAMPLE, just applied to approaches instead of templates.
+MIN_APPROACH_SAMPLE = 5
+
+
+def choose_next_approach() -> str:
+    """The real feedback loop this config file's own comment described
+    but nothing ever implemented (2026-09-14): current_approach had been
+    manually fixed to storytelling_hook since launch -- no other
+    approach had ever actually been tried, so there was no comparative
+    data for anything to learn from. Picks the real best-performing
+    approach once enough eligible samples exist for at least 2 of them
+    (see MIN_APPROACH_SAMPLE); until then, rotates to whichever approach
+    hasn't been used recently (pick_rotating(), the same "not immediately
+    repeat" mechanism every other rotation in this project already
+    uses) so real comparative data actually starts accumulating instead
+    of staying frozen on one approach forever.
+    """
+    from pipeline.winner_analyzer import approach_performance, classified_rows
+
+    pools = yaml.safe_load(APPROACHES_PATH.read_text(encoding="utf-8"))
+    all_approaches = list(pools)
+
+    performance = approach_performance(classified_rows())
+    eligible = {a: p for a, p in performance.items() if a in pools and p["count"] >= MIN_APPROACH_SAMPLE}
+    if len(eligible) >= 2:
+        return max(eligible.items(), key=lambda kv: kv[1]["avg_ratio"])[0]
+    # limit=1 (not the size of all_approaches) -- with only 3 approaches
+    # total, a larger window would exclude too much of the pool at once;
+    # 1 just guarantees no back-to-back repeat, same reasoning as this
+    # project's other small-pool rotations (e.g. the CTA variant pool).
+    return pick_rotating("current_approach", all_approaches, 1)
+
+
 def pick_style(approach: str | None = None) -> dict:
     """A hook_opener/script_structure/phrasing_style combination from the
     given (or current) approach's pool, preferring phrases not used in

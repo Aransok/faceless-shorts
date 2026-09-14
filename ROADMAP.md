@@ -2769,6 +2769,69 @@ in test coverage, not just the one field.
 
 254 tests total, all passing.
 
+## Real feedback loop: automated approach rotation (2026-09-14)
+
+Owner shared a ChatGPT conversation (Joshua's hook/retention advice,
+41.3% stayed-to-watch on Shorts, a data-driven "score topics, learn from
+winners" pipeline) and asked to build the genuinely new pieces -- the
+rest was mostly confirming direction the channel already has (3 Shorts
+pillars, 2 separate long-form types, 5-6/day) or things already shipped
+this session (hook-first prompts, stakes-framed long-form titles,
+winner_analyzer's classification).
+
+**The real gap found while building this**: `config.yaml`'s own comment
+has described periodic approach A/B testing since launch ("Change
+current_approach... e.g. weekly, to A/B test which approach performs
+better") -- but `current_approach` had been manually fixed to
+`storytelling_hook` the entire time. `fast_cuts`/`deadpan_facts`
+(`config/approaches.yaml`'s other two pools) had never actually been
+tried in production, so `winner_analyzer.py`'s own real classification
+data had nothing comparative to learn from even though the machinery to
+compare was already built.
+
+`pipeline/winner_analyzer.py`'s new `approach_performance()`: for every
+eligible row with a real `approach` set, averages that row's own
+`views/baseline_views` ratio (classify()'s own per-template-baseline
+multiplier, not raw views, which would just measure template
+popularity, not the approach's own effect) per approach.
+
+`pipeline/approaches.py`'s new `choose_next_approach()`: once at least 2
+approaches have `MIN_APPROACH_SAMPLE` (5) eligible samples each, picks
+the real best-performing one. Until then -- the actual current state --
+falls back to `pick_rotating()` (the same "don't immediately repeat"
+mechanism every other rotation in this project already uses) so real
+comparative data starts accumulating instead of staying frozen on one
+approach forever.
+
+`scripts/rotate_approach.py` + new weekly `rotate-approach.yml`
+(Sundays, ahead of the coming week) applies the pick to `config.yaml` --
+a plain regex line-replace, not a `yaml.safe_dump()` round trip, since
+PyYAML's dumper doesn't preserve comments and the file's own explanatory
+comment block is worth keeping intact through every automated rotation.
+No YouTube API call, no secrets needed -- reads only local
+state.db/data/videos.json (`sync-analytics.yml` is what keeps those
+real view counts fresh).
+
+Also tightened the hook-writing rules in all 3 Shorts prompt templates
+(`facts_template.txt`, `programming_template.txt`,
+`sauce_recipe_template.txt`) with the specific formula from the shared
+research: the first line should state the CONSEQUENCE or mystery, not a
+flat description -- a description already gives the viewer the answer
+and no reason to keep watching. More specific than the existing "don't
+open with a story" rule this session already shipped; `sauce_recipe_
+template.txt` hadn't gotten that rule at all yet, now has both.
+
+Deliberately not built yet, per the owner's own follow-up ("shouldn't
+be full video on image, most people scroll away"): occasional real
+still-photo beats (Wikimedia Commons, license-filtered) inserted briefly
+into a Short as stronger "visual proof" than generic Pexels stand-in
+footage for a specific named subject -- agreed on the concept and scope
+(a brief supplemental beat, never a slideshow replacing the video-clip
+format), flagged as the next concrete piece rather than started
+half-built alongside everything else in this pass.
+
+6 new tests (`tests/test_approaches.py`), 260 total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

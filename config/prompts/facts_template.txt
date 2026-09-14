@@ -46,6 +46,20 @@ Requirements:
   scene first — "Picture this..." or "Here's a story about..." burns the
   first couple seconds (when most viewers decide whether to keep
   watching) on nothing the video actually needs.
+  - Beyond just "no scene-setting": phrase it as the CONSEQUENCE or the
+    mystery, not a flat description of what the thing is — a
+    description gives the viewer the whole answer immediately and they
+    have no reason to keep watching; a consequence/mystery makes them
+    want to know why or how before you explain it.
+    - BAD (flat description, answer already given): "Oxford has an
+      electric bell that's been ringing since 1840."
+    - GOOD (consequence framed as a mystery): "This bell has been
+      ringing for almost 200 years, and nobody knows when it'll stop."
+    - BAD (flat description): "The guillotine is named after a doctor
+      who opposed the death penalty."
+    - GOOD (consequence/irony framed first): "The man the guillotine is
+      named after spent his life trying to make executions more humane
+      — and hated that it got named after him."
 - For each fact, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual interesting thing being
   described, not generic footage that merely relates to the topic. For

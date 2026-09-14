@@ -167,6 +167,26 @@ def classified_rows(now: datetime | None = None) -> list[dict]:
     return out
 
 
+def approach_performance(rows: list[dict]) -> dict[str, dict]:
+    """{approach: {"count": n, "avg_ratio": x}} across every eligible row
+    with a real approach set (facts/programming/sauce_recipe -- the only
+    templates pipeline/approaches.py's rotation actually applies to;
+    quiz_longform/game_night/family_game_night never set one). Each
+    row's own views/baseline_views ratio (classify()'s own multiplier,
+    already computed) is averaged per approach -- a real, comparable
+    "did this approach outperform ITS OWN template's typical video"
+    signal, not raw views (which would just measure template popularity,
+    not the approach's own effect)."""
+    ratios_by_approach: dict[str, list[float]] = {}
+    for r in rows:
+        approach = r.get("approach")
+        baseline = r.get("baseline_views") or 0
+        if not approach or baseline <= 0:
+            continue
+        ratios_by_approach.setdefault(approach, []).append(r["views"] / baseline)
+    return {a: {"count": len(ratios), "avg_ratio": sum(ratios) / len(ratios)} for a, ratios in ratios_by_approach.items()}
+
+
 def winner_characteristics(rows: list[dict]) -> list[dict]:
     """WINNER/BREAKOUT rows only, with the real structural fields the
     owner's research asked to see per winner -- template, approach, and
