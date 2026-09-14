@@ -265,5 +265,45 @@ class TestVisualDiversity(unittest.TestCase):
         self.assertIn(1, c_entry["similar_to"])
 
 
+class TestImageBeatSegmentPlanning(unittest.TestCase):
+    """pipeline/wikimedia.py supplies the real image; this covers only the
+    frame-accounting/insertion logic in _plan_beat_segments -- whether the
+    image beat stays brief and the beat's total duration stays exact.
+    """
+
+    def test_no_image_requested_returns_plain_video_segments(self):
+        plan = vf._plan_beat_segments(10.0, use_image=False)
+        self.assertTrue(all(seg["kind"] == "video" for seg in plan))
+        self.assertEqual(sum(seg["frames"] for seg in plan), round(10.0 * vf.FPS))
+
+    def test_image_beat_is_first_and_brief(self):
+        plan = vf._plan_beat_segments(10.0, use_image=True)
+        self.assertEqual(plan[0]["kind"], "image")
+        self.assertEqual(plan[0]["frames"], round(vf.IMAGE_BEAT_SECONDS * vf.FPS))
+        self.assertTrue(all(seg["kind"] == "video" for seg in plan[1:]))
+
+    def test_total_duration_stays_exact_with_an_image_inserted(self):
+        clip_duration = 12.3
+        plan = vf._plan_beat_segments(clip_duration, use_image=True)
+        self.assertEqual(sum(seg["frames"] for seg in plan), round(clip_duration * vf.FPS))
+
+    def test_falls_back_to_all_video_when_beat_too_short_to_spare_real_footage(self):
+        """A very short beat (e.g. a quick transition line) must not lose
+        almost all its real footage to an image insert -- the explicit
+        "shouldn't be full video on image" constraint applies at the beat
+        level too, not just the whole-video level."""
+        clip_duration = vf.IMAGE_BEAT_SECONDS + 0.3  # leaves far less than _MIN_VIDEO_SEGMENT_FRAMES
+        plan = vf._plan_beat_segments(clip_duration, use_image=True)
+        self.assertTrue(all(seg["kind"] == "video" for seg in plan))
+
+    def test_image_beat_never_consumes_the_whole_duration(self):
+        for clip_duration in (2.0, 5.0, 10.0, 20.0):
+            plan = vf._plan_beat_segments(clip_duration, use_image=True)
+            video_frames = sum(seg["frames"] for seg in plan if seg["kind"] == "video")
+            image_frames = sum(seg["frames"] for seg in plan if seg["kind"] == "image")
+            if image_frames:
+                self.assertGreater(video_frames, 0, f"duration {clip_duration}s: image consumed the whole beat")
+
+
 if __name__ == "__main__":
     unittest.main()

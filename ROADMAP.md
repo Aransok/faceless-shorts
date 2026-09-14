@@ -2832,6 +2832,49 @@ half-built alongside everything else in this pass.
 
 6 new tests (`tests/test_approaches.py`), 260 total, all passing.
 
+### Real image, brief supplemental beat (2026-09-14)
+
+The "next concrete piece" flagged above, built the same day once the
+owner confirmed the scope: `pipeline/wikimedia.py` searches Wikimedia
+Commons for a real photo of a beat's subject, restricted to
+attribution-free licenses (`Public domain`, `CC0`) -- CC-BY/CC-BY-SA are
+legally usable but need real per-image credit this pipeline has no
+format for, so they're filtered out rather than used unattributed. No
+API key, no paid tier -- Wikimedia's own public search API.
+
+`visuals_facts.py` only reaches for an image when a beat's own best
+real-footage match already scored `exact_subject` (i.e. the visual
+plan's tiering already confirmed what the real thing looks like), caps
+it to `MAX_IMAGE_BEATS_PER_VIDEO = 2` beats per video, and
+`_plan_beat_segments()` keeps the image to `IMAGE_BEAT_SECONDS = 1.5`s
+at the *start* of the beat with the rest reflowed to real video footage
+-- never the whole beat, per the owner's explicit constraint ("shouldn't
+be full video on image... most people scroll away"). A beat too short to
+spare `_MIN_VIDEO_SEGMENT_FRAMES` (1s) of real footage after the insert
+falls back to all-video automatically. Any search/download failure is
+caught and treated as "no image for this beat" -- an optional beat must
+never fail a video that would otherwise have succeeded (same fail-soft
+standard as every other stage).
+
+**Real gap in this pass**: this sandbox's egress policy blocks
+`commons.wikimedia.org` outright (same class of restriction that already
+blocked `i.ytimg.com`/`console.groq.com` earlier this week) — every
+piece of parsing/filtering logic is covered by real tests
+(`tests/test_wikimedia.py`) against a mocked response shaped like
+MediaWiki's documented `action=query&generator=search&prop=imageinfo`
+API, but the actual live response (field names, whether `thumburl` is
+always present at `iiurlwidth=1080`, real search relevance for short
+fact-style subjects) has NOT been verified against the real endpoint.
+The first real GitHub Actions daily run after this ships is the first
+real test of this against the live API — watch `data/thumbnails.json`-
+style logging (`visual_log` entries tagged `"method": "wikimedia_image"`
+in `assets/output/{video_id}_visual_log.json`) on that run to confirm it
+actually finds and uses real images rather than silently no-op'ing every
+time.
+
+14 new tests (`tests/test_wikimedia.py` + additions to
+`tests/test_visuals_facts.py`), 274 total, all passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

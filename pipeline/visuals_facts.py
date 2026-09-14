@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 
 from pipeline.state import get_video, get_video_steps, list_by_status, update_video
 from pipeline.voice import voice
+from pipeline.wikimedia import download_commons_image, search_commons_image
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "assets" / "output"
@@ -28,6 +29,19 @@ WIDTH, HEIGHT = 1080, 1920
 FPS = 30
 SEGMENT_TARGET_SECONDS = 5.0  # cut to a new clip roughly every 4-6s, within each beat
 PEXELS_SEARCH_URL = "https://api.pexels.com/videos/search"
+
+# Real image, brief supplemental beat (2026-09-14, per real viewer feedback
+# that all-stock B-roll never shows the actual thing a beat is about).
+# Deliberately short and deliberately rare -- explicit constraint from the
+# person running this channel: "it shouldn't be full video on image we want
+# the user to be engaged cuz most of them scroll away". So this only ever
+# replaces the FIRST few seconds of a beat's footage, never a whole beat and
+# never more than MAX_IMAGE_BEATS_PER_VIDEO beats in one video, and only
+# when the beat's own best real-footage match already qualified as
+# exact_subject (i.e. we know what the "real thing" actually looks like).
+IMAGE_BEAT_SECONDS = 1.5
+MAX_IMAGE_BEATS_PER_VIDEO = 2
+_MIN_VIDEO_SEGMENT_FRAMES = round(1.0 * FPS)  # keep >=1s of real footage in the beat after an image insert
 
 
 def _search_pexels_videos(query: str, api_key: str, per_page: int = 5) -> list[dict]:
@@ -339,6 +353,67 @@ def _plan_segment_frames(target_duration: float) -> list[int]:
     return [base + (1 if i < remainder else 0) for i in range(num_segments)]
 
 
+def _plan_beat_segments(clip_duration: float, use_image: bool) -> list[dict]:
+    """Ordered list of {"kind": "video"|"image", "frames": int} for one
+    beat. When use_image is True and there's enough real duration left
+    over, the FIRST segment becomes a brief (IMAGE_BEAT_SECONDS) real-photo
+    beat and the remaining frames are reflowed across ordinary video
+    segments -- never the whole beat (see IMAGE_BEAT_SECONDS's docstring
+    for why). Falls back to all-video if the beat is too short to spare
+    _MIN_VIDEO_SEGMENT_FRAMES of real footage after the insert.
+    """
+    video_frames = _plan_segment_frames(clip_duration)
+    if not use_image:
+        return [{"kind": "video", "frames": f} for f in video_frames]
+
+    total_frames = sum(video_frames)
+    image_frames = round(IMAGE_BEAT_SECONDS * FPS)
+    remaining = total_frames - image_frames
+    if remaining < _MIN_VIDEO_SEGMENT_FRAMES:
+        return [{"kind": "video", "frames": f} for f in video_frames]
+
+    remaining_video_frames = _plan_segment_frames(remaining / FPS)
+    return [{"kind": "image", "frames": image_frames}] + [
+        {"kind": "video", "frames": f} for f in remaining_video_frames
+    ]
+
+
+def _build_image_segment_clip(image_path: Path, frame_count: int, output_path: Path) -> None:
+    """A brief push-in (Ken Burns) on a real still photo -- the "here's the
+    actual thing" supplemental beat (see pipeline/wikimedia.py). Always
+    short and always followed by real video footage within the same beat
+    (see _plan_beat_segments) -- a still image left on screen is exactly
+    the scroll-away failure mode this exists to avoid, not something to
+    lean into.
+    """
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path is None:
+        raise RuntimeError("ffmpeg not found on PATH")
+
+    # Pre-upscale 2x before zoompan -- zoompan sampling a still at its
+    # target resolution produces visible stepping on a slow zoom; feeding
+    # it a larger frame first keeps the push-in smooth.
+    vf = (
+        f"scale={WIDTH * 2}:{HEIGHT * 2}:force_original_aspect_ratio=increase,"
+        f"crop={WIDTH * 2}:{HEIGHT * 2},"
+        f"zoompan=z='min(zoom+0.0015,1.15)':d={frame_count}:s={WIDTH}x{HEIGHT}:fps={FPS}"
+    )
+    result = subprocess.run(
+        [
+            ffmpeg_path, "-y",
+            "-loop", "1", "-i", str(image_path),
+            "-vf", vf,
+            "-frames:v", str(frame_count),
+            "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+            str(output_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"ffmpeg failed (exit {result.returncode}): {result.stderr}")
+
+
 def _build_segment_clip(source_path: Path, frame_count: int, output_path: Path) -> None:
     """Scale/crop the source clip to exactly 1080x1920 and loop it to an
     exact frame count. Cutting by -frames:v at a forced output fps, not by
@@ -467,6 +542,8 @@ def visuals_facts(video_id: str) -> str:
         raise RuntimeError("PEXELS_API_KEY not set — required for FACTS_VISUAL_SOURCE=stock")
 
     visual_log: list[dict] = []
+    image_beats_used = 0
+    real_image_beats_enabled = os.environ.get("ENABLE_REAL_IMAGE_BEATS", "1") != "0"
 
     with tempfile.TemporaryDirectory(prefix="visuals_facts_") as tmp:
         tmp_dir = Path(tmp)
@@ -480,10 +557,46 @@ def visuals_facts(video_id: str) -> str:
             clip_duration = beat["duration"]
 
             visual_plan = _parse_beat_visual_plan(beat["keywords"])
+            subject = visual_plan.get("subject")
             beat_frames = _plan_segment_frames(clip_duration)
             pool, pool_log = _build_clip_pool(visual_plan, api_key, min_count=len(beat_frames), beat_label=f"beat {beat['step_index']}: ")
             for entry in pool_log:
-                visual_log.append({"beat": beat["step_index"], "subject": visual_plan.get("subject"), **entry})
+                visual_log.append({"beat": beat["step_index"], "subject": subject, **entry})
+
+            # Real image, brief supplemental beat: only for a beat whose
+            # best real-footage match is exact_subject (we know what the
+            # real thing actually looks like), only up to
+            # MAX_IMAGE_BEATS_PER_VIDEO times per video, and any network
+            # failure here just falls back to normal stock footage for
+            # this beat -- an optional beat should never fail a video that
+            # would otherwise have succeeded.
+            commons_image = None
+            commons_image_path = None
+            wants_image = (
+                real_image_beats_enabled
+                and image_beats_used < MAX_IMAGE_BEATS_PER_VIDEO
+                and subject
+                and pool_log
+                and pool_log[0]["match_type"] == "exact_subject"
+            )
+            if wants_image:
+                try:
+                    commons_image = search_commons_image(subject)
+                    if commons_image is not None:
+                        commons_image_path = tmp_dir / f"beat{beat['step_index']}_commons.jpg"
+                        download_commons_image(commons_image["url"], commons_image_path)
+                except Exception as exc:
+                    print(f"[real image beat] beat {beat['step_index']}: skipping ({exc})")
+                    commons_image, commons_image_path = None, None
+
+            segment_plan = _plan_beat_segments(clip_duration, use_image=commons_image_path is not None)
+            if segment_plan[0]["kind"] == "image":
+                image_beats_used += 1
+                visual_log.append({
+                    "beat": beat["step_index"], "subject": subject, "method": "wikimedia_image",
+                    "title": commons_image["title"], "license": commons_image["license"],
+                    "source_page": commons_image["source_page"],
+                })
 
             source_paths = []
             for i, clip in enumerate(pool):
@@ -492,10 +605,15 @@ def visuals_facts(video_id: str) -> str:
                 source_paths.append(source_path)
 
             sub_segment_paths = []
-            for i, frame_count in enumerate(beat_frames):
-                source = source_paths[i % len(source_paths)]
+            video_index = 0
+            for i, seg in enumerate(segment_plan):
                 seg_path = tmp_dir / f"beat{beat['step_index']}_seg_{i:03d}.mp4"
-                _build_segment_clip(source, frame_count, seg_path)
+                if seg["kind"] == "image":
+                    _build_image_segment_clip(commons_image_path, seg["frames"], seg_path)
+                else:
+                    source = source_paths[video_index % len(source_paths)]
+                    video_index += 1
+                    _build_segment_clip(source, seg["frames"], seg_path)
                 sub_segment_paths.append(seg_path)
 
             beat_clip_path = tmp_dir / f"beat{beat['step_index']}_full.mp4"
