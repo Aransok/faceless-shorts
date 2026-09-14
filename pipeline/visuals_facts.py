@@ -585,6 +585,9 @@ def visuals_facts(video_id: str) -> str:
                     if commons_image is not None:
                         commons_image_path = tmp_dir / f"beat{beat['step_index']}_commons.jpg"
                         download_commons_image(commons_image["url"], commons_image_path)
+                        print(f"[real image beat] beat {beat['step_index']}: found {commons_image['title']!r} ({commons_image['license']})")
+                    else:
+                        print(f"[real image beat] beat {beat['step_index']}: no licensed image found for {subject!r}")
                 except Exception as exc:
                     print(f"[real image beat] beat {beat['step_index']}: skipping ({exc})")
                     commons_image, commons_image_path = None, None
@@ -592,6 +595,7 @@ def visuals_facts(video_id: str) -> str:
             segment_plan = _plan_beat_segments(clip_duration, use_image=commons_image_path is not None)
             if segment_plan[0]["kind"] == "image":
                 image_beats_used += 1
+                print(f"[real image beat] beat {beat['step_index']}: using real photo for {segment_plan[0]['frames']} frames")
                 visual_log.append({
                     "beat": beat["step_index"], "subject": subject, "method": "wikimedia_image",
                     "title": commons_image["title"], "license": commons_image["license"],
