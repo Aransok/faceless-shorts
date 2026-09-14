@@ -403,5 +403,13 @@
     "template": "programming",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-14T05:53:45.343965+00:00"
+  },
+  {
+    "video_id": "43a452ae-3678-466f-a839-488503bc3cf8",
+    "youtube_video_id": "yuzUFQFTeBE",
+    "uploaded_at": "2026-09-13T19:20:49.811260+00:00",
+    "template": "family_game_night",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-14T08:09:53.736915+00:00"
   }
 ]
