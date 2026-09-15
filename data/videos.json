@@ -451,5 +451,29 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-15T01:17:31.036986+00:00"
+  },
+  {
+    "video_id": "0ace40e5-fa17-463d-a780-98cb4931311a",
+    "youtube_video_id": "DzoxpDcZM9o",
+    "uploaded_at": "2026-09-15T09:56:42.518054+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-15T12:46:17.976669+00:00"
+  },
+  {
+    "video_id": "16ff4352-e158-4998-ad5f-3844b8450f1c",
+    "youtube_video_id": "hYpqUDRIHUY",
+    "uploaded_at": "2026-09-15T10:04:36.912570+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-15T15:02:46.002215+00:00"
+  },
+  {
+    "video_id": "1629db55-2708-4a3a-b64c-d9c3f862b1f8",
+    "youtube_video_id": "1p08QF9iesk",
+    "uploaded_at": "2026-09-15T10:12:47.272474+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-15T17:34:54.557471+00:00"
   }
 ]
