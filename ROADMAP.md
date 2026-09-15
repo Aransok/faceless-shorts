@@ -2982,6 +2982,25 @@ than the source material assumed; those are marked done, not re-proposed.
   about the underlying research-then-package discipline, not about
   making BiteBits' output look like Steffen Miro's channel.
 
+**Resource to evaluate, not yet investigated:** owner flagged
+`charlie947/social-media-skills` on GitHub (Claude Skills for social
+content — hooks/ideas/remixes from past top-performing content, a
+voice-builder, analytics-driven generation for LinkedIn/Instagram/X/
+YouTube; 3.4k stars/799 forks at time of sharing). Not reviewed yet —
+the "350k+ followers, 100M+ views/year" framing is the repo author's own
+claim, not independently verified, and it's built for general social
+content rather than faceless video production specifically, so how much
+of it actually transfers to this pipeline is unknown until someone
+actually reads the skills. Don't clone/integrate anything from it until
+it's been read and evaluated against what's already in `CLAUDE.md`'s
+allowed-dependencies list (it's Claude Skills, not a Python package, so
+that list doesn't directly apply, but the same "does this actually add
+capability we don't have" bar should).
+
+Owner note (2026-09-15): Claude usage is at ~86% of the weekly limit —
+hold off on spending session time investigating this until after
+Thursday's reset.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
