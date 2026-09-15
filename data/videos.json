@@ -475,5 +475,37 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-15T17:34:54.557471+00:00"
+  },
+  {
+    "video_id": "c0db8b94-bde2-46c2-a2b3-ef1fa0b9977c",
+    "youtube_video_id": "7lUy4t9g86U",
+    "uploaded_at": "2026-09-15T18:14:14.470018+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-15T20:47:43.764679+00:00"
+  },
+  {
+    "video_id": "25ee7da4-81ef-401d-82fb-7b77448b1f79",
+    "youtube_video_id": "NDSEuzzGc7w",
+    "uploaded_at": "2026-09-15T18:23:06.296416+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-15T23:08:16.853210+00:00"
+  },
+  {
+    "video_id": "71420975-e4e4-4710-b906-85dffbe9f25b",
+    "youtube_video_id": "TRSc6r7krzE",
+    "uploaded_at": "2026-09-15T18:28:43.370340+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-16T02:03:17.340691+00:00"
+  },
+  {
+    "video_id": "824a59a4-db8e-48d9-993d-33fcd687edd7",
+    "youtube_video_id": "HaavRY-og74",
+    "uploaded_at": "2026-09-15T18:35:17.806320+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-16T04:44:58.719742+00:00"
   }
 ]
