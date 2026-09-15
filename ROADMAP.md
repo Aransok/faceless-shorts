@@ -2875,6 +2875,113 @@ time.
 14 new tests (`tests/test_wikimedia.py` + additions to
 `tests/test_visuals_facts.py`), 274 total, all passing.
 
+## Proposed, not started: research → winner → packaging feedback loop (2026-09-15)
+
+Owner shared an analysis of "How My Mother (Beginner) Got Monetized With
+3 Videos Using AI" (Steffen Miro, 2026-08-09) and asked what's worth
+building from it. The core reusable idea is real and distinct from
+anything already in this pipeline: **start from evidence that people
+already want to watch something, not from "what can we generate."**
+Everything below is filtered through what this codebase already does —
+several of the suggested pieces are already built, sometimes further
+than the source material assumed; those are marked done, not re-proposed.
+
+**Already built, not redundant to add again:**
+- Per-beat visual relevance + specificity tiering + diversity-penalty
+  selection (`pipeline/visuals_facts.py` — `_score_candidate`,
+  `_select_diverse_set`) already does most of what a "visual director"
+  pass would add on top of flat Pexels search.
+- Approach rotation with a real performance feedback loop
+  (`pipeline/approaches.py::choose_next_approach`,
+  `pipeline/winner_analyzer.py::approach_performance`, shipped
+  2026-09-14) already tests hook/structure/phrasing pools against real
+  view data and rotates toward the winner once there's enough sample.
+- Authenticity/anti-AI-phrasing review gate + persona system
+  (`pipeline/review_script.py`, `config/persona.md` +
+  per-template `persona_pet_peeves_*.md`) already gives every script a
+  consistent, opinionated voice and rejects generic/fabricated lines —
+  this is most of what "make the narrator part of the format" is asking
+  for.
+- RPM-weighted per-template value estimate + WINNER/BREAKOUT
+  classification against a real trailing baseline
+  (`pipeline/winner_analyzer.py`) already exists; it currently only
+  compares this channel's own videos against its own past videos, not
+  against outside channels (see below).
+
+**Worth building, in priority order (cheapest/highest-signal first):**
+
+1. **Packaging gate before committing to a full render.** Nothing today
+   stops a weak title/hook/thumbnail concept from consuming a full
+   plan→voice→visuals→render→upload cycle. Add one more LLM self-critique
+   call, right after the topic/hook is chosen and before the full script
+   is written, scoring demand/originality/hook strength/how visualizable
+   the concept actually is — reject and re-roll below a threshold, same
+   shape as `review_script.py`'s existing approve/reject pattern, just
+   earlier and cheaper to fail. Low cost, directly saves wasted render
+   time and (more importantly right now) wasted upload-quota slots on
+   videos that were never going to work.
+2. **Real hook_type/topic_type tagging, not just approach/template.**
+   `winner_analyzer.py`'s own docstring already flags that
+   `genome_hook_style`/`genome_concept_type` currently just mirror
+   approach/template instead of carrying independent information. Making
+   these real, distinct tags (e.g. "bold-claim" vs "question" vs
+   "mystery" hook types, independent of which approach pool generated
+   them) and running `approach_performance`'s same ratio-averaging logic
+   over them would surface patterns approach rotation alone can't see
+   ("bold-claim hooks win regardless of approach" vs "storytelling_hook
+   only wins on historical topics").
+3. **A non-stock visual fallback tier.** Real photos (shipped
+   2026-09-14) and stock footage both fail the same way for abstract
+   subjects — a mechanism, a process, a numeric comparison — where no
+   real clip or photo exists to show the actual thing. A cheap
+   Pillow-based diagram/label/timeline card (same toolchain
+   `thumbnails.py` already uses for its designed Shorts cards) as a
+   fallback tier below `generic_fallback` in `_build_clip_pool`'s tiering
+   would cover a real, currently-unaddressed gap. Medium cost — needs a
+   handful of actual diagram templates, not just an LLM call.
+4. **External winner research (`winner_researcher`).** The single idea
+   from the source material with no equivalent in this codebase at all:
+   periodically searching OTHER small channels for videos with a
+   disproportionate view/subscriber ratio, then extracting transferable
+   structural patterns (hook type, curiosity gap, payoff shape) rather
+   than the topic itself. Real, valuable, but genuinely the most
+   expensive and riskiest piece to build:
+   - YouTube Data API `search.list` costs 100 quota units per call
+     against the default 10,000/day free quota — this has to be a
+     scheduled weekly job with a hard, documented call budget, not
+     something that runs per-video or per-day.
+   - The transfer step has to be built and prompted explicitly around
+     "extract the pattern, generate an original concept for THIS
+     channel's actual subjects" — never "reproduce this video" — both
+     because that's the only version of this idea that's actually useful
+     here and because it's what keeps generated output clear of
+     YouTube's reused/repetitive-content policy line.
+   - Given the free-tier-only constraint (see CLAUDE.md), this is worth
+     scoping carefully before writing any code, likely starting as a
+     manual/local script (matching `winner_analyzer.py`'s own
+     `if __name__ == "__main__"` pattern) rather than a new cron
+     workflow, until the real quota cost of a weekly run is confirmed.
+5. **Family game night as one continuous escalating experience, not a
+   sequence of independent rounds.** Flagged as a real weak spot before
+   this analysis too — worth a fresh look at `pipeline/family_game/`'s
+   round structure specifically for whether rounds already escalate
+   (increasing difficulty/stakes/twist) or are currently independent and
+   interchangeable, rather than assuming either.
+
+**Explicitly not building, and why:**
+- A fixed "15-video test batch" mechanic. `MIN_APPROACH_SAMPLE` (5) and
+  `MIN_TEMPLATE_SAMPLE` (3) in the code already gate "enough samples to
+  trust a comparison" per-approach/per-template; a rigid batch-of-15
+  ritual on top of that is process for its own sake, not a real
+  improvement on what's already there.
+- Any automation built around "impressions/CTR thresholds mean an
+  account is trusted." The source material itself flags this as its own
+  operational hypothesis, not a documented YouTube rule — not worth
+  encoding as fact into the pipeline.
+- Wholesale imitation of another creator's format. Every piece above is
+  about the underlying research-then-package discipline, not about
+  making BiteBits' output look like Steffen Miro's channel.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
