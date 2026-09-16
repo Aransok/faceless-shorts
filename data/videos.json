@@ -507,5 +507,21 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-16T04:44:58.719742+00:00"
+  },
+  {
+    "video_id": "f16213cd-fe45-4a8e-8aaa-918b9afa9b9e",
+    "youtube_video_id": "6_sKYBurbK0",
+    "uploaded_at": "2026-09-16T18:25:57.653060+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-16T22:08:11.338867+00:00"
+  },
+  {
+    "video_id": "121a96cd-06e0-4df2-a6a2-46fff73711d8",
+    "youtube_video_id": "Zc_p7X-fGLI",
+    "uploaded_at": "2026-09-16T18:33:31.426789+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-17T01:26:53.000396+00:00"
   }
 ]
