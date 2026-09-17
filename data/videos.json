@@ -539,5 +539,13 @@
     "template": "programming",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-09-17T21:24:08.994913+00:00"
+  },
+  {
+    "video_id": "5df84b02-0c43-480c-9a89-b86e17f0f9ee",
+    "youtube_video_id": "qyOOOnMbt2Y",
+    "uploaded_at": "2026-09-17T19:38:19.154469+00:00",
+    "template": "veylorn_story",
+    "approach": null,
+    "scheduled_publish_at": "2026-09-17T23:48:20.514508+00:00"
   }
 ]
