@@ -46,17 +46,42 @@ scratch.
    where the viewer
    presses 1/2/3 and the real YouTube decile-seek lands them on that
    path. Still open before building:
-   - Does this replace the now-paused quiz-longform slot, or start as a
-     standalone one-off test first so the owner can see one example
-     before deciding?
+   - **Rollout, decided (2026-09-18): standalone test video first.** One
+     test episode, no schedule change yet — owner sees a real example
+     before deciding whether this replaces the paused quiz-longform
+     slot.
    - Branch structure: how many decision points, how many endings, is it
      a single linear-with-detours story or a real branching tree (a real
      tree needs many more segments/keyframes than 9-10 decile slots can
      hold cleanly — likely needs to stay a single main path with a
      handful of "press to see a bonus/alternate beat" detours, not a
      full RPG-style branching narrative).
-   - World/setting name and tone, once the IP question above is
-     resolved.
+   - **World/setting, decided (2026-09-18): "Veylorn: The Sundering."**
+     An ancient empire shattered decades ago in a magical cataclysm
+     ("the Sundering"); three factions fill the vacuum:
+     - **The Ashcrown Wardens** — disciplined remnants of the old
+       empire's army, want to restore central rule.
+     - **The Wildkin Clans** — free tribes and nature-magic
+       practitioners who see the empire's fall as a chance for
+       something freer, distrust the Wardens.
+     - **The Hollow Choir** — secretive scholars investigating what
+       actually caused the Sundering, morally ambiguous.
+     Protagonist: an unnamed Wanderer/Envoy who moves between the three
+     factions episode to episode — this is what makes "choices are
+     in-episode flavor only" work: the Wanderer's overall arc is fixed
+     by the story bible, viewer keypresses only flavor how THIS
+     episode's encounter plays out. Tone: dark-but-hopeful epic
+     fantasy, plain invented terms throughout.
+     Naming check done deliberately: an early draft used "Legion" and
+     "Covenant" for two factions — both are real, specific World of
+     Warcraft proper nouns (the Burning Legion / *Legion* expansion;
+     the four *Shadowlands* Covenants), not generic fantasy words in
+     this context, and a real monetization/copyright risk on a
+     monetized channel — renamed to Wardens/Clans before locking this
+     in. Same scrutiny applies to any future faction/place/item name
+     added to this setting — check against actual WoW (or other major
+     franchise) proper nouns specifically, not just "does it sound
+     fantasy-ish."
    - Decile seeking is a percentage of total duration, not an exact
      timestamp — needs a real test video to confirm how much drift is
      tolerable before a "press 3" segment feels off.
