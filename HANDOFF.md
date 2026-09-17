@@ -60,6 +60,21 @@ scratch.
    - Decile seeking is a percentage of total duration, not an exact
      timestamp — needs a real test video to confirm how much drift is
      tolerable before a "press 3" segment feels off.
+   - **Visual source, decided (2026-09-17): Pollinations.ai**
+     (`image.pollinations.ai`, https://github.com/pollinations/pollinations)
+     for the story's visuals instead of plain text cards or Pexels stock.
+     Genuinely free, no API key, no signup, open-source, generates images
+     from a plain URL (works with `requests`, already an allowed
+     dependency — no new infra). Uses the Flux model, well-suited to
+     fantasy-art prompts (dragons, throne rooms, forests) in a way Pexels'
+     real-photo stock never could be for an original fantasy setting.
+     Rate limit for anonymous use is roughly 1 request/15s — fine at this
+     pipeline's per-video image volume. Plan: one generated image per
+     story beat, prompted from that beat's own scene description, same
+     shape as `visuals_facts.py`'s one-visual-per-fact-beat pattern.
+     Pexels stays available as a fallback only if a genuinely photoreal
+     (non-illustrated) shot is ever wanted. Not yet integrated into any
+     code — next session's actual build step.
 3. **"AI POV game" pitch (surfaced from a different AI assistant, pasted
    in by the owner)** — suggested simulating a first-person "gameplay"
    look either via paid AI video generators (Runway Gen-3, Kling) or by
