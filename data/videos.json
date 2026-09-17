@@ -531,5 +531,13 @@
     "template": "quiz_longform",
     "approach": null,
     "scheduled_publish_at": "2026-09-17T04:27:43.743096+00:00"
+  },
+  {
+    "video_id": "9e1dff8a-56bc-461f-9455-4a5c122a772e",
+    "youtube_video_id": "DRvF73-cYZ0",
+    "uploaded_at": "2026-09-17T18:15:38.639530+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-17T21:24:08.994913+00:00"
   }
 ]

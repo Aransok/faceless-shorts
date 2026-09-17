@@ -389,5 +389,11 @@
     "video_id": "083f4cf6-c652-442d-affb-ef4f61e146ba",
     "variant": "stat_challenge",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/083f4cf6-c652-442d-affb-ef4f61e146ba_quiz_thumbnail.jpg"
+  },
+  {
+    "video_id": "9e1dff8a-56bc-461f-9455-4a5c122a772e",
+    "method": "card",
+    "template": "programming",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/9e1dff8a-56bc-461f-9455-4a5c122a772e_thumbnail.jpg"
   }
 ]
