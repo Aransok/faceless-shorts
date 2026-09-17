@@ -21,13 +21,22 @@ the default daily rotation:
   beats (round_index 0-9), reusing video_steps' existing
   round_index/beat_type/keywords columns, no schema migration.
 - `pipeline/render_veylorn.py` — the real new piece: unlike every other
-  template, this one fixes a fixed TOTAL_DURATION_SECONDS (100s, 10s/
-  beat) up front so the 10 beats land exactly on YouTube's real decile
-  seek marks, padding narration with silence to hit each beat's budget
-  (or letting it overrun unpadded if narration exceeds budget — a known,
-  accepted limitation for a first test, see that module's docstring).
-  One combined audio+video render, split for assemble.py/captions.py/
+  template, this one fixes a fixed TOTAL_DURATION_SECONDS up front so
+  the 10 beats land exactly on YouTube's real decile seek marks,
+  padding narration with silence to hit each beat's budget (or letting
+  it overrun unpadded if narration exceeds budget — a known, accepted
+  limitation for a first test, see that module's docstring). One
+  combined audio+video render, split for assemble.py/captions.py/
   upload.py compatibility (same shape as `render_family_game.py`).
+  **Owner call (2026-09-18): 600s (10 minutes), matching this
+  channel's own established long-form standard** (game_night's real
+  2026-09-12 feedback: a ~2-minute episode was judged "nowhere near
+  'at least 10 mins' long-form") — the original 100s was only ever a
+  first-test placeholder. Bumping this also required a real correctness
+  fix: the Ken-Burns zoompan rate was a constant tuned for a 10s beat
+  (reached max zoom in ~4s, then sat frozen) — now computed per-segment
+  (`_zoompan_rate`) so the pan animates across the beat's real full
+  length, whatever that is.
 - Wired into `orchestrator.py` (scripted status -> render_veylorn_story,
   same special-case shape as family_game_night), `captions.py` (skipped,
   same as the other longform formats), `upload.py` (Entertainment
@@ -37,14 +46,25 @@ the default daily rotation:
   rotation) — only creatable via an explicit
   `run_daily(templates=["veylorn_story"])` / `--templates veylorn_story`
   call, matching the owner's "standalone test first" decision.
-- 21 new tests (`tests/test_pollinations.py`,
-  `tests/test_plan_veylorn.py`, `tests/test_render_veylorn.py`, plus
-  additions to `tests/test_orchestrator.py`), 295 total, all passing.
-- **Not yet run for real** — this sandbox has no real LLM/TTS/
-  Pollinations network path (same limitation as every other template's
-  first build), so the actual test episode needs a real GitHub Actions
-  run (`--templates veylorn_story`) to confirm end to end, same
-  verification pattern as the real-image-beats feature (2026-09-14).
+- 30 tests total across the veylorn_story files, 301 total in the
+  suite, all passing.
+- **Real first test run (2026-09-17, at the original 100s length):**
+  `plan_veylorn_story()` worked — generated a real 10-beat episode
+  ("What the Scar Remembers") — and `render_veylorn_story()` got
+  through 8 of 10 beats (real TTS + real Pollinations images + real
+  ffmpeg encodes) before Pollinations returned a plain HTTP 500 on
+  beat 8's image request, which had no retry and killed the whole
+  video (correctly caught and recorded as `status=failed` by the
+  orchestrator, not a crash — but wasteful after 8 good beats). **Fixed
+  (2026-09-18):** `pipeline/pollinations.py::download_image` now
+  retries a real 5xx up to 3 times with backoff (2/5/10s) — same
+  "known transient failure of a free endpoint" lesson as voice.py's
+  own `EDGE_TTS_RETRY_DELAYS` — while still failing immediately on a
+  real 4xx (retrying that would just fail the same way three more
+  times). A 4xx was never actually observed; the fix is scoped to the
+  5xx that was.
+  **Not yet re-tested** at the real 600s target with the retry fix in
+  place — that's the next real GitHub Actions run to fire.
 
 1. **AI-generated visuals instead of Pexels stock (facts/sauce_recipe)** —
    idea: replace/augment `visuals_facts.py`'s stock-footage search with

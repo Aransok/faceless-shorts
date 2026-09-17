@@ -35,16 +35,54 @@ class TestBuildImageUrl(unittest.TestCase):
         self.assertTrue(url.startswith(pollinations.POLLINATIONS_BASE_URL))
 
 
+def _response(status_code: int, content: bytes = b"") -> Mock:
+    resp = Mock()
+    resp.status_code = status_code
+    resp.content = content
+    resp.raise_for_status = Mock()
+    if status_code >= 400:
+        resp.raise_for_status.side_effect = pollinations.requests.HTTPError(f"{status_code} error")
+    return resp
+
+
 class TestDownloadImage(unittest.TestCase):
     def test_writes_response_content_to_out_path(self):
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_response.content = b"fake-image-bytes"
+        mock_response = _response(200, b"fake-image-bytes")
         with patch.object(pollinations.requests, "get", return_value=mock_response) as mock_get:
             with patch.object(Path, "write_bytes") as mock_write:
                 pollinations.download_image("a hero", Path("/tmp/fake.jpg"), width=10, height=10)
         mock_get.assert_called_once()
         mock_write.assert_called_once_with(b"fake-image-bytes")
+
+    def test_a_4xx_error_fails_immediately_without_retrying(self):
+        mock_response = _response(400)
+        with patch.object(pollinations.requests, "get", return_value=mock_response) as mock_get:
+            with patch.object(pollinations.time, "sleep") as mock_sleep:
+                with self.assertRaises(pollinations.requests.HTTPError):
+                    pollinations.download_image("bad prompt", Path("/tmp/fake.jpg"), width=10, height=10)
+        mock_get.assert_called_once()
+        mock_sleep.assert_not_called()
+
+    def test_a_transient_5xx_error_is_retried_and_can_succeed(self):
+        """Real observed failure (2026-09-17): a plain HTTP 500 from
+        Pollinations killed an otherwise-successful 10-beat video after
+        8 beats had already rendered -- must retry a real 5xx instead of
+        failing the whole video over one transient error."""
+        responses = [_response(500), _response(500), _response(200, b"finally-worked")]
+        with patch.object(pollinations.requests, "get", side_effect=responses) as mock_get:
+            with patch.object(pollinations.time, "sleep") as mock_sleep:
+                with patch.object(Path, "write_bytes") as mock_write:
+                    pollinations.download_image("a hero", Path("/tmp/fake.jpg"), width=10, height=10)
+        self.assertEqual(mock_get.call_count, 3)
+        mock_write.assert_called_once_with(b"finally-worked")
+        self.assertEqual(mock_sleep.call_count, 2)
+
+    def test_exhausting_all_retries_on_persistent_5xx_raises(self):
+        responses = [_response(500)] * 4  # first attempt + all 3 retries
+        with patch.object(pollinations.requests, "get", side_effect=responses):
+            with patch.object(pollinations.time, "sleep"):
+                with self.assertRaises(pollinations.requests.HTTPError):
+                    pollinations.download_image("a hero", Path("/tmp/fake.jpg"), width=10, height=10)
 
 
 if __name__ == "__main__":

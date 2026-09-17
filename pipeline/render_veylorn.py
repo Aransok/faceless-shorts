@@ -34,12 +34,22 @@ FPS = 30
 TEMPLATE = "veylorn_story"
 
 # 10 beats, one per decile of the final video -- see module docstring.
-# 100s total is deliberately short for a first test (this format's real
-# length can grow once the mechanic itself is validated against a real
-# rendered video, not guessed at up front).
-TOTAL_DURATION_SECONDS = 100.0
+# 600s (10 minutes) matches this channel's own established long-form
+# standard (see plan_game.py's real 2026-09-12 feedback: a 5-round
+# episode that rendered to only ~2 minutes was judged "nowhere near
+# 'at least 10 mins' long-form") -- 100s was only ever a first-test
+# placeholder, not a real target (owner call, 2026-09-18).
+TOTAL_DURATION_SECONDS = 600.0
 BEAT_COUNT = 10
 BEAT_SECONDS = TOTAL_DURATION_SECONDS / BEAT_COUNT
+# Max zoom reached exactly at the END of a beat's real segment length
+# (see _zoompan_rate) -- at the old 10s/beat, a fixed per-frame
+# increment (0.0008) happened to reach its cap in ~4s and then sat
+# frozen for the rest of the beat; that's a much worse problem at 60s/
+# beat (one static-looking image for most of a full minute), so the
+# rate must scale with the segment's own real frame count instead of
+# being a constant tuned for one specific beat length.
+MAX_ZOOM = 1.15
 
 
 def _beat_timing(real_duration: float, idx: int) -> tuple[float, float]:
@@ -68,6 +78,13 @@ def _run_ffmpeg(args: list[str]) -> None:
         raise RuntimeError(f"ffmpeg failed (exit {result.returncode}): {result.stderr}")
 
 
+def _zoompan_rate(frame_count: int) -> float:
+    """Per-frame zoom increment that reaches MAX_ZOOM exactly at the
+    last frame of a segment this long -- see MAX_ZOOM's own comment for
+    why this can't be a constant tuned for one specific beat length."""
+    return (MAX_ZOOM - 1.0) / max(frame_count, 1)
+
+
 def _build_beat_segment(image_path: Path, audio_path: Path, frame_count: int, output_path: Path) -> None:
     """One beat's muxed video+audio, visual duration locked to
     `frame_count` (the beat's real, already-padded audio length in
@@ -75,10 +92,11 @@ def _build_beat_segment(image_path: Path, audio_path: Path, frame_count: int, ou
     approach as pipeline/visuals_facts.py's real-image beats, just muxed
     with real audio here instead of built silent.
     """
+    zoom_rate = _zoompan_rate(frame_count)
     vf = (
         f"scale={WIDTH * 2}:{HEIGHT * 2}:force_original_aspect_ratio=increase,"
         f"crop={WIDTH * 2}:{HEIGHT * 2},"
-        f"zoompan=z='min(zoom+0.0008,1.1)':d={frame_count}:s={WIDTH}x{HEIGHT}:fps={FPS}"
+        f"zoompan=z='min(zoom+{zoom_rate:.8f},{MAX_ZOOM})':d={frame_count}:s={WIDTH}x{HEIGHT}:fps={FPS}"
     )
     _run_ffmpeg([
         "-loop", "1", "-i", str(image_path),

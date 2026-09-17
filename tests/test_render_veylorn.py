@@ -30,5 +30,25 @@ class TestBeatTiming(unittest.TestCase):
         self.assertAlmostEqual(total, rv.TOTAL_DURATION_SECONDS)
 
 
+class TestZoompanRate(unittest.TestCase):
+    def test_reaches_max_zoom_exactly_at_the_last_frame(self):
+        frame_count = 1800  # 60s at 30fps
+        rate = rv._zoompan_rate(frame_count)
+        zoom_at_last_frame = 1.0 + rate * frame_count
+        self.assertAlmostEqual(zoom_at_last_frame, rv.MAX_ZOOM, places=6)
+
+    def test_shorter_segment_gets_a_faster_rate(self):
+        """A real bug this guards against: a rate tuned for one beat
+        length freezes early on a much longer segment (see MAX_ZOOM's
+        docstring) -- the rate must scale inversely with frame_count,
+        not stay constant."""
+        short_rate = rv._zoompan_rate(300)
+        long_rate = rv._zoompan_rate(1800)
+        self.assertGreater(short_rate, long_rate)
+
+    def test_zero_frames_does_not_divide_by_zero(self):
+        rv._zoompan_rate(0)  # must not raise
+
+
 if __name__ == "__main__":
     unittest.main()

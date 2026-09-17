@@ -52,9 +52,12 @@ reaches it by watching 7 then 8 then 9 in order -- don't reference
 "the other two" reactions.
 
 PER-BEAT CONSTRAINTS (all 10 beats):
-- narration: 18-24 words, NEVER more than 28. Each beat is a fixed 10
-  real seconds of video -- narration this short leaves comfortable
-  silence at the end rather than risk overrunning the beat.
+- narration: 110-145 words, NEVER more than 165. Each beat is a fixed
+  60 real seconds of video -- narration in this range leaves
+  comfortable silence at the end rather than risk overrunning the
+  beat. This is a real chunk of story, not a one-line summary -- give
+  each beat actual scene-setting, sensory detail, and character
+  thought/dialogue, not just a bare plot event.
 - image_prompt: a vivid scene description for an AI image generator,
   matching this beat's narration -- describe the SETTING, ACTION, and
   MOOD (lighting, weather, composition), not named characters (an image
