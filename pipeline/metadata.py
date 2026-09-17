@@ -21,6 +21,9 @@ METADATA_SAUCE_RECIPE_PROMPT_PATH = (
 METADATA_FAMILY_GAME_PROMPT_PATH = (
     PROJECT_ROOT / "config" / "prompts" / "metadata_family_game_template.txt"
 )
+METADATA_VEYLORN_PROMPT_PATH = (
+    PROJECT_ROOT / "config" / "prompts" / "metadata_veylorn_template.txt"
+)
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -171,6 +174,7 @@ def generate_metadata(video_id: str) -> dict:
     is_quiz = video["template"] == "quiz_longform"
     is_sauce_recipe = video["template"] == "sauce_recipe"
     is_family_game = video["template"] == "family_game_night"
+    is_veylorn = video["template"] == "veylorn_story"
     if is_quiz:
         prompt_path = METADATA_QUIZ_PROMPT_PATH
     elif is_sauce_recipe:
@@ -181,6 +185,12 @@ def generate_metadata(video_id: str) -> dict:
         # types, and it needs its own "play along with whoever you're
         # watching with" framing the quiz prompt has no reason to have.
         prompt_path = METADATA_FAMILY_GAME_PROMPT_PATH
+    elif is_veylorn:
+        # Its own prompt -- the description MUST explain the real
+        # keyboard-seek mechanic (see render_veylorn.py's docstring), a
+        # requirement no other template's metadata prompt has any reason
+        # to carry.
+        prompt_path = METADATA_VEYLORN_PROMPT_PATH
     else:
         prompt_path = METADATA_PROMPT_PATH
     prompt_body = prompt_path.read_text(encoding="utf-8")

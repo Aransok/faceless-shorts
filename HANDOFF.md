@@ -4,12 +4,47 @@ Quick-reference status for picking this back up from any device. Full
 engineering detail lives in `ROADMAP.md` Phase 15/16 — this file is the
 short version.
 
-## New content-format ideas discussed (2026-09-17) — NOT decided or built yet
+## New content-format ideas discussed (2026-09-17) — status: BUILT (2026-09-18), not yet run for real
 
 Owner is exploring new content directions beyond the current daily
-rotation. Nothing in this section is coded — this is a decision log so a
-session on another device doesn't have to re-derive the conversation from
-scratch.
+rotation. This section is the decision log so a session on another
+device doesn't have to re-derive the conversation from scratch.
+
+**2026-09-18 update: idea 2 (the keyboard-seek fantasy story) is now
+built as template `veylorn_story`** — a standalone test only, not in
+the default daily rotation:
+- `pipeline/pollinations.py` — Pollinations.ai image URL/download (no
+  API key).
+- `config/prompts/veylorn_story_template.txt` — the story-bible +
+  episode-1 prompt (Veylorn setting, naming-collision rule baked in).
+- `pipeline/plan_veylorn.py` — one LLM call, parses into exactly 10
+  beats (round_index 0-9), reusing video_steps' existing
+  round_index/beat_type/keywords columns, no schema migration.
+- `pipeline/render_veylorn.py` — the real new piece: unlike every other
+  template, this one fixes a fixed TOTAL_DURATION_SECONDS (100s, 10s/
+  beat) up front so the 10 beats land exactly on YouTube's real decile
+  seek marks, padding narration with silence to hit each beat's budget
+  (or letting it overrun unpadded if narration exceeds budget — a known,
+  accepted limitation for a first test, see that module's docstring).
+  One combined audio+video render, split for assemble.py/captions.py/
+  upload.py compatibility (same shape as `render_family_game.py`).
+- Wired into `orchestrator.py` (scripted status -> render_veylorn_story,
+  same special-case shape as family_game_night), `captions.py` (skipped,
+  same as the other longform formats), `upload.py` (Entertainment
+  category), `metadata.py` (own prompt explaining the real press-7/8/9
+  mechanic to viewers).
+- Deliberately NOT added to `orchestrator.TEMPLATES` (the daily
+  rotation) — only creatable via an explicit
+  `run_daily(templates=["veylorn_story"])` / `--templates veylorn_story`
+  call, matching the owner's "standalone test first" decision.
+- 21 new tests (`tests/test_pollinations.py`,
+  `tests/test_plan_veylorn.py`, `tests/test_render_veylorn.py`, plus
+  additions to `tests/test_orchestrator.py`), 295 total, all passing.
+- **Not yet run for real** — this sandbox has no real LLM/TTS/
+  Pollinations network path (same limitation as every other template's
+  first build), so the actual test episode needs a real GitHub Actions
+  run (`--templates veylorn_story`) to confirm end to end, same
+  verification pattern as the real-image-beats feature (2026-09-14).
 
 1. **AI-generated visuals instead of Pexels stock (facts/sauce_recipe)** —
    idea: replace/augment `visuals_facts.py`'s stock-footage search with

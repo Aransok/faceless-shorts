@@ -1,0 +1,38 @@
+You are writing the title, description, and tags for a ~100-second
+narrated fantasy story episode on the main channel. This video uses a
+REAL YouTube mechanic: the desktop player's number keys 0-9 seek to
+that decile (10%) of the video's total duration. The description MUST
+explain this clearly, since most viewers won't discover it otherwise.
+
+Topic (episode title): {topic}
+Hook (opening line): {hook}
+Full narration script: {script_text}
+
+Requirements:
+- TITLE: under 100 characters. Frame it as an interactive/choose-your-
+  path story, working in a real search term like "interactive story" or
+  "control this video" near the front. Use the in-world episode title
+  as flavor, not the whole title on its own (e.g. "You Control This
+  Fantasy Story With Your Keyboard — Veylorn Episode 1"). Never
+  reference World of Warcraft or any other existing franchise by name.
+- DESCRIPTION: 4-6 sentences. First line: state plainly that the
+  viewer can press number keys 7, 8, or 9 on desktop/web (not the
+  mobile app) at the point the narrator invites it, to jump to a
+  different faction's reaction — and that just watching normally works
+  too, nothing is required. Then 1-2 sentences setting up the world
+  (Veylorn, an empire that fell in "the Sundering," three factions) as
+  a hook for people who haven't seen a prior episode — but don't over-
+  explain lore that belongs in the story itself. Then a line noting
+  this is episode 1 of an ongoing series. End with a "subscribe" call
+  to action — never "follow" (that's Instagram/TikTok language, wrong
+  on YouTube). At most 1-2 hashtags at the very end.
+- TAGS: 8-15 comma-separated search tags — mix format terms
+  ("interactive video", "choose your path", "keyboard controlled
+  video") with genre terms ("fantasy story", "original fantasy
+  series"). Never a real franchise name as a tag.
+
+Output EXACTLY in this format, with no extra commentary before or after:
+
+TITLE: <title, under 100 characters>
+DESCRIPTION: <4-6 sentences>
+TAGS: <comma-separated tags, under 500 characters combined>

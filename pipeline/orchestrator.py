@@ -17,7 +17,9 @@ from pipeline.plan import plan
 from pipeline.plan_family_game import plan_family_game_night
 from pipeline.plan_game import plan_game_night
 from pipeline.plan_quiz import plan_quiz
+from pipeline.plan_veylorn import plan_veylorn_story
 from pipeline.render_family_game import render_family_game_night
+from pipeline.render_veylorn import render_veylorn_story
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
 from pipeline.visuals_code import visuals_code
@@ -91,6 +93,8 @@ def _advance_one_stage(video_id: str) -> str:
     # "scripted"->"voice" label in _STAGE_NAMES would be misleading here.
     if status == "scripted" and template == "family_game_night":
         stage_name = "render_family_game"
+    elif status == "scripted" and template == "veylorn_story":
+        stage_name = "render_veylorn"
     else:
         stage_name = _STAGE_NAMES.get(status, status)
 
@@ -98,6 +102,8 @@ def _advance_one_stage(video_id: str) -> str:
     if status == "scripted":
         if template == "family_game_night":
             render_family_game_night(video_id)
+        elif template == "veylorn_story":
+            render_veylorn_story(video_id)
         else:
             voice(video_id)
     elif status == "voiced":
@@ -222,6 +228,12 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
                 video_id = plan_game_night()
             elif template == "family_game_night":
                 video_id = plan_family_game_night()
+            elif template == "veylorn_story":
+                # Standalone-test format (see HANDOFF.md) -- deliberately
+                # NOT in TEMPLATES below, so it only ever gets created via
+                # an explicit `templates=["veylorn_story"]` override, never
+                # by the normal daily rotation.
+                video_id = plan_veylorn_story()
             else:
                 video_id = plan(template, topic_hint=topic_hints.get(template))
         except Exception as exc:

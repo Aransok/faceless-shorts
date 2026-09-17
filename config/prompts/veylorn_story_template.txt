@@ -1,0 +1,83 @@
+You are writing episode 1 of an ORIGINAL fantasy narrated story for a
+YouTube video that uses a real mechanic: YouTube's desktop player lets a
+viewer press number keys 0-9 to seek to that decile (10%) of the video's
+total duration. This episode is exactly 10 beats long, one beat per
+decile (beat N plays during decile N of the video). A viewer who presses
+a number jumps straight to that beat; a viewer who does nothing just
+watches all 10 beats in order, so nothing may look broken either way.
+
+THE SETTING (use exactly this -- do not invent alternate names for it):
+
+World: Veylorn. An ancient empire shattered decades ago in a magical
+cataclysm called "the Sundering." Three factions now fill the vacuum:
+- The Ashcrown Wardens -- disciplined remnants of the old empire's army,
+  want to restore central rule.
+- The Wildkin Clans -- free tribes and nature-magic practitioners who
+  see the empire's fall as a chance for something freer, and don't
+  trust the Wardens' intentions.
+- The Hollow Choir -- secretive scholars investigating what actually
+  caused the Sundering, morally ambiguous, not clearly good or evil.
+
+Protagonist: an unnamed Wanderer (referred to as "you" in narration --
+second person, since the viewer IS the Wanderer) who moves between the
+three factions. Tone: dark-but-hopeful epic fantasy, plain invented
+vocabulary throughout.
+
+CRITICAL naming rule: every invented name (world, faction, place,
+item, character) must be original. Do NOT reuse or lightly reword any
+proper noun specific to World of Warcraft, Lord of the Rings, Game of
+Thrones, or any other existing fantasy franchise (e.g. "Legion" and
+"Covenant" were rejected for exactly this reason during design --
+"Legion"/"the Burning Legion" is a specific World of Warcraft term,
+"Covenant" is the core mechanic of WoW's Shadowlands expansion). A
+generic-sounding invented word is fine; a real franchise's actual term
+is not, even reworded.
+
+EPISODE 1 STRUCTURE (exactly 10 beats, round_index 0-9):
+
+Beats 0-6 (round_index 0 through 6, beat_type "main"): ONE continuous
+story told in order -- the Wanderer arrives somewhere in Veylorn and
+gets pulled into a small, self-contained encounter that touches all
+three factions without resolving the larger conflict (this is episode
+1 of an ongoing series -- end on a real hook, not a full resolution).
+Beat 6's narration MUST end with an explicit, natural in-story line
+inviting the viewer to press 7, 8, or 9 to hear how each faction sees
+what just happened (or just keep watching to hear all three in order).
+
+Beats 7-9 (round_index 7, 8, 9, beat_type "bonus"): three SHORT,
+INDEPENDENT epilogue reactions to the beat-6 encounter -- round_index 7
+is the Ashcrown Wardens' perspective, 8 is the Wildkin Clans', 9 is the
+Hollow Choir's. Each must work whether a viewer jumps straight to it OR
+reaches it by watching 7 then 8 then 9 in order -- don't reference
+"the other two" reactions.
+
+PER-BEAT CONSTRAINTS (all 10 beats):
+- narration: 18-24 words, NEVER more than 28. Each beat is a fixed 10
+  real seconds of video -- narration this short leaves comfortable
+  silence at the end rather than risk overrunning the beat.
+- image_prompt: a vivid scene description for an AI image generator,
+  matching this beat's narration -- describe the SETTING, ACTION, and
+  MOOD (lighting, weather, composition), not named characters (an image
+  model can't keep a named character's face consistent across separate
+  generations, so describe silhouettes/figures/roles instead, e.g. "a
+  cloaked figure" not "the Wanderer looks like X"). Always end the
+  image_prompt with ", epic fantasy digital painting, dramatic lighting"
+  so every beat renders in one consistent visual style.
+
+OUTPUT FORMAT -- respond with ONLY this JSON object, no other text:
+
+{
+  "title": "a short in-world episode title, no franchise-adjacent words",
+  "beats": [
+    {"round_index": 0, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 1, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 2, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 3, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 4, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 5, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 6, "beat_type": "main", "narration": "...", "image_prompt": "..."},
+    {"round_index": 7, "beat_type": "bonus", "narration": "...", "image_prompt": "..."},
+    {"round_index": 8, "beat_type": "bonus", "narration": "...", "image_prompt": "..."},
+    {"round_index": 9, "beat_type": "bonus", "narration": "...", "image_prompt": "..."}
+  ]
+}

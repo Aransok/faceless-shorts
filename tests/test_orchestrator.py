@@ -40,22 +40,26 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.plan_patcher = patch.object(orchestrator, "plan")
         self.plan_game_night_patcher = patch.object(orchestrator, "plan_game_night")
         self.plan_family_game_night_patcher = patch.object(orchestrator, "plan_family_game_night")
+        self.plan_veylorn_story_patcher = patch.object(orchestrator, "plan_veylorn_story")
         self.run_video_patcher = patch.object(orchestrator, "run_video_to_completion")
         self.list_by_status_patcher = patch.object(orchestrator, "list_by_status", return_value=[])
         self.mock_plan = self.plan_patcher.start()
         self.mock_plan_game_night = self.plan_game_night_patcher.start()
         self.mock_plan_family_game_night = self.plan_family_game_night_patcher.start()
+        self.mock_plan_veylorn_story = self.plan_veylorn_story_patcher.start()
         self.mock_run_video = self.run_video_patcher.start()
         self.list_by_status_patcher.start()
         self.addCleanup(self.plan_patcher.stop)
         self.addCleanup(self.plan_game_night_patcher.stop)
         self.addCleanup(self.plan_family_game_night_patcher.stop)
+        self.addCleanup(self.plan_veylorn_story_patcher.stop)
         self.addCleanup(self.run_video_patcher.stop)
         self.addCleanup(self.list_by_status_patcher.stop)
 
         self.mock_plan.side_effect = lambda template, topic_hint=None: f"vid-{template}"
         self.mock_plan_game_night.side_effect = lambda: "vid-game_night"
         self.mock_plan_family_game_night.side_effect = lambda: "vid-family_game_night"
+        self.mock_plan_veylorn_story.side_effect = lambda: "vid-veylorn_story"
         self.mock_run_video.side_effect = lambda video_id: {
             "video_id": video_id, "template": "x", "status": "uploaded", "error": None,
         }
@@ -89,6 +93,18 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         orchestrator.run_daily(count=1, templates=["family_game_night"])
         self.mock_plan_family_game_night.assert_called_once_with()
         self.mock_plan.assert_not_called()
+
+    def test_veylorn_story_template_dispatches_to_its_own_planner(self):
+        # veylorn_story (2026-09-18 standalone test format, see
+        # HANDOFF.md) is deliberately absent from TEMPLATES -- it must
+        # still be creatable via an explicit templates= override, same
+        # dispatch shape as game_night/family_game_night.
+        orchestrator.run_daily(count=1, templates=["veylorn_story"])
+        self.mock_plan_veylorn_story.assert_called_once_with()
+        self.mock_plan.assert_not_called()
+
+    def test_veylorn_story_never_appears_in_the_default_rotation(self):
+        self.assertNotIn("veylorn_story", orchestrator.TEMPLATES)
 
     def test_no_templates_falls_back_to_default_rotation_by_count(self):
         orchestrator.run_daily(count=3)
@@ -157,12 +173,15 @@ class AdvanceOneStageScriptedDispatchTest(unittest.TestCase):
         self.get_video_patcher = patch.object(orchestrator, "get_video")
         self.voice_patcher = patch.object(orchestrator, "voice")
         self.render_family_game_patcher = patch.object(orchestrator, "render_family_game_night")
+        self.render_veylorn_patcher = patch.object(orchestrator, "render_veylorn_story")
         self.mock_get_video = self.get_video_patcher.start()
         self.mock_voice = self.voice_patcher.start()
         self.mock_render_family_game = self.render_family_game_patcher.start()
+        self.mock_render_veylorn = self.render_veylorn_patcher.start()
         self.addCleanup(self.get_video_patcher.stop)
         self.addCleanup(self.voice_patcher.stop)
         self.addCleanup(self.render_family_game_patcher.stop)
+        self.addCleanup(self.render_veylorn_patcher.stop)
 
     def _set_video(self, template: str, status: str = "scripted"):
         video = {"id": "vid-1", "status": status, "template": template}
@@ -174,15 +193,23 @@ class AdvanceOneStageScriptedDispatchTest(unittest.TestCase):
         self.mock_render_family_game.assert_called_once_with("vid-1")
         self.mock_voice.assert_not_called()
 
+    def test_veylorn_story_scripted_calls_render_veylorn_not_voice(self):
+        self._set_video("veylorn_story")
+        orchestrator._advance_one_stage("vid-1")
+        self.mock_render_veylorn.assert_called_once_with("vid-1")
+        self.mock_voice.assert_not_called()
+
     def test_other_templates_scripted_still_call_voice(self):
         for template in ("facts", "programming", "sauce_recipe", "game_night", "quiz_longform"):
             with self.subTest(template=template):
                 self.mock_voice.reset_mock()
                 self.mock_render_family_game.reset_mock()
+                self.mock_render_veylorn.reset_mock()
                 self._set_video(template)
                 orchestrator._advance_one_stage("vid-1")
                 self.mock_voice.assert_called_once_with("vid-1")
                 self.mock_render_family_game.assert_not_called()
+                self.mock_render_veylorn.assert_not_called()
 
 
 if __name__ == "__main__":
