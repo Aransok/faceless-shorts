@@ -33,29 +33,45 @@ scratch.
    really seeking there. **This is free to build** — no paid APIs, just
    precise ffmpeg-based editing/timing on top of the pipeline that
    already exists. This is the most promising real next idea so far.
-   **Not started.** Open questions before building:
+   **Not started.** Content angle chosen by the owner (2026-09-17): a
+   narrated fantasy "choose your path" story, text narration + simple
+   visuals. **Confirmed by the owner**: "WoW" was only a genre/tone
+   reference (epic fantasy), not a request to use actual World of
+   Warcraft IP — flagged that Blizzard's trademarked names/lore/
+   characters would be a real legal risk on a monetized channel, owner's
+   own follow-up confirmed an ORIGINAL fantasy setting (own world name,
+   own factions) is what's wanted, not licensed IP. Mechanically: TTS
+   narration + simple styled story cards (same Pillow-based rendering
+   approach already used by `game_night`/`quiz_longform`), branch points
+   where the viewer
+   presses 1/2/3 and the real YouTube decile-seek lands them on that
+   path. Still open before building:
    - Does this replace the now-paused quiz-longform slot, or start as a
      standalone one-off test first so the owner can see one example
      before deciding?
-   - What's the actual content angle for each of the ~9-10 decile
-     segments (a story with branching outcomes? a fact per number? a
-     mini choose-your-path game)?
+   - Branch structure: how many decision points, how many endings, is it
+     a single linear-with-detours story or a real branching tree (a real
+     tree needs many more segments/keyframes than 9-10 decile slots can
+     hold cleanly — likely needs to stay a single main path with a
+     handful of "press to see a bonus/alternate beat" detours, not a
+     full RPG-style branching narrative).
+   - World/setting name and tone, once the IP question above is
+     resolved.
    - Decile seeking is a percentage of total duration, not an exact
      timestamp — needs a real test video to confirm how much drift is
      tolerable before a "press 3" segment feels off.
 3. **"AI POV game" pitch (surfaced from a different AI assistant, pasted
-   in by the owner)** — suggests simulating a first-person "gameplay"
+   in by the owner)** — suggested simulating a first-person "gameplay"
    look either via paid AI video generators (Runway Gen-3, Kling) or by
    manually screen-recording a real game (Unreal/Unity free assets, or
    GTA V/Roblox) with an OBS keyboard-overlay plugin showing keys light
-   up as they're "pressed." **Conflicts with stated constraints**: the
-   paid-tool option contradicts the owner's "I don't want to pay"
-   decision from idea #1 above; the screen-recording option requires real
-   per-video manual work (playing/recording a game, syncing an overlay by
-   hand) which breaks this project's fully-automated, no-manual-
-   production model (`CLAUDE.md`'s core premise). **Parked** — only worth
-   reconsidering if the owner decides to accept either paid tooling or
-   manual production work for this one specific track.
+   up as they're "pressed." **Rejected by the owner (2026-09-17)** — paid
+   tooling contradicts the "I don't want to pay" decision from idea #1
+   above, and manual screen-recording breaks this project's fully-
+   automated, no-manual-production model (`CLAUDE.md`'s core premise).
+   Not being pursued; only the free keyboard-overlay-animation piece
+   (drawable with Pillow, no recording needed, since the pipeline already
+   knows the script/timing) is worth reusing, folded into idea 2 above.
 4. **Quiz Longform (2x/week) workflow disabled on GitHub Actions**
    (2026-09-17, done) — owner asked to pause weekly/longform content for
    now. Ran `gh workflow disable "Quiz Longform (2x/week)"`; confirmed
@@ -63,9 +79,10 @@ scratch.
    every other workflow left untouched. Re-enable with
    `gh workflow enable "Quiz Longform (2x/week)"` when ready.
 
-**Next step, if picking this up fresh:** get owner sign-off on which of
-idea 2's open questions to answer, then build ONE test video for the
-keyboard-seek format (small scope, per this repo's own "work in small
+**Next step, if picking this up fresh:** get owner sign-off on (a) the
+original-fantasy-setting-vs-WoW-IP question and (b) idea 2's other open
+questions above, then build ONE test video for the keyboard-seek fantasy
+story format (small scope, per this repo's own "work in small
 iterations" rule) before wiring it into any real schedule.
 
 ## What's shipped and working (live in production)
