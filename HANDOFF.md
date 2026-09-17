@@ -75,6 +75,28 @@ scratch.
      Pexels stays available as a fallback only if a genuinely photoreal
      (non-illustrated) shot is ever wanted. Not yet integrated into any
      code — next session's actual build step.
+   - **Series continuity, decided (2026-09-17):** this is meant to be an
+     ongoing series across many videos, not one-off standalone stories —
+     owner wants a consistent big-picture storyline that carries forward
+     episode to episode. Resolved design questions:
+     - **Viewer choices are in-episode flavor only** (owner's explicit
+       pick over the branching-canon alternative) — the main storyline
+       advances the same way regardless of which path a viewer picks;
+       keyboard choices change bonus/detour beats within that one
+       episode, never what the next episode covers. Keeps this from
+       becoming a combinatorial branching-state problem over a long
+       series.
+     - **A persistent "story bible"** carries the actual continuity: world
+       name, factions, main characters, the planned arc, and a running
+       summary of what's happened so far. Reuses this pipeline's existing
+       pattern (`recent_topics()`/`recent_facts()` in `pipeline/state.py`
+       already read prior state into a generation prompt) — same idea,
+       new use: a new `state.db` table holds the current arc/character/
+       world summary, read into every new episode's generation prompt for
+       consistency, then appended to after that episode is planned so the
+       next one has the up-to-date state. Not yet designed at the schema
+       level or built — next session's job, alongside the Pollinations
+       integration above.
 3. **"AI POV game" pitch (surfaced from a different AI assistant, pasted
    in by the owner)** — suggested simulating a first-person "gameplay"
    look either via paid AI video generators (Runway Gen-3, Kling) or by
