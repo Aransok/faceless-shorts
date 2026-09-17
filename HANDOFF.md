@@ -63,8 +63,19 @@ the default daily rotation:
   real 4xx (retrying that would just fail the same way three more
   times). A 4xx was never actually observed; the fix is scoped to the
   5xx that was.
-  **Not yet re-tested** at the real 600s target with the retry fix in
-  place — that's the next real GitHub Actions run to fire.
+  **Retested (run #45, 2026-09-17) at the real 600s target — clean
+  success end to end.** All 10 beats rendered (no Pollinations 5xx
+  this time, no narration-overrun warnings logged), through
+  assemble/metadata/upload: `status=uploaded`,
+  `youtube_video_id=qyOOOnMbt2Y`, title "The Duskglass Shard". Real
+  stage timings: plan 104s, render_veylorn (all 10 beats: TTS +
+  Pollinations + ffmpeg encode) 810s, assemble 690s, upload 6s —
+  ~25 minutes total for one 10-minute episode. **Owner should watch
+  the actual uploaded video** to judge the real open questions this
+  format still has no answer to: does the decile-seek actually feel
+  responsive when you press a number key, is a single Ken-Burns image
+  per 60s beat visually enough to hold attention that long, and does
+  the story/pacing itself work. None of that is verifiable from logs.
 
 1. **AI-generated visuals instead of Pexels stock (facts/sauce_recipe)** —
    idea: replace/augment `visuals_facts.py`'s stock-footage search with
