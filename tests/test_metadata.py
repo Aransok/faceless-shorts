@@ -13,9 +13,11 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.metadata import (
+    DESCRIPTION_MAX_CHARS,
     METADATA_FAMILY_GAME_PROMPT_PATH,
     METADATA_PROMPT_PATH,
     METADATA_QUIZ_PROMPT_PATH,
+    _append_full_story,
     _generate_metadata_fields,
     generate_metadata,
 )
@@ -119,6 +121,34 @@ class GenerateMetadataPromptSelectionTest(unittest.TestCase):
         prompt_used = self.mocks["fields"].call_args.args[0]
         expected_snippet = METADATA_PROMPT_PATH.read_text(encoding="utf-8").split("\n")[0]
         self.assertIn(expected_snippet, prompt_used)
+
+
+class AppendFullStoryTest(unittest.TestCase):
+    """veylorn_story owner ask (2026-09-18): full narration text in the
+    description, without ever crowding out the LLM-written CTA."""
+
+    def test_appends_the_full_story_under_a_header(self):
+        result = _append_full_story("A short description.", "Once upon a time in Veylorn.")
+        self.assertIn("A short description.", result)
+        self.assertIn("Full story:", result)
+        self.assertIn("Once upon a time in Veylorn.", result)
+        self.assertTrue(result.index("A short description.") < result.index("Full story:"))
+
+    def test_empty_script_text_leaves_description_unchanged(self):
+        self.assertEqual(_append_full_story("A short description.", ""), "A short description.")
+
+    def test_long_story_is_truncated_to_fit_the_real_youtube_limit(self):
+        description = "x" * 100
+        story = "word " * 2000  # far longer than any real budget
+        result = _append_full_story(description, story)
+        self.assertLessEqual(len(result), DESCRIPTION_MAX_CHARS)
+        self.assertTrue(result.endswith("…"))
+        self.assertIn(description, result, "the description itself must never be the part that gets cut")
+
+    def test_description_already_at_the_limit_gets_no_story_appended(self):
+        description = "x" * DESCRIPTION_MAX_CHARS
+        result = _append_full_story(description, "some story text")
+        self.assertEqual(result, description)
 
 
 if __name__ == "__main__":

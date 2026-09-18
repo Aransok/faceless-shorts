@@ -166,6 +166,27 @@ def _format_sauce_scripts(video_id: str) -> str:
     return "\n".join(f"Sauce {step['step_index']}: {step['script_text']}" for step in steps)
 
 
+def _append_full_story(description: str, script_text: str) -> str:
+    """veylorn_story owner ask (2026-09-18): the full narration text in
+    the description, not just the LLM-written summary/hook -- lets a
+    viewer read the whole episode even if they don't watch. Appended
+    AFTER _enforce_limits() already ran on the LLM's own description
+    (so the real CTA/subscribe line never loses budget to the story
+    text), then the STORY portion specifically is what gets trimmed if
+    the combination would exceed DESCRIPTION_MAX_CHARS -- losing the
+    tail of a story recap is a much smaller loss than losing the
+    subscribe CTA a truncate-the-whole-thing approach risks.
+    """
+    if not script_text:
+        return description
+    header = "\n\nFull story:\n"
+    budget = DESCRIPTION_MAX_CHARS - len(description) - len(header)
+    if budget <= 0:
+        return description
+    story = script_text if len(script_text) <= budget else script_text[:budget].rsplit(" ", 1)[0].rstrip() + "…"
+    return description + header + story
+
+
 def generate_metadata(video_id: str) -> dict:
     video = get_video(video_id)
     if video is None:
@@ -207,6 +228,8 @@ def generate_metadata(video_id: str) -> dict:
     title, description, tags = _enforce_limits(
         parsed["TITLE"], parsed["DESCRIPTION"], parsed["TAGS"]
     )
+    if is_veylorn:
+        description = _append_full_story(description, video["script_text"] or "")
 
     require_review = os.environ.get("REQUIRE_REVIEW", "true").lower() == "true"
     next_status = "awaiting_review" if require_review else "approved"

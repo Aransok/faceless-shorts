@@ -1,10 +1,17 @@
 """Pure-logic tests for pipeline/render_veylorn.py's per-beat duration
-math -- no real ffmpeg/TTS/network calls, per CLAUDE.md's testing rules.
+math and on-screen choice-prompt overlay -- no real ffmpeg/TTS/network
+calls, per CLAUDE.md's testing rules. The overlay test does use real
+Pillow image ops (in-memory only) since that's the thing under test,
+not an external call.
 """
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
+
+from PIL import Image
 
 from pipeline import render_veylorn as rv
 
@@ -48,6 +55,41 @@ class TestZoompanRate(unittest.TestCase):
 
     def test_zero_frames_does_not_divide_by_zero(self):
         rv._zoompan_rate(0)  # must not raise
+
+
+class TestDrawChoiceOverlay(unittest.TestCase):
+    """Real owner feedback (2026-09-18): pressing 7/8/9 didn't feel like
+    a real choice without visible on-screen text -- this is what makes
+    the choice actually visible."""
+
+    def _blank_image(self, color=(50, 60, 70)) -> Path:
+        tmp_dir = Path(tempfile.mkdtemp())
+        path = tmp_dir / "test.jpg"
+        Image.new("RGB", (rv.WIDTH, rv.HEIGHT), color).save(path)
+        return path
+
+    def test_overlay_darkens_the_bottom_region_only(self):
+        path = self._blank_image(color=(200, 200, 200))
+        rv._draw_choice_overlay(path, "PRESS 3: Confront them\nPRESS 4: Talk it out")
+        image = Image.open(path)
+        top_pixel = image.getpixel((rv.WIDTH // 2, 50))
+        # Sample near the left edge of the box's vertical middle (not
+        # dead center, which risks landing on a glyph stroke instead of
+        # the box background at some font/text combination).
+        box_area_pixel = image.getpixel((40, rv.HEIGHT - 150))
+        self.assertEqual(top_pixel, (200, 200, 200), "region outside the prompt box must be untouched")
+        self.assertLess(sum(box_area_pixel), sum(top_pixel), "the prompt box must visibly darken its region")
+
+    def test_output_stays_a_valid_same_size_image(self):
+        path = self._blank_image()
+        rv._draw_choice_overlay(path, "PRESS 7: ...\nPRESS 8: ...\nPRESS 9: ...")
+        image = Image.open(path)
+        self.assertEqual(image.size, (rv.WIDTH, rv.HEIGHT))
+
+    def test_handles_a_single_line_prompt(self):
+        path = self._blank_image()
+        rv._draw_choice_overlay(path, "PRESS 5 to continue")  # no real beat uses this, but must not crash
+        Image.open(path).verify()
 
 
 if __name__ == "__main__":

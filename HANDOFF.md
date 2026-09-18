@@ -77,6 +77,66 @@ the default daily rotation:
   per 60s beat visually enough to hold attention that long, and does
   the story/pacing itself work. None of that is verifiable from logs.
 
+**2026-09-18 round 2, owner feedback after watching the real episode
+("I kinda like it" + a real list of fixes) — built, not yet re-tested:**
+- **Groq instead of Claude for script generation**
+  (`plan_veylorn.py` now calls `call_bulk_llm()`, not `call_llm()`) —
+  deliberate exception to plan.py's general "keep the real script loop
+  on Claude" rule, justified here since this format has no review/
+  rewrite loop to risk extra Claude calls from a cheaper model.
+- **Less dead air**: narration budget raised from 110-145/165 words to
+  135-155/165 (still a 60s/beat fixed budget) so less of each beat is
+  silence padding.
+- **Real second choice point + visible on-screen text**: owner's exact
+  complaint — pressing 7/8/9 "doesn't make a point" since those deciles
+  just play in chronological order regardless of choice. Real
+  constraint worth remembering: YouTube's keyboard seek is always
+  "jump to a fixed point," never "go there then return" — true
+  back-and-forth isn't possible with this mechanic. What's fixed
+  instead: beats 3-4 are now a real earlier fork (two different takes
+  on the same beat-2 moment, both converging into beat 5), and BOTH
+  choice moments (beat 2 -> 3/4, beat 6 -> 7/8/9) now burn a real
+  on-screen text prompt onto the image (`render_veylorn.py`'s new
+  `_draw_choice_overlay`, Poppins-ExtraBold, semi-transparent box) —
+  not just spoken narration a viewer might not register as actionable.
+- **Character/world visual consistency**: real research done first —
+  Pollinations has no character-consistency feature (same seed only
+  reproduces one exact image, not "the same character in different
+  poses"); true consistency needs paid tools (ControlNet/LoRA/
+  reference-image APIs) off the table here. Realistic free fix built:
+  the prompt template now has a fixed VISUAL IDENTITY section (specific
+  armor/clothing/color-palette descriptions per faction + the world
+  itself) the LLM must reuse verbatim-or-close in every image_prompt —
+  consistent look/style, not a locked face, same tradeoff the owner's
+  own "50 different photos of me, still me" framing described.
+- **Full story text in the description**
+  (`metadata.py::_append_full_story`) — appended after the LLM's own
+  description/CTA, budget-trimmed so the story text (not the CTA) is
+  what gets cut if it would exceed YouTube's 5000-char limit.
+- **Background music: blocked, not built.** Only one track exists in
+  the whole project (`assets/music/lofi_pulse.mp3`, not remotely
+  fantasy) and this sandbox's egress proxy blocks every real royalty-
+  free music host checked (opengameart.org, incompetech.com) — can't
+  verify a specific track's license from here. Needs either the owner
+  to supply a real CC0/CC-BY track file, or a verified direct-download
+  URL for me to fetch at real GitHub Actions run time (this sandbox
+  can't verify one itself). `assemble.py`'s existing MUSIC_TEMPLATES
+  mixing is ready to use the moment a real file lands in `assets/music/`
+  — veylorn_story just isn't added to that tuple yet.
+- 8 new/changed tests (`tests/test_render_veylorn.py`'s
+  `TestDrawChoiceOverlay`, `tests/test_plan_veylorn.py`'s choice-prompt
+  validation tests, `tests/test_metadata.py`'s `AppendFullStoryTest`),
+  311 total, all passing. **Not yet re-tested against a real GitHub
+  Actions run** — that's the next real verification step once picked
+  back up (owner hit a Claude usage session limit 2026-09-18, this
+  round paused here rather than firing another real run + monitoring
+  loop).
+
+**Unevaluated resource, logged 2026-09-18**: owner shared
+`k2-fsa/OmniVoice` (GitHub) as a possible TTS option — not read or
+compared against the current edge_tts/kokoro backends yet. Look at
+this next session before assuming it's better/free/worth switching to.
+
 1. **AI-generated visuals instead of Pexels stock (facts/sauce_recipe)** —
    idea: replace/augment `visuals_facts.py`'s stock-footage search with
    real AI video generation (Veo 3, or a "TopView" third-party skill the

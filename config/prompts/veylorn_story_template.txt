@@ -5,6 +5,9 @@ total duration. This episode is exactly 10 beats long, one beat per
 decile (beat N plays during decile N of the video). A viewer who presses
 a number jumps straight to that beat; a viewer who does nothing just
 watches all 10 beats in order, so nothing may look broken either way.
+There is no "return to where you were" -- pressing a number always jumps
+to that fixed point, never back to a previous position -- so every beat
+must make sense arrived-at directly, not just as a continuation.
 
 THE SETTING (use exactly this -- do not invent alternate names for it):
 
@@ -33,54 +36,96 @@ Thrones, or any other existing fantasy franchise (e.g. "Legion" and
 generic-sounding invented word is fine; a real franchise's actual term
 is not, even reworded.
 
+VISUAL IDENTITY (use these exact descriptions, or a close paraphrase
+that keeps every specific detail, in EVERY image_prompt that shows the
+matching thing -- the image generator has no memory between calls and
+no way to keep a character's face consistent, so repeating the same
+concrete visual details is the only real way to make the world and its
+people look like a consistent, real place instead of a different
+invented look every beat):
+- World/setting look: weathered pale stone ruins overtaken by moss,
+  a muted teal-and-amber color palette, faint cracked-crystal motifs in
+  the sky or architecture referencing the Sundering.
+- Ashcrown Wardens (any Warden figure): silver-grey plate armor scored
+  with old battle-wear, a stylized broken-crown emblem on the chest,
+  deep blue weathered capes.
+- Wildkin Clans (any Wildkin figure): layered leather and woven-bark
+  clothing, bone and feather ornaments, tattooed forearms, earthy
+  browns and greens.
+- Hollow Choir (any Choir figure): pale hooded robes, masks etched with
+  fine silver spiral patterns, carrying old brass instruments or
+  sealed scrolls.
+- The Wanderer (the viewer) is never shown -- narration is second
+  person and no image_prompt should depict "the Wanderer" as a visible
+  character.
+
 EPISODE 1 STRUCTURE (exactly 10 beats, round_index 0-9):
 
-Beats 0-6 (round_index 0 through 6, beat_type "main"): ONE continuous
-story told in order -- the Wanderer arrives somewhere in Veylorn and
-gets pulled into a small, self-contained encounter that touches all
-three factions without resolving the larger conflict (this is episode
-1 of an ongoing series -- end on a real hook, not a full resolution).
-Beat 6's narration MUST end with an explicit, natural in-story line
-inviting the viewer to press 7, 8, or 9 to hear how each faction sees
-what just happened (or just keep watching to hear all three in order).
+Beats 0-2 (main): opening -- the Wanderer arrives somewhere in Veylorn
+and a small situation starts developing that will require a real
+decision. Beat 2's narration MUST end with an explicit, natural
+in-story line offering the choice below, and its "on_screen_prompt"
+field must contain the exact short text to display on screen for it
+(2 lines max, each under 40 characters, e.g. "PRESS 3: Confront them
+directly\nPRESS 4: Try to talk your way in").
 
-Beats 7-9 (round_index 7, 8, 9, beat_type "bonus"): three SHORT,
-INDEPENDENT epilogue reactions to the beat-6 encounter -- round_index 7
-is the Ashcrown Wardens' perspective, 8 is the Wildkin Clans', 9 is the
-Hollow Choir's. Each must work whether a viewer jumps straight to it OR
-reaches it by watching 7 then 8 then 9 in order -- don't reference
-"the other two" reactions.
+Beats 3-4 (choice, one real fork -- NOT sequential chronology): TWO
+DIFFERENT ways the SAME moment from beat 2 could go (e.g. beat 3 =
+confronting directly, beat 4 = talking your way in) -- genuinely
+different in tone/detail, not one flowing into the other. Both must
+independently lead into the SAME beat 5 (the story's actual arc
+doesn't branch, per this series' own continuity rules -- only the
+flavor of how you got there does), so end each of beat 3 and beat 4 on
+a line that could plausibly transition into beat 5's opening regardless
+of which path was taken.
+
+Beats 5-6 (main): the shared climax of this encounter, following
+either beat 3 or beat 4 equally well. Beat 6's narration MUST end with
+an explicit, natural in-story line offering the second choice below,
+with its own "on_screen_prompt" (same format as beat 2's).
+
+Beats 7-9 (bonus, a second real fork, three-way): three SHORT,
+INDEPENDENT epilogue reactions to the beat 5-6 encounter -- round_index
+7 is the Ashcrown Wardens' perspective, 8 is the Wildkin Clans', 9 is
+the Hollow Choir's. Each must work whether a viewer jumps straight to
+it OR reaches it by watching 7 then 8 then 9 in order -- don't
+reference "the other two" reactions, and each should feel like a real,
+satisfying small ending on its own (this is episode 1 of an ongoing
+series -- each ending should still leave the larger conflict open, but
+not feel unfinished on its own terms).
 
 PER-BEAT CONSTRAINTS (all 10 beats):
-- narration: 110-145 words, NEVER more than 165. Each beat is a fixed
-  60 real seconds of video -- narration in this range leaves
-  comfortable silence at the end rather than risk overrunning the
-  beat. This is a real chunk of story, not a one-line summary -- give
+- narration: 135-155 words, NEVER more than 165. Each beat is a fixed
+  60 real seconds of video -- narration in this range fills most of
+  the beat with real story rather than leaving long silence at the
+  end. This is a real chunk of story, not a one-line summary -- give
   each beat actual scene-setting, sensory detail, and character
   thought/dialogue, not just a bare plot event.
 - image_prompt: a vivid scene description for an AI image generator,
   matching this beat's narration -- describe the SETTING, ACTION, and
-  MOOD (lighting, weather, composition), not named characters (an image
-  model can't keep a named character's face consistent across separate
-  generations, so describe silhouettes/figures/roles instead, e.g. "a
-  cloaked figure" not "the Wanderer looks like X"). Always end the
-  image_prompt with ", epic fantasy digital painting, dramatic lighting"
-  so every beat renders in one consistent visual style.
+  MOOD (lighting, weather, composition). Apply the VISUAL IDENTITY
+  section above for any faction member or the world itself that
+  appears. Always end the image_prompt with ", epic fantasy digital
+  painting, dramatic lighting" so every beat renders in one consistent
+  visual style.
+- on_screen_prompt: ONLY set on beat 2 and beat 6 (the two choice
+  beats) -- see their instructions above. Omit (empty string) on
+  every other beat.
 
 OUTPUT FORMAT -- respond with ONLY this JSON object, no other text:
 
 {
   "title": "a short in-world episode title, no franchise-adjacent words",
   "beats": [
-    {"round_index": 0, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 1, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 2, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 3, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 4, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 5, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 6, "beat_type": "main", "narration": "...", "image_prompt": "..."},
-    {"round_index": 7, "beat_type": "bonus", "narration": "...", "image_prompt": "..."},
-    {"round_index": 8, "beat_type": "bonus", "narration": "...", "image_prompt": "..."},
-    {"round_index": 9, "beat_type": "bonus", "narration": "...", "image_prompt": "..."}
+    {"round_index": 0, "beat_type": "main", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 1, "beat_type": "main", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 2, "beat_type": "main", "narration": "...", "image_prompt": "...", "on_screen_prompt": "PRESS 3: ...\nPRESS 4: ..."},
+    {"round_index": 3, "beat_type": "choice", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 4, "beat_type": "choice", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 5, "beat_type": "main", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 6, "beat_type": "main", "narration": "...", "image_prompt": "...", "on_screen_prompt": "PRESS 7: ...\nPRESS 8: ...\nPRESS 9: ..."},
+    {"round_index": 7, "beat_type": "bonus", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 8, "beat_type": "bonus", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""},
+    {"round_index": 9, "beat_type": "bonus", "narration": "...", "image_prompt": "...", "on_screen_prompt": ""}
   ]
 }

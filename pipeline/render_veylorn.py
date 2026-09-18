@@ -17,21 +17,38 @@ an audio-only file so assemble.py/captions.py/upload.py stay unmodified.
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
+from PIL import Image, ImageDraw, ImageFont
+
 from pipeline.pollinations import download_image
+from pipeline.render_text import draw_centered_lines, fit_multiline
 from pipeline.state import get_video, get_video_steps, update_video
 from pipeline.voice import _pad_with_silence, audio_duration_seconds, synthesize
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "assets" / "output"
+FONT_PATH = PROJECT_ROOT / "assets" / "fonts" / "Poppins-ExtraBold.ttf"
 
 WIDTH, HEIGHT = 1920, 1080
 FPS = 30
 TEMPLATE = "veylorn_story"
+
+# Real owner feedback (2026-09-18, after watching run #45): pressing
+# 7/8/9 didn't feel like a real choice since those decile plays through
+# in plain chronological order regardless -- the choice needs to be
+# visibly announced with real on-screen text, not just spoken narration
+# a viewer might not register as "you can act on this right now."
+PROMPT_FONT_SIZE = 56
+PROMPT_MIN_FONT_SIZE = 32
+PROMPT_LINE_HEIGHT = 68
+PROMPT_BOX_COLOR = (10, 8, 20, 190)  # near-black, mostly opaque
+PROMPT_TEXT_COLOR = (223, 184, 92, 255)  # warm gold, readable on the dark box
 
 # 10 beats, one per decile of the final video -- see module docstring.
 # 600s (10 minutes) matches this channel's own established long-form
@@ -67,6 +84,37 @@ def _beat_timing(real_duration: float, idx: int) -> tuple[float, float]:
     if pad_seconds < 0:
         print(f"[render_veylorn] beat {idx}: narration ({real_duration:.1f}s) exceeded the {BEAT_SECONDS:.0f}s budget -- decile alignment will drift from here")
     return 0.0, real_duration
+
+
+def _draw_choice_overlay(image_path: Path, prompt_text: str) -> None:
+    """Burns a translucent box + the literal on-screen press-prompt text
+    onto a beat's downloaded image, in place, before it goes into
+    _build_beat_segment -- simplest way to guarantee the text is visible
+    for this beat's ENTIRE duration (a viewer needs the whole beat to
+    actually read it and press a key before playback moves on), no
+    timed ffmpeg overlay/fade needed. `prompt_text` may contain literal
+    "\\n" line breaks (see the prompt template's on_screen_prompt field).
+    """
+    lines_in = prompt_text.split("\n")
+    image = Image.open(image_path).convert("RGBA")
+    draw = ImageDraw.Draw(image)
+
+    max_width = int(image.width * 0.82)
+    all_lines: list[str] = []
+    font = ImageFont.truetype(str(FONT_PATH), PROMPT_FONT_SIZE)
+    for raw_line in lines_in:
+        font, wrapped = fit_multiline(draw, raw_line, FONT_PATH, PROMPT_FONT_SIZE, PROMPT_MIN_FONT_SIZE, max_width)
+        all_lines.extend(wrapped)
+
+    box_height = len(all_lines) * PROMPT_LINE_HEIGHT + 60
+    box_top = image.height - box_height - 80
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    ImageDraw.Draw(overlay).rectangle([0, box_top, image.width, box_top + box_height], fill=PROMPT_BOX_COLOR)
+    image = Image.alpha_composite(image, overlay)
+
+    draw = ImageDraw.Draw(image)
+    draw_centered_lines(draw, all_lines, font, PROMPT_TEXT_COLOR, image.width / 2, box_top + 30, PROMPT_LINE_HEIGHT)
+    image.convert("RGB").save(image_path)
 
 
 def _run_ffmpeg(args: list[str]) -> None:
@@ -129,7 +177,7 @@ def render_veylorn_story(video_id: str) -> None:
     if len(beats) != BEAT_COUNT:
         raise ValueError(f"video {video_id} has {len(beats)} beats, expected exactly {BEAT_COUNT} -- run plan_veylorn_story() first")
 
-    tts_backend = __import__("os").environ.get("TTS_BACKEND", "edge_tts")
+    tts_backend = os.environ.get("TTS_BACKEND", "edge_tts")
 
     with tempfile.TemporaryDirectory(prefix="render_veylorn_") as tmp:
         tmp_dir = Path(tmp)
@@ -154,6 +202,11 @@ def render_veylorn_story(video_id: str) -> None:
 
             image_path = tmp_dir / f"beat{idx}.jpg"
             download_image(beat["keywords"], image_path, width=WIDTH, height=HEIGHT, seed=idx)
+
+            round_data = json.loads(beat["round_data_json"]) if beat["round_data_json"] else {}
+            on_screen_prompt = round_data.get("on_screen_prompt")
+            if on_screen_prompt:
+                _draw_choice_overlay(image_path, on_screen_prompt)
 
             frame_count = round(final_duration * FPS)
             segment_path = tmp_dir / f"beat{idx}_segment.mp4"
