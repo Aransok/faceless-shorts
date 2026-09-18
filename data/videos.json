@@ -547,5 +547,21 @@
     "template": "veylorn_story",
     "approach": null,
     "scheduled_publish_at": "2026-09-17T23:48:20.514508+00:00"
+  },
+  {
+    "video_id": "83bed478-86ad-48bf-8aa5-a74d2f0d2581",
+    "youtube_video_id": "ju0vDQufO1U",
+    "uploaded_at": "2026-09-18T17:47:47.763643+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-18T20:05:05.464749+00:00"
+  },
+  {
+    "video_id": "95e56204-d75a-499e-ad9a-07acf2c62d18",
+    "youtube_video_id": "XYNGmY8IMDM",
+    "uploaded_at": "2026-09-18T17:58:25.776487+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-09-18T22:32:39.338297+00:00"
   }
 ]
