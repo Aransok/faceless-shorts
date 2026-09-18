@@ -132,10 +132,34 @@ the default daily rotation:
   round paused here rather than firing another real run + monitoring
   loop).
 
-**Unevaluated resource, logged 2026-09-18**: owner shared
-`k2-fsa/OmniVoice` (GitHub) as a possible TTS option — not read or
-compared against the current edge_tts/kokoro backends yet. Look at
-this next session before assuming it's better/free/worth switching to.
+**`k2-fsa/OmniVoice` evaluated (2026-09-18) — real research done,
+recommendation: don't switch.** Owner shared it as a possible TTS
+replacement for edge_tts/kokoro. Findings:
+- Genuinely strong project on paper: multilingual (600+ languages),
+  voice cloning + voice design (gender/age/pitch/accent), Apache-2.0
+  (commercial/monetized use explicitly fine, no restrictions), no API
+  key, self-hostable.
+- Real blocker: every documented usage example hardcodes
+  `device_map="cuda:0"`; benchmarks are GPU-only (H100). CPU support
+  exists but is immature -- found an open, stale GitHub issue about
+  CPU mode failing on Windows, and a separate open issue for adding
+  basic Dockerized CPU deployment, i.e. still being built, not a
+  finished path.
+- This project's own workflows all run on GitHub Actions'
+  `ubuntu-latest` runners, which have **no GPU at all** -- not a
+  preference, a hard constraint this specific project has. OmniVoice
+  would also need PyTorch + a real multi-GB HuggingFace model pull on
+  every run (Actions runners are thrown away after each job, so that
+  download repeats daily without real caching work), a much heavier
+  footprint than edge_tts (free hosted API call) or kokoro (small
+  local ONNX model), both already proven working reliably in this
+  exact CI environment.
+- The underlying want -- a more distinct, controllable narrator voice
+  per pillar (e.g. a dedicated "bard" voice for veylorn_story vs. the
+  Shorts narrator) -- is real and worth keeping in mind, just not
+  buildable with THIS tool under THIS project's free-tier/no-GPU CI
+  constraint. Revisit only if this pipeline ever runs somewhere with a
+  real GPU.
 
 1. **AI-generated visuals instead of Pexels stock (facts/sauce_recipe)** —
    idea: replace/augment `visuals_facts.py`'s stock-footage search with
