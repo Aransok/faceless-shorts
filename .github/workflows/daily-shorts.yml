@@ -98,6 +98,13 @@ jobs:
         env:
           LLM_BACKEND: claude_code
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Owner cost-reduction request (2026-09-20): Haiku instead of
+          # the CLI's default model for the script draft/review/rewrite
+          # loop -- see pipeline/plan.py's _call_claude_code() for the
+          # real tradeoff (a cheaper model here could cause more
+          # authenticity-review rejections, i.e. more Claude calls, not
+          # fewer). Revert by clearing this var if that shows up for real.
+          CLAUDE_CODE_MODEL: claude-haiku-4-5-20251001
           # If today's Claude usage limit is hit mid-run, retry that one
           # call on Groq's free-tier Llama API instead of failing the
           # video outright (see pipeline/plan.py's call_llm()). A no-op
