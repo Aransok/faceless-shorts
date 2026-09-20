@@ -35,7 +35,7 @@ from pipeline.voice import voice
 # review pipeline -- weighted 2:2:1 toward facts/sauce_recipe over
 # programming for that reason.
 #
-# Nudged to 2:1:2 (2026-09-13): owner-shared creator research argues
+# Nudged to 2:2:1 (2026-09-13): owner-shared creator research argues
 # views alone understate a technical template's real value -- advertisers
 # on developer/programming content pay far more per 1000 views than on
 # general trivia/food content. pipeline/winner_analyzer.py's own

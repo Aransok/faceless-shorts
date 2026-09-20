@@ -58,6 +58,10 @@ jobs:
         env:
           LLM_BACKEND: claude_code
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Same owner cost-reduction request as daily-shorts.yml -- see
+          # that workflow's comment and pipeline/plan.py's
+          # _call_claude_code() for the real tradeoff.
+          CLAUDE_CODE_MODEL: claude-haiku-4-5-20251001
           # Same usage-limit fallback as daily-shorts.yml -- see that
           # workflow's comment and pipeline/plan.py's call_llm().
           LLM_FALLBACK_BACKEND: groq

@@ -119,11 +119,24 @@ def _call_claude_code(prompt: str) -> str:
     claude_path = shutil.which("claude")
     if claude_path is None:
         raise RuntimeError("claude CLI not found on PATH")
+    # Owner cost-reduction request (2026-09-20): defaults to whatever the
+    # CLI's own default model is (unset -> no --model flag, same behavior
+    # as before this existed) so this is opt-in per environment, not a
+    # silent model downgrade. Set to e.g. claude-haiku-4-5-20251001 in CI
+    # to cut real Claude usage cost on the script draft/review/rewrite
+    # loop -- the one call_llm() path this project deliberately keeps on
+    # Claude rather than a free backend (see call_bulk_llm()'s docstring).
+    # Tradeoff worth watching: a cheaper model here could plausibly cause
+    # MORE authenticity-review rejections (review_script.py), which means
+    # MORE Claude calls per video, not fewer -- same risk class already
+    # flagged for why the review/rewrite loop stays off call_bulk_llm().
+    model = os.environ.get("CLAUDE_CODE_MODEL", "").strip()
+    args = [claude_path, "-p"] + (["--model", model] if model else [])
     # On Windows the global npm shim is a .cmd, which CreateProcess can't
     # launch directly without a shell — and the prompt goes via stdin
     # rather than argv so shell quoting never touches untrusted text.
     result = subprocess.run(
-        [claude_path, "-p"],
+        args,
         input=prompt,
         capture_output=True,
         text=True,

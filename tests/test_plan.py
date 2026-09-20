@@ -170,6 +170,31 @@ class CallLlmFallbackTest(unittest.TestCase):
                 call_llm("prompt")
 
 
+class CallClaudeCodeModelFlagTest(unittest.TestCase):
+    """Owner cost-reduction request (2026-09-20): CLAUDE_CODE_MODEL lets
+    CI pin `claude -p` to a cheaper model (e.g. Haiku) without touching
+    local dev, which leaves it unset. No real subprocess calls --
+    subprocess.run is mocked."""
+
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_unset_env_var_omits_the_model_flag(self, mock_run, mock_which):
+        mock_run.return_value = mock.Mock(returncode=0, stdout="output", stderr="")
+        with mock.patch.dict("os.environ", {"CLAUDE_CODE_MODEL": ""}):
+            call_llm("prompt")
+        args = mock_run.call_args.args[0]
+        self.assertEqual(args, ["/usr/bin/claude", "-p"])
+
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_set_env_var_adds_the_model_flag(self, mock_run, mock_which):
+        mock_run.return_value = mock.Mock(returncode=0, stdout="output", stderr="")
+        with mock.patch.dict("os.environ", {"CLAUDE_CODE_MODEL": "claude-haiku-4-5-20251001"}):
+            call_llm("prompt")
+        args = mock_run.call_args.args[0]
+        self.assertEqual(args, ["/usr/bin/claude", "-p", "--model", "claude-haiku-4-5-20251001"])
+
+
 class CallBulkLlmTest(unittest.TestCase):
     """call_bulk_llm() is a pure dispatcher for the cheap-backend split
     (metadata/CTA generation) -- see pipeline/metadata.py and
