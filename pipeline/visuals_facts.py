@@ -16,7 +16,14 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-from pipeline.state import get_video, get_video_steps, list_by_status, update_video
+from pipeline.state import (
+    get_video,
+    get_video_steps,
+    list_by_status,
+    recent_stock_clip_ids,
+    update_video,
+    update_video_step,
+)
 from pipeline.voice import voice
 from pipeline.wikimedia import download_commons_image, search_commons_image
 
@@ -175,6 +182,19 @@ def _search_tier(query: str, tier: str, subject: str, api_key: str, seen_ids: se
 # were all near-identical "hand placing a sticky note on a plain wall"
 # shots. Different IDs is not the same thing as different footage.
 MAX_DIVERSITY_PENALTY = 30  # capped so a much stronger, similar candidate can still beat a much weaker, diverse one (see tests)
+
+# Cross-video reuse penalty (2026-09-21, real confirmed owner report:
+# "we again sometimes use same stock footage"). MAX_DIVERSITY_PENALTY
+# above only ever compares candidates against each other WITHIN one
+# video -- nothing previously persisted which Pexels clip IDs got used
+# in PAST videos at all (see pipeline/state.py's recent_stock_clip_ids()
+# docstring for the real gap this closes). A flat penalty, not outright
+# exclusion, same philosophy as the diversity penalty: a clip that's
+# genuinely the only good match for a rare subject should still be able
+# to win over a much weaker "fresh" alternative, but for the common case
+# (a generic query with plenty of real alternatives) this reliably pushes
+# a recently-used clip out of the running.
+RECENT_REUSE_PENALTY = 25
 _FUZZY_PREFIX_LEN = 4  # catches word-form variants a literal set intersection misses: "sticky"/"sticking", "note"/"notes"
 
 
@@ -233,16 +253,24 @@ def _diversity_penalty(video: dict, selected: list[dict]) -> tuple[int, int | No
     return penalty, (most_similar_id if penalty > 0 else None)
 
 
-def _select_diverse_set(candidates: list[dict], min_count: int, beat_label: str = "") -> tuple[list[dict], list[dict]]:
+def _select_diverse_set(
+    candidates: list[dict],
+    min_count: int,
+    beat_label: str = "",
+    recent_clip_ids: frozenset = frozenset(),
+) -> tuple[list[dict], list[dict]]:
     """Greedy diversity-aware selection: select the best SET, not the
     top-N scored independently. Each round, every remaining candidate's
     diversity-adjusted score (base relevance - similarity penalty
-    against everything already selected) is recomputed, and the best one
-    wins -- so a candidate that looked strong before anything was
-    selected can still lose out once something too similar is already
-    in the set. See MAX_DIVERSITY_PENALTY for why relevance still wins
-    over "different at any cost" (a much weaker, merely-diverse
-    candidate can't out-score a much stronger, moderately-similar one).
+    against everything already selected - RECENT_REUSE_PENALTY if this
+    exact clip was used in a recent past video, per `recent_clip_ids`)
+    is recomputed, and the best one wins -- so a candidate that looked
+    strong before anything was selected can still lose out once
+    something too similar is already in the set. See
+    MAX_DIVERSITY_PENALTY for why relevance still wins over "different
+    at any cost" (a much weaker, merely-diverse candidate can't out-score
+    a much stronger, moderately-similar one) -- RECENT_REUSE_PENALTY
+    follows the same philosophy for cross-video reuse.
 
     Deduplicates by video id itself (doesn't just trust the caller's own
     seen_ids bookkeeping) -- defense in depth, same real ID can never be
@@ -263,9 +291,11 @@ def _select_diverse_set(candidates: list[dict], min_count: int, beat_label: str 
         scored_round = []
         for c in remaining:
             penalty, similar_to = _diversity_penalty(c["video"], selected)
-            scored_round.append((c["score"] - penalty, penalty, similar_to, c))
+            reused = c["video"]["id"] in recent_clip_ids
+            total_penalty = penalty + (RECENT_REUSE_PENALTY if reused else 0)
+            scored_round.append((c["score"] - total_penalty, total_penalty, similar_to, reused, c))
         scored_round.sort(key=lambda t: t[0], reverse=True)
-        final_score, penalty, similar_to, winner = scored_round[0]
+        final_score, penalty, similar_to, reused, winner = scored_round[0]
 
         remaining.remove(winner)
         selected.append(winner)
@@ -273,6 +303,8 @@ def _select_diverse_set(candidates: list[dict], min_count: int, beat_label: str 
             "too similar to already-selected clip(s), but still the best available" if penalty >= MAX_DIVERSITY_PENALTY
             else "diversity-adjusted top pick"
         )
+        if reused:
+            reason += ", recently used in another video"
         log.append({
             "clip_id": winner["video"]["id"], "query": winner["query"], "tier": winner["tier"],
             "match_type": winner["match_type"], "clip_description": _describe_clip(winner["video"]),
@@ -289,7 +321,11 @@ def _select_diverse_set(candidates: list[dict], min_count: int, beat_label: str 
 
 
 def _build_clip_pool(
-    visual_plan: dict, api_key: str, min_count: int, beat_label: str = ""
+    visual_plan: dict,
+    api_key: str,
+    min_count: int,
+    beat_label: str = "",
+    recent_clip_ids: frozenset = frozenset(),
 ) -> tuple[list[dict], list[dict]]:
     """Searches the beat's visual plan tier by tier -- exact_subject
     first, then accurate_representation, then concept_explanation,
@@ -328,7 +364,7 @@ def _build_clip_pool(
     if not all_scored:
         raise RuntimeError(f"no Pexels results for visual plan: {visual_plan}")
 
-    selected, selection_log = _select_diverse_set(all_scored, min_count, beat_label)
+    selected, selection_log = _select_diverse_set(all_scored, min_count, beat_label, recent_clip_ids)
     pool = [c["video"] for c in selected]
     return pool, selection_log
 
@@ -544,6 +580,13 @@ def visuals_facts(video_id: str) -> str:
     visual_log: list[dict] = []
     image_beats_used = 0
     real_image_beats_enabled = os.environ.get("ENABLE_REAL_IMAGE_BEATS", "1") != "0"
+    # Cross-video reuse penalty (see RECENT_REUSE_PENALTY/recent_stock_
+    # clip_ids() docstrings) -- read once per video, not once per beat:
+    # this video's own earlier beats persist their clip IDs via
+    # update_video_step() below as the loop runs, so a later beat in the
+    # SAME video already benefits from the within-video seen_ids dedup
+    # in _select_diverse_set() and doesn't need this too.
+    recent_clip_ids = frozenset(recent_stock_clip_ids())
 
     with tempfile.TemporaryDirectory(prefix="visuals_facts_") as tmp:
         tmp_dir = Path(tmp)
@@ -559,9 +602,21 @@ def visuals_facts(video_id: str) -> str:
             visual_plan = _parse_beat_visual_plan(beat["keywords"])
             subject = visual_plan.get("subject")
             beat_frames = _plan_segment_frames(clip_duration)
-            pool, pool_log = _build_clip_pool(visual_plan, api_key, min_count=len(beat_frames), beat_label=f"beat {beat['step_index']}: ")
+            pool, pool_log = _build_clip_pool(
+                visual_plan, api_key, min_count=len(beat_frames),
+                beat_label=f"beat {beat['step_index']}: ", recent_clip_ids=recent_clip_ids,
+            )
             for entry in pool_log:
                 visual_log.append({"beat": beat["step_index"], "subject": subject, **entry})
+            # Persisted (unlike {video_id}_visual_log.json, which is
+            # gitignored and thrown away with the CI runner) so the NEXT
+            # video's recent_stock_clip_ids() call can actually see it --
+            # see RECENT_REUSE_PENALTY's docstring for the real gap this
+            # closes.
+            update_video_step(
+                video_id, beat["step_index"],
+                round_data_json=json.dumps({"stock_clip_ids": [c["id"] for c in pool]}),
+            )
 
             # Real image, brief supplemental beat: only for a beat whose
             # best real-footage match is exact_subject (we know what the

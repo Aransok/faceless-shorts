@@ -6,6 +6,7 @@ see SPEC.md's Data model and status flow.
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -492,6 +493,45 @@ def recent_beats(template: str, limit_videos: int = 15, db_path: Path = DB_PATH)
             summary += "..."
         summaries.append(summary)
     return summaries
+
+
+_STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe")
+
+
+def recent_stock_clip_ids(limit_videos: int = 30, db_path: Path = DB_PATH) -> set[int]:
+    """Real, confirmed gap (2026-09-21 owner report: "we again sometimes
+    use the same stock footage"). pipeline/visuals_facts.py's own
+    diversity selection only ever compares candidates against each other
+    WITHIN one video -- there was no persisted, cross-video memory of
+    which Pexels clip IDs got used at all (the only record,
+    {video_id}_visual_log.json, is written to the gitignored
+    assets/output/ directory and thrown away with the CI runner). This
+    reads the clip IDs visuals_facts.py now writes back into
+    video_steps.round_data_json (see that module's _persist_clip_ids())
+    for the most recent videos across BOTH stock-footage templates --
+    facts/sauce_recipe draw from the same Pexels pool, so a generic clip
+    used in one can just as easily resurface in the other.
+    """
+    placeholders = ",".join("?" for _ in _STOCK_FOOTAGE_TEMPLATES)
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            f"""
+            SELECT vs.round_data_json FROM video_steps vs
+            JOIN videos v ON v.id = vs.video_id
+            WHERE v.template IN ({placeholders}) AND vs.round_data_json IS NOT NULL
+            ORDER BY v.created_at DESC, vs.step_index ASC
+            LIMIT ?
+            """,
+            (*_STOCK_FOOTAGE_TEMPLATES, limit_videos * 3),
+        ).fetchall()
+    clip_ids: set[int] = set()
+    for row in rows:
+        try:
+            data = json.loads(row["round_data_json"])
+        except (TypeError, ValueError):
+            continue
+        clip_ids.update(data.get("stock_clip_ids", []))
+    return clip_ids
 
 
 def recent_cta_types(limit: int = 1, db_path: Path = DB_PATH) -> list[str]:

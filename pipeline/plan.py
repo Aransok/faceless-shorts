@@ -44,7 +44,17 @@ TEMPLATES = {
     "sauce_recipe": PROMPTS_DIR / "sauce_recipe_template.txt",
 }
 
-RECENT_TOPICS_LIMIT = 15
+# Widened 15 -> 25 (2026-09-21): a real, confirmed cross-video duplicate
+# was found in production data -- the Darvaza gas crater / "Door to
+# Hell" burning-since-1971 fact appeared in both "Fires And Lights That
+# Never Went Out" (2026-09-06) and "Natural Wonders So Extreme They Look
+# Fake" (2026-09-16), ~17 facts videos apart, one past the old 15-video
+# window recent_beats() actually checks. 25 gives real margin past that
+# confirmed gap. Costs a real but modest amount of extra prompt tokens
+# (recent_beats() sends _BEAT_SUMMARY_WORDS=15-word summaries, so ~150
+# extra words in the avoid-list per generation call) -- worth it against
+# a real, observed repeat, not a hypothetical one.
+RECENT_TOPICS_LIMIT = 25
 VALID_STEP_COUNTS = (2, 3, 4)
 
 # Phase 17: authenticity review pass (pipeline/review_script.py). Up to
@@ -364,6 +374,74 @@ def _extract_narration(template: str, parsed: dict) -> str:
     return "\n".join(lines)
 
 
+# Within-video repeated-opener check (2026-09-21, real confirmed
+# production bug: a single sauce_recipe video's own beats 1 and 2 both
+# opened "Sauté minced shallots..." on 2026-09-20). recent_beats()
+# above only guards against a PAST video repeating an item -- nothing
+# stopped the items INSIDE one video from repeating each other. Whole-
+# sentence fuzzy-token similarity (the approach visuals_facts.py uses
+# for clip descriptions) was tried against this real pair first and
+# came back too weak a signal (0.19, barely above a 0.077 baseline for
+# genuinely distinct beats) -- a ~40-word narration sentence has enough
+# unique words that overall overlap dilutes fast. Comparing just the
+# first few CONTENT words of each item is what actually separates the
+# real duplicate (shared 3 of its first 4) from every real distinct
+# pair checked (shared 0) -- confirmed against this channel's actual
+# production data, not guessed.
+_OPENING_WINDOW = 4
+_OPENING_OVERLAP_MIN = 3
+_OPENING_STOPWORDS = {
+    "the", "a", "an", "of", "in", "on", "at", "and", "or", "with", "for",
+    "to", "is", "it", "its", "this", "that", "then", "into", "over",
+    "under", "until", "just", "one", "two", "three",
+}
+
+
+def _opening_content_words(text: str, n: int = _OPENING_WINDOW) -> list[str]:
+    words = [w.strip(".,!?—-'\"") for w in text.lower().split()]
+    return [w for w in words if w and w not in _OPENING_STOPWORDS][:n]
+
+
+def _find_repeated_opener(items: list[str]) -> tuple[int, int] | None:
+    """Index pair (i, j) of the first two items whose opening content
+    words overlap too much, or None if all items are distinct enough."""
+    openers = [_opening_content_words(item) for item in items]
+    for i in range(len(openers)):
+        for j in range(i + 1, len(openers)):
+            if len(openers[i]) < _OPENING_OVERLAP_MIN or len(openers[j]) < _OPENING_OVERLAP_MIN:
+                continue
+            if len(set(openers[i]) & set(openers[j])) >= _OPENING_OVERLAP_MIN:
+                return i, j
+    return None
+
+
+def _item_texts(template: str, parsed: dict) -> list[str] | None:
+    """The independent per-item narrations a repeated-opener check makes
+    sense for -- None for programming, whose STEPs are sequential beats
+    of ONE demo, not parallel items that could duplicate each other the
+    way three independent facts/sauces can."""
+    if template == "programming":
+        return None
+    return [item["script_text"] for item in parsed["facts"]]
+
+
+def _duplicate_item_feedback(template: str, parsed: dict) -> str | None:
+    items = _item_texts(template, parsed)
+    if items is None:
+        return None
+    pair = _find_repeated_opener(items)
+    if pair is None:
+        return None
+    i, j = pair
+    return (
+        f"Items {i + 1} and {j + 1} open with the same technique/phrase as each "
+        "other -- rewrite so all three items are clearly distinct from ONE "
+        "ANOTHER, not just distinct from past videos:\n"
+        f"  item {i + 1}: {items[i]}\n"
+        f"  item {j + 1}: {items[j]}"
+    )
+
+
 def _build_rewrite_prompt(original_prompt: str, previous_raw: str, feedback: str) -> str:
     return (
         f"{original_prompt}\n\n"
@@ -379,25 +457,31 @@ def _build_rewrite_prompt(original_prompt: str, previous_raw: str, feedback: str
 
 def _generate_reviewed(template: str, prompt: str) -> dict:
     """Generates a script, runs it through the authenticity review pass
-    (pipeline/review_script.py), and rewrites (feeding the reviewer's own
-    feedback back to the LLM) up to REVIEW_MAX_REWRITES times until it's
-    approved. Raises if it's still rejected after the last attempt --
-    caught by the caller's normal fail-soft handling, same as a
-    malformed-output ValueError from the parser."""
+    (pipeline/review_script.py) and the deterministic repeated-opener
+    check (_duplicate_item_feedback -- checked FIRST since it's free,
+    unlike the reviewer call, so a duplicate is caught without spending
+    an LLM call finding out), and rewrites (feeding whichever feedback
+    fired back to the LLM) up to REVIEW_MAX_REWRITES times until both
+    pass. Raises if still failing after the last attempt -- caught by
+    the caller's normal fail-soft handling, same as a malformed-output
+    ValueError from the parser."""
     raw = call_llm(prompt)
     parsed = _parse_response(template, raw)
     attempts = 0
     while True:
-        review = review_script(_extract_narration(template, parsed), call_llm)
-        if review["approved"]:
-            return parsed
+        feedback = _duplicate_item_feedback(template, parsed)
+        if feedback is None:
+            review = review_script(_extract_narration(template, parsed), call_llm)
+            if review["approved"]:
+                return parsed
+            feedback = review["feedback"]
         attempts += 1
         if attempts > REVIEW_MAX_REWRITES:
             raise RuntimeError(
-                f"script for template {template!r} failed authenticity review "
-                f"after {REVIEW_MAX_REWRITES} rewrite attempt(s):\n{review['feedback']}"
+                f"script for template {template!r} failed authenticity/uniqueness review "
+                f"after {REVIEW_MAX_REWRITES} rewrite attempt(s):\n{feedback}"
             )
-        raw = call_llm(_build_rewrite_prompt(prompt, raw, review["feedback"]))
+        raw = call_llm(_build_rewrite_prompt(prompt, raw, feedback))
         parsed = _parse_response(template, raw)
 
 
