@@ -7,14 +7,21 @@ most views," per the owner's own explicit ask.
 Built entirely on data already collected: views/likes/comment_count via
 pipeline/stats.py's Data-API sync, genome_item_count/genome_visual_density
 via metadata.py's per-video "genome" tagging. Deliberately does NOT use
-average-percentage-viewed, subscribers-gained, or real RPM/revenue --
-those need the YouTube Analytics API, a different OAuth scope than
-what's currently authorized, and the owner explicitly chose to ship with
-what's already collectable rather than open a new consent flow (see
-ROADMAP.md). genome_hook_style/genome_concept_type are read from
-state.db but not surfaced separately here -- they currently just mirror
-approach/template (see metadata.py), so they'd add duplicate columns,
-not new information.
+subscribers-gained or real RPM/revenue -- those need the YouTube
+Analytics API's MONETARY scope (yt-analytics-monetary.readonly), which
+stays unauthorized (see CLAUDE.md's OAuth-scope rule) since it's a much
+bigger ask (real earnings data) than what real audience retention needed.
+
+Real average-percentage-viewed / average-view-duration (2026-09-21 owner
+ask) IS now collectable -- see pipeline/stats.py's fetch_retention() and
+state.db's avg_view_percentage/avg_view_duration_seconds columns -- but
+this module's classification below still doesn't read them: same
+"collect first, before there's enough volume to score against"
+posture already applied to views/likes/comment_count when they first
+landed here (see ROADMAP.md). genome_hook_style/genome_concept_type are
+read from state.db but not surfaced separately here -- they currently
+just mirror approach/template (see metadata.py), so they'd add
+duplicate columns, not new information.
 """
 
 from __future__ import annotations

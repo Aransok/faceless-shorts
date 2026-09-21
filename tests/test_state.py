@@ -91,6 +91,18 @@ class StateHelpersTest(unittest.TestCase):
         video = get_video(video_id, db_path=self.db_path)
         self.assertEqual(video["family_game_segments_json"], '[{"kind": "host"}]')
 
+    def test_retention_columns_are_writable_via_update_video(self):
+        # Same regression class as the migration test above -- guards
+        # avg_view_percentage/avg_view_duration_seconds (2026-09-21,
+        # real audience-retention collection) specifically.
+        video_id = create_video("facts", topic="a topic", db_path=self.db_path)
+        update_video(
+            video_id, db_path=self.db_path, avg_view_percentage=42.0, avg_view_duration_seconds=18.5
+        )
+        video = get_video(video_id, db_path=self.db_path)
+        self.assertEqual(video["avg_view_percentage"], 42.0)
+        self.assertEqual(video["avg_view_duration_seconds"], 18.5)
+
 
 if __name__ == "__main__":
     unittest.main()
