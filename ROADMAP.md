@@ -3058,6 +3058,39 @@ extended by one) — all mocked (`_load_credentials`, `build`,
 `_load_video_log`, `update_video`), no real network/API calls, per
 CLAUDE.md's testing rules. Full suite: 322 passing.
 
+## Payoff-first hook rule, all 3 Shorts templates (2026-09-21)
+
+Owner: "we need to improve our hol[ok] game at least for the first
+couple of seconds" -- this had been sitting unresolved since the
+2026-09-13 hook pass (that entry asked whether to go further with a
+"payoff-first, reverse structure" rule specifically, never answered).
+Owner confirmed: all 3 templates, now.
+
+The 2026-09-13 rule already banned scene-setting opener ("Picture
+this...") and required the first line state a CONSEQUENCE rather than a
+flat description. Real gap it left open: a consequence/mystery framing
+can still be generic enough to paste onto almost any topic ("nobody
+knows why", "scientists are stumped") -- technically not a flat
+description, but it spends the same first-couple-seconds window asking
+the viewer to trust you instead of giving them something concrete.
+
+`facts_template.txt` / `programming_template.txt` /
+`sauce_recipe_template.txt`: first-line rule rewritten to require the
+opening line lead with the actual PAYOFF -- the single most concrete,
+specific detail (a real number/name/outcome), not a generic tease. Each
+template's BAD examples now include a "generic tease" case alongside the
+existing "flat description" case, and GOOD examples were rewritten to be
+concretely anchored (e.g. facts: "rung over 10 billion times on the same
+two batteries" instead of the vaguer "nobody knows when it'll stop").
+Prompt-only change, no code touched; 322 tests unaffected (nothing
+asserts on prompt text, confirmed by re-running the full suite).
+
+Not yet verifiable from data — this is a judgment call on established
+hook-writing principle, not something today's view/like/comment stats
+can confirm either way. Worth revisiting once real retention data
+(see the entry above) is flowing to check whether it actually moved
+average-view-percentage on the first few seconds specifically.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
