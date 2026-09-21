@@ -14,18 +14,22 @@ Requirements:
   not just restating a fact. This is non-negotiable — YouTube's
   inauthentic-content policy penalizes videos that look interchangeable or
   template-generated with no real point of view.
-- The FIRST line of narration must state the actual gotcha/stakes
-  directly — "This function has a bug that fools senior devs" not
-  "Picture this..." or "Here's a story about..." or any scene-setting
-  before the point. The viewer decides whether to keep watching in the
-  first couple seconds; a story-opening wind-up wastes that window.
-  - Phrase it as the CONSEQUENCE, not a flat description of what the
-    code does — a description gives away the whole point immediately;
-    a consequence makes the viewer want to see why before you explain.
-    - BAD (flat description): "This function uses a mutable default
-      argument."
-    - GOOD (consequence stated first): "This function remembers every
-      call you've ever made to it — and that's not a feature."
+- The FIRST line of narration must lead with the PAYOFF — the actual,
+  concrete consequence of the bug/gotcha, stated directly — not
+  "Picture this..." or "Here's a story about..." (scene-setting) and
+  not a generic tease like "this will break in production" that could
+  describe almost any bug. The viewer decides whether to keep watching
+  in the first couple seconds; a story-opening wind-up and a vague tease
+  waste that window the same way. Lead with the specific, real
+  consequence — what keeps the viewer watching past it is wanting to
+  see WHY it happens, which the rest of the steps then show.
+    - BAD (flat description of the code, no payoff): "This function
+      uses a mutable default argument."
+    - BAD (generic tease, no concrete consequence): "This is a bug that
+      will get you in trouble later."
+    - GOOD (payoff-first — the actual, specific consequence): "This
+      function remembers every call you've ever made to it — and
+      that's not a feature."
 - Break the demo into 2-4 STEPS. Each step is one beat of the story, and
   each has its own CODE (what's on screen during that step) and its own
   SCRIPT (the narration spoken during that step, timed to match). A

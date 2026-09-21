@@ -42,24 +42,35 @@ Requirements:
   so aim for the lower half (closer to 110-125 total) if you want to
   land comfortably under 55 seconds. Conversational pace, no filler, no
   "did you know" openers, no numbering out loud ("fact one...").
-- The very first line must state the fact/hook directly, not set a
-  scene first — "Picture this..." or "Here's a story about..." burns the
-  first couple seconds (when most viewers decide whether to keep
-  watching) on nothing the video actually needs.
-  - Beyond just "no scene-setting": phrase it as the CONSEQUENCE or the
-    mystery, not a flat description of what the thing is — a
-    description gives the viewer the whole answer immediately and they
-    have no reason to keep watching; a consequence/mystery makes them
-    want to know why or how before you explain it.
-    - BAD (flat description, answer already given): "Oxford has an
-      electric bell that's been ringing since 1840."
-    - GOOD (consequence framed as a mystery): "This bell has been
-      ringing for almost 200 years, and nobody knows when it'll stop."
+- The very first line must lead with the PAYOFF, not build up to it —
+  the single most concrete, surprising, specific detail of the fact (a
+  real number, name, or outcome), stated directly. Two ways this still
+  goes wrong even beyond the "no scene-setting" rule:
+  1. A flat description that gives the whole fact away with nothing left
+     to explain — still banned, same as before.
+  2. A generic tease that could be pasted onto almost any fact ("nobody
+     knows why", "scientists are still stumped", "you won't believe
+     what happens next") — this spends the first couple seconds asking
+     the viewer to trust you instead of giving them something real. If
+     your first line would still basically work on a completely
+     different fact, it's too generic — rewrite it around the specific
+     number/name/detail that makes THIS fact the one worth watching.
+  The first line should be the actual payoff — the surprising claim
+  itself, concretely stated. What keeps the viewer watching past it is
+  wanting to know WHY or HOW, which the rest of the beat then explains.
+    - BAD (flat description, answer already given, nothing left to
+      explain): "Oxford has an electric bell that's been ringing since
+      1840."
+    - BAD (generic tease, no concrete payoff — could be about anything):
+      "This bell has a secret that scientists still can't figure out."
+    - GOOD (payoff-first — the actual concrete claim, stated plainly):
+      "This bell has rung over 10 billion times on the same two
+      batteries, and no one's allowed to open it to find out why."
     - BAD (flat description): "The guillotine is named after a doctor
       who opposed the death penalty."
-    - GOOD (consequence/irony framed first): "The man the guillotine is
-      named after spent his life trying to make executions more humane
-      — and hated that it got named after him."
+    - GOOD (payoff-first — the specific twist, stated as fact): "The
+      doctor the guillotine is named after spent his final years
+      begging France to take his name off it."
 - For each fact, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual interesting thing being
   described, not generic footage that merely relates to the topic. For

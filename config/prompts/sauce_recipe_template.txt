@@ -56,16 +56,23 @@ Requirements:
   so aim for the lower half if you want to land comfortably under 60
   seconds. Conversational pace, no filler, no "did you know" openers, no
   numbering out loud ("sauce one...").
-- The very first line must state the hook/payoff directly, not set a
-  scene first — "Picture this..." or "Here's a story about..." burns the
-  first couple seconds (when most viewers decide whether to keep
-  watching) on nothing the video actually needs. Phrase it as the
-  CONSEQUENCE or the surprise, not a flat description of the sauce — a
-  description gives away the whole point immediately.
+- The very first line must lead with the PAYOFF — the actual, concrete
+  surprise or result, not a flat description of the sauce ("Picture
+  this..."/scene-setting is banned for the same reason as before) and
+  not a generic tease like "this sauce will change your life" that
+  could be slapped onto any recipe. If the line would still basically
+  work pasted onto a different sauce, it's too generic — anchor it to
+  the specific ingredient, step, or result that makes THIS sauce the
+  one worth watching. Lead with the concrete payoff; what keeps the
+  viewer watching past it is wanting to know HOW, which the rest of the
+  beat then shows.
   - BAD (flat description): "This is a three-ingredient garlic butter
     sauce."
-  - GOOD (consequence/surprise stated first): "This sauce looks
-    completely wrong until you add one ingredient."
+  - BAD (generic tease, no concrete payoff): "This sauce will change
+    the way you cook forever."
+  - GOOD (payoff-first — the specific, concrete surprise): "This sauce
+    looks completely broken and grainy right up until the last ten
+    seconds, when one spoon of cold butter pulls it together."
 - For each sauce, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual cooking action or dish
   being described, not generic kitchen filler. For each sauce, give:
