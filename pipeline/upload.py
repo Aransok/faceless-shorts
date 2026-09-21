@@ -35,6 +35,12 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.force-ssl",
+    # Retention reporting (pipeline/stats.py's fetch_retention()) needs
+    # this too -- see scripts/get_youtube_token.py's SCOPES comment.
+    # Harmless to declare here even before the token is actually
+    # re-authorized with it; Credentials just won't have real access
+    # to that scope's data until it is.
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
 
 # YouTube's fixed category IDs. Not configurable — a sane per-template

@@ -116,12 +116,18 @@ def build_report(days: int = 7) -> str:
     lines.append("")
     lines.append("## Per-video detail")
     lines.append("")
-    lines.append("| youtube_video_id | template | approach | views | likes | comments | uploaded_at |")
-    lines.append("|---|---|---|---|---|---|---|")
+    # avg_view_percentage/avg_view_duration_seconds are None until the
+    # YouTube token has been re-authorized with yt-analytics.readonly
+    # (see pipeline/stats.py's fetch_retention()) -- shown as "-" until
+    # then rather than a misleading 0%.
+    lines.append("| youtube_video_id | template | approach | views | likes | comments | watched % | avg watch | uploaded_at |")
+    lines.append("|---|---|---|---|---|---|---|---|---|")
     for r in sorted(rows, key=lambda r: -r["views"]):
+        watched_pct = f"{r['avg_view_percentage']:.0f}%" if r.get("avg_view_percentage") is not None else "-"
+        avg_watch = f"{r['avg_view_duration_seconds']:.0f}s" if r.get("avg_view_duration_seconds") is not None else "-"
         lines.append(
             f"| {r['youtube_video_id']} | {r['template']} | {r['approach'] or '(none)'} | "
-            f"{r['views']} | {r['likes']} | {r['comments']} | {r['uploaded_at']} |"
+            f"{r['views']} | {r['likes']} | {r['comments']} | {watched_pct} | {avg_watch} | {r['uploaded_at']} |"
         )
     lines.append("")
     lines.extend(_build_winner_section())

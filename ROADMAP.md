@@ -3001,6 +3001,63 @@ Owner note (2026-09-15): Claude usage is at ~86% of the weekly limit —
 hold off on spending session time investigating this until after
 Thursday's reset.
 
+## Real audience retention collection: yt-analytics.readonly scope (2026-09-21)
+
+Owner asked directly whether we're checking real retention (e.g. "42%
+only watch the clip, others swipe away") and what's done with it.
+Answer at the time: nothing -- `pipeline/stats.py` only ever pulled
+view/like/comment counts from the YouTube Data API. Average-view-
+percentage and audience retention live in a completely separate API
+(YouTube Analytics, `reports.query`), needing a scope
+(`yt-analytics.readonly`) this project had explicitly deferred opening
+(see the "Winner analyzer" entry above, 2026-09-13) per `CLAUDE.md`'s
+own rule to confirm OAuth scope changes first. Owner confirmed: add it.
+
+**`scripts/get_youtube_token.py` / `pipeline/upload.py`**: added
+`yt-analytics.readonly` to `SCOPES`. Read-only, non-monetary -- NOT
+`yt-analytics-monetary.readonly` (real revenue/subscriber data), which
+stays unauthorized, unrequested, and out of scope. An existing refresh
+token doesn't retroactively gain a new scope -- the owner needs to
+re-run `get_youtube_token.py` locally (regenerates
+`credentials/youtube_token.json`) and update the `YT_REFRESH_TOKEN`
+GitHub secret with the new value for CI to pick it up too.
+
+**`pipeline/stats.py`**: new `fetch_retention(youtube_video_ids)` queries
+`youtubeAnalytics` v2 (`dimensions=video`,
+`metrics=averageViewPercentage,averageViewDuration`, batched at 50 IDs
+per call like `fetch_statistics()`'s own confirmed Data-API limit — the
+Analytics API's real per-call cap isn't documented anywhere trustworthy,
+so this reuses a limit that's at least confirmed correct elsewhere
+rather than guessing a bigger one). Both `sync_analytics()` (persists to
+`state.db`) and `weekly_report_data()` (live report data) now also pull
+retention, but through a shared `_fetch_retention_or_empty()` wrapper
+that catches the failure and continues with just view/like/comment
+counts — CLAUDE.md's "fail soft, not hard" rule applies directly here:
+until the owner actually re-authorizes, every real call will 403, and
+that must not break the view-count collection that already works.
+
+**`pipeline/state.py`**: two new nullable columns,
+`avg_view_percentage` (REAL) and `avg_view_duration_seconds` (REAL), via
+the same `ALTER TABLE IF NOT EXISTS`-column-check migration pattern
+already used for every other column here.
+
+**`scripts/weekly_report.py`**: per-video table now shows "watched %"
+and "avg watch" columns (`-` until retention is available, never a
+misleading 0%) — the natural place this answers "what are we doing with
+it," since that table is already a live, per-video report.
+
+**Deliberately not done, matching the same "collect first" posture
+already applied to views/likes/comment_count when they first landed**
+(see `pipeline/winner_analyzer.py`'s docstring, updated to reflect this):
+`winner_analyzer.py`'s classification logic doesn't read retention yet,
+and nothing in generation reacts to it. Collection only, until there's
+real data to actually look at post-re-authorization.
+
+9 new tests (`tests/test_stats.py`, new; `tests/test_state.py`,
+extended by one) — all mocked (`_load_credentials`, `build`,
+`_load_video_log`, `update_video`), no real network/API calls, per
+CLAUDE.md's testing rules. Full suite: 322 passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

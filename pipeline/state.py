@@ -59,6 +59,8 @@ _COLUMNS = (
     "likes",
     "comment_count",
     "stats_synced_at",
+    "avg_view_percentage",
+    "avg_view_duration_seconds",
     "family_game_segments_json",
     "created_at",
     "updated_at",
@@ -155,6 +157,22 @@ def init_db(db_path: Path = DB_PATH) -> None:
             conn.execute("ALTER TABLE videos ADD COLUMN comment_count INTEGER")
         if "stats_synced_at" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN stats_synced_at TEXT")
+        # Real audience retention (2026-09-21 owner ask: "how much of the
+        # clip is watched, how many swipe away"). views/likes/comments
+        # above say whether a video did well; these say WHY -- a weak
+        # hook (low avg_view_percentage) and a weak back half look
+        # identical in view count alone. Needs the YouTube Analytics API
+        # (yt-analytics.readonly scope, separate from the Data API scope
+        # views/likes/comments use) -- see pipeline/stats.py's
+        # fetch_retention() and scripts/get_youtube_token.py's SCOPES.
+        # Nullable: a video synced before re-authorization, or synced
+        # while the new scope still isn't granted, just has no value here
+        # rather than failing the whole sync (see sync_analytics()'s
+        # fail-soft retention handling).
+        if "avg_view_percentage" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN avg_view_percentage REAL")
+        if "avg_view_duration_seconds" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN avg_view_duration_seconds REAL")
         # family_game_night (2026-09-13): the composed episode's full
         # segment list (pipeline/family_game/episode.py's
         # flatten_episode_to_segments() output -- HOST_TIME narration

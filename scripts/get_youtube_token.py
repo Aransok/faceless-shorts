@@ -28,8 +28,23 @@ TOKEN_OUTPUT_PATH = PROJECT_ROOT / "credentials" / "youtube_token.json"
 # description/tags) after upload. youtube.upload + youtube.readonly alone
 # aren't enough for videos.update/delete — force-ssl is the scope that
 # actually covers managing your own already-uploaded content.
+#
+# yt-analytics.readonly (added 2026-09-21, owner ask): a SEPARATE API
+# (YouTube Analytics, not the Data API force-ssl covers) and scope,
+# needed for real audience-retention numbers -- average % of each video
+# actually watched, average watch duration -- see pipeline/stats.py's
+# fetch_retention(). Read-only, non-monetary (no revenue/ad data) -- NOT
+# the same as yt-analytics-monetary.readonly, which stays unauthorized
+# (see pipeline/winner_analyzer.py's docstring).
+#
+# Re-run this script after adding this scope -- an existing refresh
+# token doesn't retroactively gain a new scope. Local dev: this
+# overwrites credentials/youtube_token.json. CI: also update the
+# YT_REFRESH_TOKEN repo secret with the new token's refresh_token value,
+# or the workflow's calls keep using the old, narrower-scoped one.
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
 
 
