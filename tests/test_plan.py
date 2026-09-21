@@ -14,7 +14,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.plan import (
     ClaudeUsageLimitError,
     _build_rewrite_prompt,
+    _duplicate_item_feedback,
     _extract_narration,
+    _find_repeated_opener,
+    _item_texts,
+    _opening_content_words,
     _topic_hint_block,
     call_bulk_llm,
     call_llm,
@@ -235,6 +239,89 @@ class CallBulkLlmTest(unittest.TestCase):
                         call_bulk_llm("prompt")
 
 
+class RepeatedOpenerTest(unittest.TestCase):
+    """Real, confirmed production bug (2026-09-20): a single sauce_recipe
+    video's own beats 1 and 2 both opened "Sauté minced shallots..." --
+    recent_beats() (state.py) only guards against a PAST video repeating
+    an item, nothing stopped the items INSIDE one video from repeating
+    each other. Real text from that exact production video below."""
+
+    _REAL_DUP_A = (
+        "Sauté minced shallots in butter, add balsamic and stock — two to "
+        "one — and reduce for five minutes until it coats a spoon."
+    )
+    _REAL_DUP_B = (
+        "Sauté minced shallots until soft, add white wine to deglaze, then "
+        "pour in cream and simmer until it thickens."
+    )
+    _REAL_DISTINCT_C = (
+        "Don't clean the pan. Pour in stock and scrape up every bit of "
+        "brown on the bottom — that's the base of the sauce."
+    )
+
+    def test_real_duplicate_pair_is_detected(self):
+        self.assertEqual(_find_repeated_opener([self._REAL_DUP_A, self._REAL_DUP_B, self._REAL_DISTINCT_C]), (0, 1))
+
+    def test_real_distinct_items_are_not_flagged(self):
+        # A different real production video's three items, genuinely distinct.
+        distinct = [
+            "Mince the garlic and cook it gently in butter, then whisk in the cream until it thickens.",
+            "Toasted garlic chili oil works the same way: thinly slice four cloves, drop them in a half cup of hot oil.",
+            "Whisk two egg yolks with a tablespoon of lemon juice over low heat until it thickens.",
+        ]
+        self.assertIsNone(_find_repeated_opener(distinct))
+
+    def test_very_short_items_are_not_flagged(self):
+        # Below _OPENING_OVERLAP_MIN words each -- not enough signal to
+        # judge, must not false-positive (also protects the existing
+        # single-letter-script fixtures in GenerateReviewedTest below).
+        self.assertIsNone(_find_repeated_opener(["a", "b", "c"]))
+
+    def test_opening_content_words_strips_stopwords_and_punctuation(self):
+        words = _opening_content_words("The quick, brown fox jumps over the lazy dog.")
+        self.assertNotIn("the", words)
+        self.assertNotIn("over", words)
+        self.assertEqual(words, ["quick", "brown", "fox", "jumps"])
+
+
+class ItemTextsTest(unittest.TestCase):
+    def test_programming_returns_none_sequential_steps_not_parallel_items(self):
+        parsed = {"steps": [{"script_text": "a"}, {"script_text": "b"}]}
+        self.assertIsNone(_item_texts("programming", parsed))
+
+    def test_facts_returns_each_facts_script_text(self):
+        parsed = {"facts": [{"script_text": "one"}, {"script_text": "two"}, {"script_text": "three"}]}
+        self.assertEqual(_item_texts("facts", parsed), ["one", "two", "three"])
+
+    def test_sauce_recipe_reuses_the_facts_field_shape(self):
+        parsed = {"facts": [{"script_text": "sauce one"}, {"script_text": "sauce two"}]}
+        self.assertEqual(_item_texts("sauce_recipe", parsed), ["sauce one", "sauce two"])
+
+
+class DuplicateItemFeedbackTest(unittest.TestCase):
+    def test_none_when_no_duplicate(self):
+        parsed = {"facts": [{"script_text": "one thing happens here today"}, {"script_text": "totally different other event"}]}
+        self.assertIsNone(_duplicate_item_feedback("facts", parsed))
+
+    def test_none_for_programming_regardless_of_content(self):
+        parsed = {"steps": [{"script_text": "same words same words"}, {"script_text": "same words same words"}]}
+        self.assertIsNone(_duplicate_item_feedback("programming", parsed))
+
+    def test_names_the_duplicate_pair_and_includes_both_texts(self):
+        parsed = {
+            "facts": [
+                {"script_text": RepeatedOpenerTest._REAL_DUP_A},
+                {"script_text": RepeatedOpenerTest._REAL_DUP_B},
+                {"script_text": RepeatedOpenerTest._REAL_DISTINCT_C},
+            ]
+        }
+        feedback = _duplicate_item_feedback("sauce_recipe", parsed)
+        self.assertIsNotNone(feedback)
+        self.assertIn("Items 1 and 2", feedback)
+        self.assertIn(RepeatedOpenerTest._REAL_DUP_A, feedback)
+        self.assertIn(RepeatedOpenerTest._REAL_DUP_B, feedback)
+
+
 class GenerateReviewedTest(unittest.TestCase):
     def test_approves_first_draft_without_rewriting(self):
         import pipeline.plan as plan_module
@@ -294,6 +381,55 @@ class GenerateReviewedTest(unittest.TestCase):
         finally:
             plan_module.call_llm = original_llm
             plan_module.review_script = original_review
+
+    def test_repeated_opener_triggers_a_rewrite_without_spending_a_review_call(self):
+        # Real, confirmed production bug (2026-09-20) -- see
+        # RepeatedOpenerTest. The deterministic duplicate check must be
+        # checked BEFORE the reviewer LLM call so a caught duplicate
+        # costs one rewrite generation call, not a wasted reviewer call too.
+        import pipeline.plan as plan_module
+
+        def _facts_response(fact1, fact2, fact3):
+            return (
+                "TOPIC: t\nHOOK: h\n"
+                f"FACT_1_SCRIPT: {fact1}\nFACT_1_SUBJECT: s1\nFACT_1_EXACT_QUERIES: q1\nFACT_1_REPRESENTATION_QUERIES: q1\nFACT_1_CONCEPT_QUERIES: none\n"
+                f"FACT_2_SCRIPT: {fact2}\nFACT_2_SUBJECT: s2\nFACT_2_EXACT_QUERIES: q2\nFACT_2_REPRESENTATION_QUERIES: q2\nFACT_2_CONCEPT_QUERIES: none\n"
+                f"FACT_3_SCRIPT: {fact3}\nFACT_3_SUBJECT: s3\nFACT_3_EXACT_QUERIES: q3\nFACT_3_REPRESENTATION_QUERIES: q3\nFACT_3_CONCEPT_QUERIES: none"
+            )
+
+        duplicate_draft = _facts_response(
+            RepeatedOpenerTest._REAL_DUP_A, RepeatedOpenerTest._REAL_DUP_B, RepeatedOpenerTest._REAL_DISTINCT_C
+        )
+        fixed_draft = _facts_response(
+            RepeatedOpenerTest._REAL_DUP_A,
+            "Whisk two egg yolks with a tablespoon of lemon juice over low heat until it thickens.",
+            RepeatedOpenerTest._REAL_DISTINCT_C,
+        )
+        responses = [duplicate_draft, fixed_draft]
+        llm_calls = []
+        review_calls = []
+
+        def fake_llm(prompt: str) -> str:
+            llm_calls.append(prompt)
+            return responses[len(llm_calls) - 1]
+
+        def fake_review(narration: str, fn) -> dict:
+            review_calls.append(narration)
+            return {"approved": True, "feedback": "APPROVED"}
+
+        original_llm = plan_module.call_llm
+        original_review = plan_module.review_script
+        plan_module.call_llm = fake_llm
+        plan_module.review_script = fake_review
+        try:
+            parsed = plan_module._generate_reviewed("facts", "prompt")
+        finally:
+            plan_module.call_llm = original_llm
+            plan_module.review_script = original_review
+
+        self.assertEqual(len(llm_calls), 2, "one generation call + one rewrite call")
+        self.assertEqual(len(review_calls), 1, "the reviewer must not be called on the round with a caught duplicate")
+        self.assertEqual(parsed["facts"][1]["script_text"], "Whisk two egg yolks with a tablespoon of lemon juice over low heat until it thickens.")
 
 
 if __name__ == "__main__":

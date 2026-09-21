@@ -265,6 +265,43 @@ class TestVisualDiversity(unittest.TestCase):
         self.assertIn(1, c_entry["similar_to"])
 
 
+class TestCrossVideoReusePenalty(unittest.TestCase):
+    """Real, confirmed owner report (2026-09-21): "we again sometimes use
+    same stock footage" -- the diversity system above only ever compared
+    candidates within ONE video; recent_clip_ids (persisted cross-video,
+    see pipeline/state.py's recent_stock_clip_ids()) closes that gap."""
+
+    def _scored(self, video_id, description, tier="exact_subject", score=90):
+        return {
+            "video": _fake_video(video_id, description), "query": "q", "tier": tier,
+            "match_type": tier, "score": score,
+        }
+
+    def test_recently_used_clip_is_penalized_in_favor_of_a_fresh_one(self):
+        reused = self._scored(1, "generic kitchen close up", score=90)
+        fresh = self._scored(2, "different generic kitchen close up shot", score=85)
+
+        selected, log = vf._select_diverse_set([reused, fresh], min_count=1, recent_clip_ids=frozenset({1}))
+
+        self.assertEqual(selected[0]["video"]["id"], 2, "a fresh, nearly-as-relevant clip should win over a recently-reused one")
+
+    def test_recently_used_clip_can_still_win_if_its_the_only_real_match(self):
+        reused = self._scored(1, "very specific rare exact subject match", score=95)
+        weak = self._scored(2, "totally unrelated filler footage", score=20)
+
+        selected, log = vf._select_diverse_set([reused, weak], min_count=1, recent_clip_ids=frozenset({1}))
+
+        self.assertEqual(selected[0]["video"]["id"], 1, "RECENT_REUSE_PENALTY must not be so large it always loses to a much weaker alternative")
+        entry = next(e for e in log if e["clip_id"] == 1)
+        self.assertIn("recently used", entry["selection_reason"])
+
+    def test_no_recent_ids_behaves_exactly_as_before(self):
+        a = self._scored(1, "some clip", score=90)
+        b = self._scored(2, "another clip", score=85)
+        selected, _log = vf._select_diverse_set([a, b], min_count=2)
+        self.assertEqual([c["video"]["id"] for c in selected], [1, 2])
+
+
 class TestImageBeatSegmentPlanning(unittest.TestCase):
     """pipeline/wikimedia.py supplies the real image; this covers only the
     frame-accounting/insertion logic in _plan_beat_segments -- whether the

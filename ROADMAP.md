@@ -3091,6 +3091,71 @@ can confirm either way. Worth revisiting once real retention data
 (see the entry above) is flowing to check whether it actually moved
 average-view-percentage on the first few seconds specifically.
 
+## Real, confirmed repeat bugs: same facts, same stock footage (2026-09-21)
+
+Owner: "we again sometimes use same facts and same stock footage."
+Investigated against real production data rather than guessing at a
+cause -- found three distinct, confirmed root causes, all fixed here.
+
+**1. Cross-video fact/sauce repeats: the avoid-list window was too
+short.** `recent_beats()`'s default (`RECENT_TOPICS_LIMIT`, plan.py) only
+checked the last 15 videos' worth of items. Real confirmed duplicate
+found in `state.db`: the Darvaza gas crater / "Door to Hell" burning-
+since-1971 fact appeared in both "Fires And Lights That Never Went Out"
+(2026-09-06) and "Natural Wonders So Extreme They Look Fake"
+(2026-09-16) -- ~17 facts videos apart, two past the old window.
+`RECENT_TOPICS_LIMIT` widened 15 -> 25 for real margin past that
+confirmed gap. Modest real prompt-token cost (recent_beats() sends
+15-word summaries per item), accepted against a real, observed repeat.
+
+**2. Within-video repeats: nothing compared a video's own 3 items to
+each other.** Real confirmed duplicate: a single 2026-09-20
+sauce_recipe video's beats 1 and 2 both opened "Sauté minced
+shallots..." -- recent_beats() only ever guards against a PAST video,
+never the current one's own items. `pipeline/plan.py` adds
+`_find_repeated_opener()`: whole-sentence fuzzy similarity (the
+approach visuals_facts.py already uses for clip descriptions) was
+tried against this real pair first and came back too weak a signal
+(0.19 vs a 0.077 baseline for genuinely distinct beats -- confirmed by
+testing against real production text, not assumed) -- a ~40-word
+narration has enough unique words to dilute whole-sentence overlap.
+Comparing just the first 4 content words of each item is what actually
+separates the real duplicate (shared 3 of 4) from every real distinct
+pair checked (shared 0). Wired into `_generate_reviewed()`, checked
+BEFORE the authenticity-reviewer LLM call (free, deterministic) rather
+than after -- a caught duplicate costs one rewrite generation call, not
+a wasted reviewer call too, and still bounded by the existing
+`REVIEW_MAX_REWRITES=1`.
+
+**3. Stock footage: zero cross-video memory existed at all.**
+`visuals_facts.py`'s "visual diversity" selection (`_select_diverse_set`)
+only ever compared a beat's candidates against each other WITHIN that
+one video. The only historical record, `{video_id}_visual_log.json`, is
+written to the gitignored `assets/output/` directory and thrown away
+with the CI runner -- there was no persistence at all of which Pexels
+clip IDs had been used in past videos. Fixed:
+- `pipeline/state.py`: new `recent_stock_clip_ids()`, reading clip IDs
+  back from `video_steps.round_data_json` (already an existing,
+  currently-facts/sauce_recipe-unused column -- same "generalized JSON
+  payload" pattern `round_data_json` already carries for game_night/
+  veylorn) across the last 30 videos of BOTH `facts` and `sauce_recipe`
+  (they share the same Pexels pool).
+- `visuals_facts.py`: persists each beat's selected clip IDs into
+  `round_data_json` via `update_video_step()` right after selection (so
+  even a later video in the SAME daily run sees an earlier one's
+  picks); `_select_diverse_set()`/`_build_clip_pool()` take a
+  `recent_clip_ids` set and apply a flat `RECENT_REUSE_PENALTY = 25` --
+  a penalty, not exclusion, same philosophy as the existing
+  `MAX_DIVERSITY_PENALTY`: a clip that's genuinely the only real match
+  for a rare subject can still win, but a recently-used clip reliably
+  loses to a fresh, comparably-relevant alternative for the common
+  generic-query case.
+
+17 new tests (`tests/test_state.py`, `tests/test_visuals_facts.py`,
+`tests/test_plan.py`), all using real production text/data as the test
+oracle where possible (not just synthetic examples) -- no real network/
+API/LLM calls. Full suite: 339 passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

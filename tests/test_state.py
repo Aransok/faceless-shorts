@@ -12,7 +12,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.state import create_video, create_video_steps, get_video, init_db, recent_beats, recent_cta_types, update_video
+from pipeline.state import (
+    create_video,
+    create_video_steps,
+    get_video,
+    init_db,
+    recent_beats,
+    recent_cta_types,
+    recent_stock_clip_ids,
+    update_video,
+)
 
 
 class StateHelpersTest(unittest.TestCase):
@@ -90,6 +99,50 @@ class StateHelpersTest(unittest.TestCase):
         update_video(video_id, db_path=self.db_path, family_game_segments_json='[{"kind": "host"}]')
         video = get_video(video_id, db_path=self.db_path)
         self.assertEqual(video["family_game_segments_json"], '[{"kind": "host"}]')
+
+    def test_recent_stock_clip_ids_unions_ids_across_facts_and_sauce_recipe(self):
+        # Real, confirmed owner report (2026-09-21): "we again sometimes
+        # use same stock footage" -- facts and sauce_recipe draw from
+        # the same Pexels pool, so a clip used in either counts.
+        import json
+
+        facts_vid = create_video("facts", topic="a", db_path=self.db_path)
+        create_video_steps(
+            facts_vid,
+            [{"script_text": "a fact", "round_data_json": json.dumps({"stock_clip_ids": [1, 2]})}],
+            db_path=self.db_path,
+        )
+        sauce_vid = create_video("sauce_recipe", topic="b", db_path=self.db_path)
+        create_video_steps(
+            sauce_vid,
+            [{"script_text": "a sauce", "round_data_json": json.dumps({"stock_clip_ids": [3]})}],
+            db_path=self.db_path,
+        )
+
+        self.assertEqual(recent_stock_clip_ids(db_path=self.db_path), {1, 2, 3})
+
+    def test_recent_stock_clip_ids_ignores_other_templates(self):
+        import json
+
+        vid = create_video("programming", topic="not stock footage", db_path=self.db_path)
+        create_video_steps(
+            vid,
+            [{"script_text": "code narration", "round_data_json": json.dumps({"stock_clip_ids": [99]})}],
+            db_path=self.db_path,
+        )
+        self.assertEqual(recent_stock_clip_ids(db_path=self.db_path), set())
+
+    def test_recent_stock_clip_ids_tolerates_missing_or_malformed_json(self):
+        vid = create_video("facts", topic="a", db_path=self.db_path)
+        create_video_steps(
+            vid,
+            [
+                {"script_text": "no round_data_json at all"},
+                {"script_text": "malformed json", "round_data_json": "not valid json"},
+            ],
+            db_path=self.db_path,
+        )
+        self.assertEqual(recent_stock_clip_ids(db_path=self.db_path), set())
 
     def test_retention_columns_are_writable_via_update_video(self):
         # Same regression class as the migration test above -- guards
