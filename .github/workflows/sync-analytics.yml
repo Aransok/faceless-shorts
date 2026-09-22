@@ -59,7 +59,12 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python pipeline/stats.py "${{ github.event.inputs.debug_retention_curve_video_id }}"
+        # -m, not a bare file path -- pipeline/stats.py is a package
+        # module (no sys.path shim like scripts/*.py have), and running
+        # it as `python pipeline/stats.py` leaves the project root off
+        # sys.path, breaking its own `from pipeline.state import ...`
+        # (real failure hit on the first real run of this step).
+        run: python -m pipeline.stats "${{ github.event.inputs.debug_retention_curve_video_id }}"
 
       - name: Commit updated state
         run: |
