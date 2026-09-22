@@ -122,6 +122,45 @@ def fetch_retention(youtube_video_ids: list[str]) -> dict[str, dict]:
     return retention
 
 
+def fetch_retention_curve(youtube_video_id: str) -> list[dict]:
+    """[{"elapsed_fraction": 0.0-1.0, "audience_watch_ratio": float}, ...]
+    for ONE video -- real per-moment audience retention (what fraction of
+    viewers are still watching at each point across the video's length),
+    not just the single average-view-percentage number fetch_retention()
+    returns. Owner ask (2026-09-22): "the watchtime itself we get 42[%],
+    only the others just swipe [away]" -- a single average can't tell an
+    early-hook drop-off from a slow fade partway through; this curve can.
+
+    Only one video per call -- unlike fetch_retention()'s dimensions=video
+    (which accepts a comma-joined id list), the elapsedVideoTimeRatio
+    dimension used here is scoped to a single video's own timeline, so
+    there's no equivalent multi-video batching to do. Same un-defensive
+    style as fetch_retention() -- raises whatever the API raises; this
+    has no caller yet that needs fail-soft handling (see this module's
+    __main__ block, a manual diagnostic run, not part of the daily
+    sync_analytics() collection path).
+    """
+    creds = _load_credentials()
+    analytics = build("youtubeAnalytics", "v2", credentials=creds)
+    today = datetime.now(timezone.utc).date().isoformat()
+    resp = (
+        analytics.reports()
+        .query(
+            ids="channel==MINE",
+            startDate=_RETENTION_START_DATE,
+            endDate=today,
+            metrics="audienceWatchRatio",
+            dimensions="elapsedVideoTimeRatio",
+            filters=f"video=={youtube_video_id}",
+        )
+        .execute()
+    )
+    return [
+        {"elapsed_fraction": row[0], "audience_watch_ratio": row[1]}
+        for row in resp.get("rows", [])
+    ]
+
+
 def _fetch_retention_or_empty(youtube_video_ids: list[str]) -> dict[str, dict]:
     """Shared fail-soft wrapper (CLAUDE.md's "fail soft, not hard" rule):
     a token that hasn't been re-authorized with yt-analytics.readonly yet
@@ -198,3 +237,24 @@ def sync_analytics(min_age_hours: float = 48, max_age_days: float = 14) -> int:
         )
         updated += 1
     return updated
+
+
+if __name__ == "__main__":
+    import sys
+
+    video_id_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    if not video_id_arg:
+        uploads = all_uploads()
+        if not uploads:
+            raise SystemExit("no uploads in data/videos.json and no video_id given")
+        video_id_arg = sorted(uploads, key=lambda r: r["uploaded_at"])[-1]["youtube_video_id"]
+
+    print(f"real audience retention curve for {video_id_arg}:")
+    curve = fetch_retention_curve(video_id_arg)
+    if not curve:
+        print("no retention data available for this video yet")
+    for point in curve:
+        pct_through = round(point["elapsed_fraction"] * 100)
+        watch_ratio = point["audience_watch_ratio"]
+        bar = "#" * round(min(watch_ratio, 1.0) * 40)
+        print(f"  {pct_through:3d}% through video: {watch_ratio:.2f}  {bar}")

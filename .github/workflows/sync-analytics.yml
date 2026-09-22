@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: "30 9 * * *"
   workflow_dispatch:
+    inputs:
+      debug_retention_curve_video_id:
+        description: "Optional: a real YouTube video ID to print pipeline/stats.py's fetch_retention_curve() for (manual diagnostic only, no effect on the normal sync above)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -42,6 +47,19 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python scripts/sync_analytics.py
+
+      # Manual diagnostic only -- only runs when the input above is set
+      # on a workflow_dispatch run, never on the daily schedule. Prints
+      # pipeline/stats.py's fetch_retention_curve() (see its module
+      # docstring/__main__ block) for one real video, to see WHERE in a
+      # video viewers actually leave, not just the average % watched.
+      - name: Debug retention curve (optional)
+        if: github.event.inputs.debug_retention_curve_video_id != ''
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python pipeline/stats.py "${{ github.event.inputs.debug_retention_curve_video_id }}"
 
       - name: Commit updated state
         run: |

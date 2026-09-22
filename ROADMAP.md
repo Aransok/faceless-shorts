@@ -3156,6 +3156,36 @@ clip IDs had been used in past videos. Fixed:
 oracle where possible (not just synthetic examples) -- no real network/
 API/LLM calls. Full suite: 339 passing.
 
+## Real retention data confirmed working; per-moment curve added (2026-09-22)
+
+Owner re-authorized the YouTube token (yt-analytics.readonly scope,
+see the 2026-09-21 entry above) and enabled the YouTube Analytics API
+on the Google Cloud project (a separate step from the OAuth scope
+grant -- the first real sync attempt hit `accessNotConfigured`, not a
+scope error, until that was done). Confirmed working via a manual
+`Sync Analytics` run: 53 videos got real `avg_view_percentage`/
+`avg_view_duration_seconds` values, no more "retention fetch failed"
+warning in the job log. Real numbers: programming ~57% avg watched,
+facts ~49%, sauce_recipe ~46% (quiz_longform/game_night/veylorn_story
+numbers are noise -- those videos only have 1-5 total views synced so
+far, nowhere near enough to mean anything).
+
+Owner's follow-up, matching their original ask precisely: a single
+average can't show WHETHER a low number means an early-hook problem
+(viewers swipe in the first couple seconds) or a slow fade partway
+through. `pipeline/stats.py`'s new `fetch_retention_curve(youtube_video_id)`
+queries YouTube Analytics' `elapsedVideoTimeRatio` dimension --
+per-moment "what fraction of viewers are still watching" across the
+video's length, one video per call (this dimension doesn't support
+fetch_retention()'s multi-ID batching). Given a `__main__` block per
+CLAUDE.md's own per-module convention, and a manual-only diagnostic
+step added to `sync-analytics.yml` (`debug_retention_curve_video_id`
+input, never fires on the daily schedule) so it can actually be run
+against real data from CI, where the real credentials live.
+
+4 new tests (`tests/test_stats.py`), mocked, no real network calls.
+Full suite: 343 passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

@@ -13,7 +13,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.stats import fetch_retention, sync_analytics, weekly_report_data
+from pipeline.stats import fetch_retention, fetch_retention_curve, sync_analytics, weekly_report_data
 
 _LOG_ROW = {
     "video_id": "vid-1",
@@ -69,6 +69,65 @@ class FetchRetentionTest(unittest.TestCase):
         )
         with self.assertRaises(RuntimeError):
             fetch_retention(["yt-1"])
+
+
+class FetchRetentionCurveTest(unittest.TestCase):
+    """Owner ask (2026-09-22): "the watchtime itself we get 42[%], only
+    the others just swipe [away]" -- the single average number
+    fetch_retention() returns can't show WHERE viewers leave; this
+    per-moment curve can."""
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_parses_rows_into_elapsed_fraction_watch_ratio_pairs(self, mock_creds, mock_build):
+        mock_query = mock.Mock()
+        mock_query.execute.return_value = {
+            "rows": [[0.0, 1.0], [0.1, 0.62], [0.5, 0.31], [1.0, 0.18]]
+        }
+        mock_build.return_value.reports.return_value.query.return_value = mock_query
+
+        result = fetch_retention_curve("yt-1")
+
+        self.assertEqual(
+            result,
+            [
+                {"elapsed_fraction": 0.0, "audience_watch_ratio": 1.0},
+                {"elapsed_fraction": 0.1, "audience_watch_ratio": 0.62},
+                {"elapsed_fraction": 0.5, "audience_watch_ratio": 0.31},
+                {"elapsed_fraction": 1.0, "audience_watch_ratio": 0.18},
+            ],
+        )
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_uses_a_single_video_filter_not_the_multi_id_batching(self, mock_creds, mock_build):
+        mock_query = mock.Mock()
+        mock_query.execute.return_value = {"rows": []}
+        mock_build.return_value.reports.return_value.query.return_value = mock_query
+
+        fetch_retention_curve("yt-solo")
+
+        call_kwargs = mock_build.return_value.reports.return_value.query.call_args.kwargs
+        self.assertEqual(call_kwargs["filters"], "video==yt-solo")
+        self.assertEqual(call_kwargs["dimensions"], "elapsedVideoTimeRatio")
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_no_data_returns_an_empty_list(self, mock_creds, mock_build):
+        mock_query = mock.Mock()
+        mock_query.execute.return_value = {"rows": []}
+        mock_build.return_value.reports.return_value.query.return_value = mock_query
+
+        self.assertEqual(fetch_retention_curve("yt-brand-new"), [])
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_error_propagates_uncaught(self, mock_creds, mock_build):
+        mock_build.return_value.reports.return_value.query.return_value.execute.side_effect = (
+            RuntimeError("403 insufficient scope")
+        )
+        with self.assertRaises(RuntimeError):
+            fetch_retention_curve("yt-1")
 
 
 class SyncAnalyticsRetentionTest(unittest.TestCase):
