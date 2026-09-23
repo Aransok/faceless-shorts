@@ -3186,6 +3186,60 @@ against real data from CI, where the real credentials live.
 4 new tests (`tests/test_stats.py`), mocked, no real network calls.
 Full suite: 343 passing.
 
+## Real incident: manual/scheduled trigger collision hit YouTube's upload cap + lost state.db records (2026-09-22/23)
+
+Owner reported the daily cron hadn't fired; a check confirmed no
+schedule-triggered run had happened yet that day, so a manual
+`workflow_dispatch` backup was fired at 17:41 UTC. The real cron then
+also fired at 18:02 UTC (the known ~4h-late pattern) -- both runs ended
+up uploading videos back to back on the same real channel. Real damage:
+- The scheduled run's own uploads hit YouTube's real daily upload cap
+  partway through (`uploadLimitExceeded`) -- 2 of its 5 videos never
+  uploaded at all.
+- Its `state.db` commit then failed outright -- a binary-file merge
+  conflict (state.db can't be 3-way merged) against the manual run's
+  already-pushed commit, the same unfixable-via-retry failure mode this
+  project's own workflow comments already document. The 3 videos from
+  the scheduled run that DID upload successfully are live on YouTube
+  with zero record in state.db -- untracked for dedup, retention sync,
+  and CTA comments. One of the three was partially recoverable (its
+  real YouTube ID happened to leak into an unrelated thumbnail-upload
+  429 error line in the job log); the other two were not recoverable
+  from the log and were left as-is rather than guessed at.
+
+Real, separate root cause found while investigating the NEXT day's
+near-identical situation (owner said "Fire shorts" on 2026-09-23; a
+scheduled run had not yet fired, so another manual trigger was sent --
+this time safely, since no other run was in flight): a scheduled run
+that DID fire that day looked suspiciously fast (78s success for a
+5-video pipeline). Its job log showed every video failed immediately
+with `RuntimeError: claude CLI failed (exit 1): You've hit your weekly
+limit · resets 7pm (UTC)` -- the Claude account's WEEKLY usage limit,
+a wording `pipeline/plan.py`'s `_USAGE_LIMIT_PATTERN` regex didn't
+recognize (it only matched "usage limit"/"session limit"/"limit
+reached"), so `call_llm()`'s automatic Groq fallback never fired and
+every video failed outright instead of degrading gracefully. Same
+failure class as the 2026-09-12 "session limit" wording gap already
+fixed once. Rather than add "weekly limit" as a third one-off literal
+and wait for "monthly"/"daily" to repeat this again, the pattern now
+also matches the general "hit your `<word>` limit" shape all of these
+share, which should catch any future period-name variant without
+another real failure first.
+
+2 new tests (`tests/test_plan.py`), no real network/LLM calls. Full
+suite: 345 passing.
+
+**Not fixed here, flagged as real follow-up work:** the manual-trigger
+vs. delayed-cron collision itself. The existing concurrency group
+prevents two runs from writing state.db AT THE SAME TIME, but doesn't
+prevent a run whose `github.sha` was captured (at trigger time) before
+an earlier run's push from checking out stale code once it finally
+executes -- exactly what happened here. A real fix needs its own scoped
+design pass (e.g., re-fetching main fresh immediately before the
+pipeline starts working, not just before the final commit; or moving
+away from committing a binary SQLite file from CI entirely), not a
+quick patch bolted onto this incident's cleanup.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
