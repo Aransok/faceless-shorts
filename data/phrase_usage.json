@@ -1,54 +1,54 @@
 {
   "hook_openers": [
-    "This is accurate, and the actual mechanism is worth knowing:",
-    "The explanation for this usually gets left out entirely:",
-    "This is true for a specific, checkable reason, not just 'because':",
-    "The full explanation for this rarely makes the cut:",
-    "The real cause here gets simplified out of most versions of the story:",
+    "Fast one, but a good one:",
+    "One thing before you scroll:",
+    "One fact, zero fluff:",
+    "Ten seconds, one genuinely wild fact:",
+    "Skip the intro, here's the point:",
+    "You have ten seconds, here's the fact:",
+    "Three seconds, one wild fact:",
     "Here's the fact, no buildup:",
-    "This one's short and it's a lot:",
+    "Straight to it:",
     "This'll take ten seconds and it's worth it:",
-    "Here's a fact that'll ruin your day, in a good way:",
-    "Here's something you'll repeat to someone today:",
+    "This one's short and it's a lot:",
     "Quick one:",
-    "Here's your fact for the day:",
+    "Here's a fact that'll ruin your day, in a good way:",
     "Fast fact:",
-    "Quick hit:",
-    "No intro, just the fact:"
+    "Here's your fact for the day:"
   ],
   "script_structures": [
-    "Open with the outcome, then walk backward through the cause.",
-    "Open on a small detail, then zoom out to the bigger picture.",
-    "Build tension gradually across three beats, then release it in the last line.",
-    "Start with the punchline, then explain why it's true.",
-    "Cold open on the surprising moment, then unpack how we got there.",
+    "State the surprising part first, explain second, exit third.",
+    "Keep it to three short beats max.",
+    "State it, then immediately back it up with the 'why'.",
+    "Rapid-fire delivery, minimal setup, straight to the point.",
+    "Skip context entirely unless it's needed to land the punchline.",
+    "Treat every sentence like it has to earn its place.",
     "Structure it as claim, quick evidence, quick close.",
+    "Front-load the payoff, spend the rest of the time justifying it.",
     "One sentence of setup max, then the payoff.",
-    "Lead with the number or stat, then explain it in one breath.",
+    "One fact, one twist, done.",
     "Compress the whole idea into two beats: claim, then proof.",
-    "One idea, delivered fast, no tangents.",
+    "Lead with the number or stat, then explain it in one breath.",
     "No warmup \u2014 open directly on the strangest detail.",
     "Say the wildest part first, everything else is just support.",
-    "State the surprising claim first, then the one-line reason why.",
-    "Zero throat-clearing \u2014 first word is already the content.",
-    "Deliver it as a single escalating thought, no pauses."
+    "One idea, delivered fast, no tangents."
   ],
   "phrasing_styles": [
-    "Earnest, like you genuinely want the listener to feel what you felt.",
-    "Curious and searching, like you're figuring it out as you go.",
-    "Reflective, like you're still a little surprised by it yourself.",
-    "Plainspoken but with real conviction underneath it.",
-    "Unhurried \u2014 let the details breathe before moving on.",
-    "Energetic without being shouty.",
+    "Punch each key word slightly \u2014 cadence matters here.",
+    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
+    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
+    "Rapid cadence, but land the final word hard.",
+    "Matter-of-fact but fast, like reading a highlight reel.",
+    "Staccato rhythm \u2014 short bursts, clear breaks.",
+    "Talk like you're genuinely in a hurry to tell someone.",
     "Bright and quick, almost a little breathless.",
-    "Short, punchy sentences. No wasted words.",
+    "Confident and quick, like you already know this lands.",
+    "Energetic without being shouty.",
     "Snappy, with a little grin in the delivery.",
-    "Quick with a wink \u2014 this is fun, not frantic.",
-    "High energy, like you're genuinely excited to share this.",
+    "Short, punchy sentences. No wasted words.",
     "Each sentence lands like its own mic drop.",
-    "Clipped and efficient \u2014 every word working.",
-    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
-    "Urgent but controlled \u2014 fast doesn't mean sloppy."
+    "Quick with a wink \u2014 this is fun, not frantic.",
+    "Clipped and efficient \u2014 every word working."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "save_for_later_early"
+    "center_punch_mid"
   ],
   "code_theme": [
-    "monokai",
-    "solarized-dark"
+    "dracula",
+    "one-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",

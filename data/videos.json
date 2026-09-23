@@ -619,5 +619,61 @@
     "template": "facts",
     "approach": "fast_cuts",
     "scheduled_publish_at": "2026-09-21T11:56:20.195256+00:00"
+  },
+  {
+    "video_id": "56c2ca73-d745-4ea3-90ac-0a735b5bc844",
+    "youtube_video_id": "6eHOqwP6qKA",
+    "uploaded_at": "2026-09-22T17:51:11.699265+00:00",
+    "template": "facts",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-22T21:17:04.997428+00:00"
+  },
+  {
+    "video_id": "2fe628c2-7426-4136-8d1e-bd80dd63e66d",
+    "youtube_video_id": "ZIuFmcUhTGw",
+    "uploaded_at": "2026-09-22T18:07:19.488104+00:00",
+    "template": "sauce_recipe",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-23T00:35:00.043124+00:00"
+  },
+  {
+    "video_id": "e22596ac-756f-4935-8f23-2304151e0ac5",
+    "youtube_video_id": "PfHRWMq732I",
+    "uploaded_at": "2026-09-22T18:11:13.782920+00:00",
+    "template": "programming",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-23T03:19:01.490988+00:00"
+  },
+  {
+    "video_id": "04a57c67-0fce-46c0-9011-2d3947d99a51",
+    "youtube_video_id": "YV4WgCXDd1s",
+    "uploaded_at": "2026-09-23T17:47:18.285668+00:00",
+    "template": "facts",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-23T20:02:57.424193+00:00"
+  },
+  {
+    "video_id": "0aeb8f5c-45c4-49b1-9788-1b78526e2e03",
+    "youtube_video_id": "GEnPeIal4sw",
+    "uploaded_at": "2026-09-23T17:53:03.048873+00:00",
+    "template": "programming",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-23T22:38:53.761545+00:00"
+  },
+  {
+    "video_id": "5876cce9-7b27-48f0-afa9-02a6e103cc04",
+    "youtube_video_id": "rveSBx5bXI0",
+    "uploaded_at": "2026-09-23T18:02:12.535661+00:00",
+    "template": "sauce_recipe",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-24T01:05:34.869559+00:00"
+  },
+  {
+    "video_id": "bc43fb6b-82ac-4970-abea-c776c3b7e54e",
+    "youtube_video_id": "0TNacb_RIX0",
+    "uploaded_at": "2026-09-23T18:13:38.463057+00:00",
+    "template": "facts",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-24T03:52:55.477195+00:00"
   }
 ]
