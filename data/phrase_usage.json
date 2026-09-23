@@ -1,10 +1,5 @@
 {
   "hook_openers": [
-    "Quick one:",
-    "Here's your fact for the day:",
-    "Fast fact:",
-    "Quick hit:",
-    "No intro, just the fact:",
     "Fast one, but a good one:",
     "One thing before you scroll:",
     "One fact, zero fluff:",
@@ -14,14 +9,14 @@
     "Three seconds, one wild fact:",
     "Here's the fact, no buildup:",
     "Straight to it:",
-    "This'll take ten seconds and it's worth it:"
+    "This'll take ten seconds and it's worth it:",
+    "This one's short and it's a lot:",
+    "Quick one:",
+    "Here's a fact that'll ruin your day, in a good way:",
+    "Fast fact:",
+    "Here's your fact for the day:"
   ],
   "script_structures": [
-    "No warmup \u2014 open directly on the strangest detail.",
-    "Say the wildest part first, everything else is just support.",
-    "State the surprising claim first, then the one-line reason why.",
-    "Zero throat-clearing \u2014 first word is already the content.",
-    "Deliver it as a single escalating thought, no pauses.",
     "State the surprising part first, explain second, exit third.",
     "Keep it to three short beats max.",
     "State it, then immediately back it up with the 'why'.",
@@ -31,14 +26,14 @@
     "Structure it as claim, quick evidence, quick close.",
     "Front-load the payoff, spend the rest of the time justifying it.",
     "One sentence of setup max, then the payoff.",
-    "One fact, one twist, done."
+    "One fact, one twist, done.",
+    "Compress the whole idea into two beats: claim, then proof.",
+    "Lead with the number or stat, then explain it in one breath.",
+    "No warmup \u2014 open directly on the strangest detail.",
+    "Say the wildest part first, everything else is just support.",
+    "One idea, delivered fast, no tangents."
   ],
   "phrasing_styles": [
-    "High energy, like you're genuinely excited to share this.",
-    "Each sentence lands like its own mic drop.",
-    "Clipped and efficient \u2014 every word working.",
-    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
-    "Urgent but controlled \u2014 fast doesn't mean sloppy.",
     "Punch each key word slightly \u2014 cadence matters here.",
     "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
@@ -48,7 +43,12 @@
     "Talk like you're genuinely in a hurry to tell someone.",
     "Bright and quick, almost a little breathless.",
     "Confident and quick, like you already know this lands.",
-    "Energetic without being shouty."
+    "Energetic without being shouty.",
+    "Snappy, with a little grin in the delivery.",
+    "Short, punchy sentences. No wasted words.",
+    "Each sentence lands like its own mic drop.",
+    "Quick with a wink \u2014 this is fun, not frantic.",
+    "Clipped and efficient \u2014 every word working."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
