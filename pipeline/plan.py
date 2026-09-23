@@ -117,11 +117,19 @@ class ClaudeUsageLimitError(RuntimeError):
 # limit", not "usage limit" -- so this pattern missed it entirely, and
 # the whole point of having LLM_FALLBACK_BACKEND (never having to just
 # wait out a limit) silently didn't fire on a wording variant that
-# actually happens. Broadened to match "session limit" too, plus a
-# generic "limit reached" catch-all, rather than trying to enumerate
-# every exact phrasing Anthropic might use.
+# actually happens.
+#
+# Real recurrence found 2026-09-23: a scheduled run's CLI said "You've
+# hit your weekly limit · resets 7pm (UTC)" -- "weekly limit" this time,
+# same exact failure mode, every video in the run failed outright
+# instead of falling back to Groq. Rather than add "weekly limit" as a
+# third one-off literal and wait for "monthly limit"/"daily limit" to
+# repeat this again, the pattern now also matches the general "hit your
+# <anything> limit" shape those all share, which should catch any future
+# period-name variant without another real failure first.
 _USAGE_LIMIT_PATTERN = re.compile(
-    r"usage limit|session limit|limit reached|rate.?limit exceeded", re.IGNORECASE
+    r"usage limit|session limit|weekly limit|limit reached|rate.?limit exceeded|hit your \w+ limit",
+    re.IGNORECASE,
 )
 
 

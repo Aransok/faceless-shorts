@@ -126,6 +126,45 @@ class CallLlmFallbackTest(unittest.TestCase):
             result = call_llm("prompt")
         self.assertEqual(result, "fallback script")
 
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_weekly_limit_wording_also_triggers_fallback(self, mock_run, mock_which, mock_post):
+        # Real recurrence (2026-09-23): a real scheduled run's CLI said
+        # "You've hit your weekly limit · resets 7pm (UTC)" -- every
+        # video in that run failed outright instead of falling back to
+        # Groq, same root cause as the 2026-09-12 "session limit" bug,
+        # just a different period name.
+        mock_run.return_value = mock.Mock(
+            returncode=1, stdout="", stderr="You've hit your weekly limit · resets 7pm (UTC)"
+        )
+        mock_post.return_value = mock.Mock()
+        mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            result = call_llm("prompt")
+        self.assertEqual(result, "fallback script")
+
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_unknown_period_name_limit_wording_still_matches_the_general_shape(
+        self, mock_run, mock_which, mock_post
+    ):
+        # The general "hit your <word> limit" pattern (added alongside
+        # the weekly-limit fix) should catch a not-yet-seen period name
+        # too, e.g. "monthly" or "daily", without needing a third real
+        # production failure first.
+        mock_run.return_value = mock.Mock(
+            returncode=1, stdout="", stderr="You've hit your monthly limit · resets in 3 days"
+        )
+        mock_post.return_value = mock.Mock()
+        mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            result = call_llm("prompt")
+        self.assertEqual(result, "fallback script")
+
     @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
     @mock.patch("pipeline.plan.subprocess.run")
     def test_usage_limit_without_fallback_configured_raises(self, mock_run, mock_which):
