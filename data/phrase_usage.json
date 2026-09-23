@@ -1,10 +1,5 @@
 {
   "hook_openers": [
-    "Here's the fact, no buildup:",
-    "This one's short and it's a lot:",
-    "This'll take ten seconds and it's worth it:",
-    "Here's a fact that'll ruin your day, in a good way:",
-    "Here's something you'll repeat to someone today:",
     "Quick one:",
     "Here's your fact for the day:",
     "Fast fact:",
@@ -14,14 +9,14 @@
     "One thing before you scroll:",
     "One fact, zero fluff:",
     "Ten seconds, one genuinely wild fact:",
-    "Skip the intro, here's the point:"
+    "Skip the intro, here's the point:",
+    "You have ten seconds, here's the fact:",
+    "Three seconds, one wild fact:",
+    "Here's the fact, no buildup:",
+    "Straight to it:",
+    "This'll take ten seconds and it's worth it:"
   ],
   "script_structures": [
-    "Structure it as claim, quick evidence, quick close.",
-    "One sentence of setup max, then the payoff.",
-    "Lead with the number or stat, then explain it in one breath.",
-    "Compress the whole idea into two beats: claim, then proof.",
-    "One idea, delivered fast, no tangents.",
     "No warmup \u2014 open directly on the strangest detail.",
     "Say the wildest part first, everything else is just support.",
     "State the surprising claim first, then the one-line reason why.",
@@ -31,14 +26,14 @@
     "Keep it to three short beats max.",
     "State it, then immediately back it up with the 'why'.",
     "Rapid-fire delivery, minimal setup, straight to the point.",
-    "Skip context entirely unless it's needed to land the punchline."
+    "Skip context entirely unless it's needed to land the punchline.",
+    "Treat every sentence like it has to earn its place.",
+    "Structure it as claim, quick evidence, quick close.",
+    "Front-load the payoff, spend the rest of the time justifying it.",
+    "One sentence of setup max, then the payoff.",
+    "One fact, one twist, done."
   ],
   "phrasing_styles": [
-    "Energetic without being shouty.",
-    "Bright and quick, almost a little breathless.",
-    "Short, punchy sentences. No wasted words.",
-    "Snappy, with a little grin in the delivery.",
-    "Quick with a wink \u2014 this is fun, not frantic.",
     "High energy, like you're genuinely excited to share this.",
     "Each sentence lands like its own mic drop.",
     "Clipped and efficient \u2014 every word working.",
@@ -48,7 +43,12 @@
     "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
     "Rapid cadence, but land the final word hard.",
-    "Matter-of-fact but fast, like reading a highlight reel."
+    "Matter-of-fact but fast, like reading a highlight reel.",
+    "Staccato rhythm \u2014 short bursts, clear breaks.",
+    "Talk like you're genuinely in a hurry to tell someone.",
+    "Bright and quick, almost a little breathless.",
+    "Confident and quick, like you already know this lands.",
+    "Energetic without being shouty."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -63,8 +63,8 @@
     "center_punch_mid"
   ],
   "code_theme": [
-    "solarized-dark",
-    "dracula"
+    "dracula",
+    "one-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
