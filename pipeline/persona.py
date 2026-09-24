@@ -31,6 +31,8 @@ _PET_PEEVES_FILE = {
     "facts": "persona_pet_peeves_facts.md",
     "quiz_longform": "persona_pet_peeves_dev.md",
     "sauce_recipe": "persona_pet_peeves_sauce_recipe.md",
+    "weird": "persona_pet_peeves_weird.md",
+    "food": "persona_pet_peeves_food.md",
     "game_night": "persona_pet_peeves_dev.md",
 }
 

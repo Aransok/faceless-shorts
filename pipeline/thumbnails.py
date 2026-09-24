@@ -250,6 +250,8 @@ TEMPLATE_BADGE_TEXT = {
     "facts": "FACT CHECK",
     "programming": "CODE BUG",
     "sauce_recipe": "SAUCE SECRETS",
+    "weird": "DID YOU KNOW",
+    "food": "KITCHEN SCIENCE",
 }
 DEFAULT_BADGE_TEXT = "WATCH NOW"
 

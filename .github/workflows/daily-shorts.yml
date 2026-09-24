@@ -28,7 +28,7 @@ on:
       count:
         description: "Number of new videos to generate (ignored if templates is set)"
         required: false
-        default: "5"
+        default: "6"
       templates:
         description: "Optional: exact comma-separated template sequence to run instead of count (e.g. 'sauce_recipe,sauce_recipe')"
         required: false
@@ -131,7 +131,7 @@ jobs:
           TOPIC_HINTS_JSON: ${{ github.event.inputs.topic_hints || '' }}
         run: >
           python scripts/run_daily.py
-          --count "${{ github.event.inputs.count || '5' }}"
+          --count "${{ github.event.inputs.count || '6' }}"
           --templates "${{ github.event.inputs.templates || '' }}"
 
       # assets/output/* is gitignored (rendered audio/video never gets

@@ -80,6 +80,8 @@ TEMPLATE_RPM_ESTIMATE = {
     "facts": 2.25,
     "sauce_recipe": 2.25,
     "game_night": 2.25,
+    "weird": 2.25,
+    "food": 2.25,
 }
 
 

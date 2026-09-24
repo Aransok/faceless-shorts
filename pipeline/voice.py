@@ -54,7 +54,7 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 # fade-to-blank between steps) or "quiz_longform" (its own
 # COUNTDOWN_SECONDS pause system).
 BEAT_PAUSE_SECONDS = 3.5
-_PAUSED_TEMPLATES = {"facts", "sauce_recipe"}
+_PAUSED_TEMPLATES = {"facts", "sauce_recipe", "weird", "food"}
 
 # game_night: gameplay/reveal/countdown/suspense beats show a real
 # on-screen card the viewer needs actual time to read AND think about (a

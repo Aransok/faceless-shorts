@@ -15,8 +15,11 @@ Sources are free, keyless, public APIs (CLAUDE.md's "no paid APIs" rule):
   about.
 - sauce_recipe: Wikipedia's Category:Sauces, minus every sauce this
   channel's past scripts already mention.
-programming has no source here yet -- nothing free maps cleanly onto
-"a real gotcha"; it relies on plan.py's full-history topic avoid-list.
+- food: Wikipedia's Category:Cooking techniques, same "not already
+  covered" filter.
+programming and weird have no source here -- nothing free maps cleanly
+onto "a real gotcha" or "an everyday thing with a hidden reason"; both
+rely on plan.py's full-history topic avoid-list instead.
 
 Fail-soft end to end: any network/parse problem returns None and the
 video is planned exactly as before (CLAUDE.md's "fail soft" rule).
@@ -38,10 +41,18 @@ from pipeline.wikimedia import USER_AGENT
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 DYK_PAGE = "Wikipedia:Recent additions"
-SAUCE_CATEGORY = "Category:Sauces"
+# Templates seeded from a Wikipedia category's article titles.
+CATEGORY_SOURCE = {
+    "sauce_recipe": "Category:Sauces",
+    "food": "Category:Cooking techniques",
+}
 
 CANDIDATES_PER_SEED = 6
-_USED_SLOT = {"facts": "research_used_facts", "sauce_recipe": "research_used_sauces"}
+_USED_SLOT = {
+    "facts": "research_used_facts",
+    "sauce_recipe": "research_used_sauces",
+    "food": "research_used_food",
+}
 # Effectively "remember forever" -- DYK hooks and sauce names are never
 # worth re-offering, and each entry is one short line.
 _USED_HISTORY_LIMIT = 3000
@@ -90,7 +101,7 @@ def parse_dyk_hooks(html: str) -> list[str]:
     return hooks
 
 
-def clean_sauce_titles(titles: list[str]) -> list[str]:
+def clean_category_titles(titles: list[str]) -> list[str]:
     names = []
     for title in titles:
         if title.lower().startswith("list of"):
@@ -117,11 +128,11 @@ def fetch_dyk_hooks() -> list[str]:
     return parse_dyk_hooks(data["parse"]["text"])
 
 
-def fetch_sauce_names() -> list[str]:
+def fetch_category_names(category: str) -> list[str]:
     data = _wikipedia_get(
-        {"action": "query", "list": "categorymembers", "cmtitle": SAUCE_CATEGORY, "cmtype": "page", "cmlimit": 500}
+        {"action": "query", "list": "categorymembers", "cmtitle": category, "cmtype": "page", "cmlimit": 500}
     )
-    return clean_sauce_titles([m["title"] for m in data["query"]["categorymembers"]])
+    return clean_category_titles([m["title"] for m in data["query"]["categorymembers"]])
 
 
 def _format_seed(template: str, picks: list[str]) -> str:
@@ -132,6 +143,13 @@ def _format_seed(template: str, picks: list[str]) -> str:
             "a newly written, editor-reviewed article). Anchor one of the three "
             "facts on the strongest of these, and let the connecting theme grow "
             f"from it:\n{lines}"
+        )
+    if template == "food":
+        return (
+            "Real cooking techniques from Wikipedia this channel has never "
+            "covered. Build at least one of today's three items around one "
+            "you can explain accurately (the real why + what to do), and let "
+            f"the connecting theme grow from it:\n{lines}"
         )
     return (
         "Real sauces from Wikipedia's list of sauces that this channel has "
@@ -156,7 +174,7 @@ def suggest_research_seed(template: str) -> str | None:
             pool = fetch_dyk_hooks()
         else:
             covered = all_script_text(template)
-            pool = [name for name in fetch_sauce_names() if name.lower() not in covered]
+            pool = [name for name in fetch_category_names(CATEGORY_SOURCE[template]) if name.lower() not in covered]
         used = set(used_values(_USED_SLOT[template]))
         fresh = [p for p in pool if p not in used]
         if not fresh:
@@ -176,7 +194,7 @@ if __name__ == "__main__":
     if template_arg == "facts":
         found = fetch_dyk_hooks()
     else:
-        found = fetch_sauce_names()
+        found = fetch_category_names(CATEGORY_SOURCE[template_arg])
     print(f"{len(found)} candidates for {template_arg}:")
     for item in found[:40]:
         print(f"  - {item}")

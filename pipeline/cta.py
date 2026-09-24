@@ -144,6 +144,16 @@ _TEMPLATE_HINTS = {
         "save": "e.g. the next time they have the specific ingredients/situation this sauce calls for.",
         "share": "e.g. someone who cooks, or who'd specifically use one of these sauces.",
     },
+    "weird": {
+        "comment_question": "e.g. whether they already knew the real reason, or believed the common myth.",
+        "save": "e.g. the next time they see this everyday thing and want to explain it to someone.",
+        "share": "e.g. someone who uses or notices this exact thing every day.",
+    },
+    "food": {
+        "comment_question": "e.g. which of the three they've been doing wrong, or what they'll change first.",
+        "save": "e.g. the next time they're actually cooking or storing this specific food.",
+        "share": "e.g. someone who cooks, or who does exactly the thing this corrects.",
+    },
     "game_night": {
         "comment_question": "e.g. how many rounds they got right, or whether they'd have guessed the same answer.",
         "save": "e.g. their next actual game night with other people.",

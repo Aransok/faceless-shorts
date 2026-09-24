@@ -31,7 +31,7 @@ MUSIC_EXTENSIONS = (".mp3", ".wav", ".m4a", ".ogg")
 # not a deliberate exclusion -- it launched without ever being added here.
 # "game_night" added up front this time (Phase 16) rather than repeating
 # that same omission a second time now that the shape of the bug is known.
-MUSIC_TEMPLATES = ("facts", "quiz_longform", "programming", "sauce_recipe", "game_night", "family_game_night")
+MUSIC_TEMPLATES = ("facts", "quiz_longform", "programming", "sauce_recipe", "weird", "food", "game_night", "family_game_night")
 # How far below the narration's own measured loudness the music should
 # sit — measured per-track/per-video rather than a fixed gain constant,
 # since a fixed multiplier on top of tracks with different native loudness

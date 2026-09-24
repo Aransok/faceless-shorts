@@ -512,7 +512,7 @@ def _concat_segments(segment_paths: list[Path], output_path: Path) -> None:
         os.unlink(filelist_path)
 
 
-_STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe")
+_STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe", "weird", "food")
 
 
 def _parse_beat_visual_plan(raw_keywords: str) -> dict:

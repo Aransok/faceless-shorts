@@ -180,19 +180,27 @@ class PublishWindowTest(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def test_a_full_five_video_batch_never_lands_in_dead_hours(self):
+    def test_a_full_six_video_batch_never_lands_in_dead_hours(self):
         # The exact real failure: a batch starting ~18:00 UTC used to push
         # its 4th/5th videos to ~05:00-09:00 UTC.
         self._with_log([])
         now = _utc(24, 18, 0)
         scheduled = []
-        for _ in range(5):
+        for _ in range(6):
             t = _next_publish_time(now=now)
             scheduled.append(t)
             self._with_log([{"scheduled_publish_at": s.isoformat()} for s in scheduled])
         for t in scheduled:
             self.assertTrue(_in_publish_window(t), f"{t.isoformat()} landed outside the window")
         self.assertEqual(scheduled, sorted(scheduled), "publish times must stay in order")
+
+    def test_a_six_video_batch_starting_at_the_opening_fits_one_evening(self):
+        self._with_log([])
+        scheduled = []
+        for _ in range(6):
+            scheduled.append(_next_publish_time(now=_utc(24, 18, 45)))
+            self._with_log([{"scheduled_publish_at": s.isoformat()} for s in scheduled])
+        self.assertLess(scheduled[-1] - scheduled[0], timedelta(hours=upload_module.PUBLISH_WINDOW_HOURS))
 
     def test_spacing_still_respects_the_minimum_gap(self):
         self._with_log([{"scheduled_publish_at": _utc(24, 21, 0).isoformat()}])

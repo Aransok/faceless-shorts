@@ -42,6 +42,12 @@ TEMPLATES = {
     # flows through the exact same _parse_facts_response() below and the
     # exact same visuals_facts.py B-roll pipeline. See ROADMAP.md.
     "sauce_recipe": PROMPTS_DIR / "sauce_recipe_template.txt",
+    # Owner-chosen formats (2026-09-24): same 3-beat FACT_N field shape as
+    # facts/sauce_recipe, so they reuse the same parser, voice pauses, and
+    # stock-footage visuals. weird = ONE everyday thing explained over three
+    # beats; food = three non-sauce kitchen insights. See ROADMAP.md.
+    "weird": PROMPTS_DIR / "weird_template.txt",
+    "food": PROMPTS_DIR / "food_template.txt",
 }
 
 # Widened 15 -> 25 (2026-09-21): a real, confirmed cross-video duplicate
@@ -565,7 +571,12 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
     # recent_beats()'s docstring for the real overlap bug (two
     # consecutive sauce_recipe videos both independently picking
     # chimichurri) this closes.
-    _AVOID_BEATS_PLACEHOLDER = {"facts": "{avoid_facts}", "sauce_recipe": "{avoid_sauces}"}
+    _AVOID_BEATS_PLACEHOLDER = {
+        "facts": "{avoid_facts}",
+        "sauce_recipe": "{avoid_sauces}",
+        "weird": "{avoid_facts}",
+        "food": "{avoid_items}",
+    }
     if template in _AVOID_BEATS_PLACEHOLDER:
         avoid_beats = recent_beats(template, limit_videos=RECENT_TOPICS_LIMIT)
         prompt = prompt.replace(

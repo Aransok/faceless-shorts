@@ -51,6 +51,8 @@ CATEGORY_ID = {
     "quiz_longform": "27",  # Education
     "family_game_night": "24",  # Entertainment
     "veylorn_story": "24",  # Entertainment
+    "weird": "24",  # Entertainment
+    "food": "26",  # Howto & Style
 }
 
 VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")
@@ -69,12 +71,12 @@ VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")
 # and 5th video of every ~18:00 UTC batch into exactly that dead window.
 # Now every publish time is snapped into 20:00-04:00 UTC (the two best
 # buckets), with tighter gaps so a 5-video batch still fits one window.
-# 4 gaps x 1.75h + 30 min opening jitter = 7.5h, so a 5-video batch that
-# starts at the window opening fits inside one 8h window. A batch that
-# starts mid-window spills its last video(s) to the next evening rather
-# than into dead hours.
-PUBLISH_GAP_MIN_HOURS = 1.25
-PUBLISH_GAP_MAX_HOURS = 1.75
+# 5 gaps x 1.4h + 30 min opening jitter = 7.5h, so the 6-video daily
+# batch that starts at the window opening fits inside one 8h window. A
+# batch that starts mid-window spills its last video(s) to the next
+# evening rather than into dead hours.
+PUBLISH_GAP_MIN_HOURS = 1.1
+PUBLISH_GAP_MAX_HOURS = 1.4
 PUBLISH_WINDOW_START_HOUR_UTC = 20
 PUBLISH_WINDOW_HOURS = 8
 
