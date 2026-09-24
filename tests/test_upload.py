@@ -13,7 +13,21 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.upload import _CTA_COMMENTS, CTA_COMMENT_PROBABILITY, _generate_cta_comment, post_cta_comment, upload
+import json
+import tempfile
+from datetime import datetime, timedelta, timezone
+
+from pipeline import upload as upload_module
+from pipeline.upload import (
+    _CTA_COMMENTS,
+    CTA_COMMENT_PROBABILITY,
+    _generate_cta_comment,
+    _in_publish_window,
+    _next_publish_time,
+    _snap_into_publish_window,
+    post_cta_comment,
+    upload,
+)
 
 _VIDEO = {"topic": "a topic", "hook": "a hook", "script_text": "a script"}
 
@@ -123,6 +137,67 @@ class UploadCtaCommentProbabilityTest(unittest.TestCase):
             # random() < CTA_COMMENT_PROBABILITY (any positive probability) -- winning roll
             upload("vid-1")
         self.mocks["post_cta_comment"].assert_called_once()
+
+
+def _utc(day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(2026, 9, day, hour, minute, tzinfo=timezone.utc)
+
+
+class PublishWindowTest(unittest.TestCase):
+    """Real channel data (2026-09-24): Shorts going public 00:00-04:00 UTC
+    had ~5x the median views of ones going public 04:00-12:00 UTC --
+    every publish time now lands inside 20:00-04:00 UTC."""
+
+    def test_window_spans_midnight(self):
+        self.assertTrue(_in_publish_window(_utc(24, 20, 0)))
+        self.assertTrue(_in_publish_window(_utc(24, 23, 59)))
+        self.assertTrue(_in_publish_window(_utc(25, 0, 30)))
+        self.assertTrue(_in_publish_window(_utc(25, 3, 59)))
+
+    def test_dead_hours_are_outside_the_window(self):
+        for hour in (4, 6, 9, 12, 15, 19):
+            self.assertFalse(_in_publish_window(_utc(24, hour, 0)), f"{hour}:00 UTC should be outside")
+
+    def test_in_window_time_is_left_alone(self):
+        t = _utc(24, 22, 15)
+        self.assertEqual(_snap_into_publish_window(t), t)
+
+    def test_early_morning_time_moves_to_that_evening_not_the_next(self):
+        snapped = _snap_into_publish_window(_utc(24, 6, 0))
+        self.assertEqual(snapped.date(), _utc(24, 20).date())
+        self.assertTrue(_utc(24, 20, 0) <= snapped <= _utc(24, 20, 30))
+
+    def test_late_afternoon_time_moves_to_the_same_evening(self):
+        snapped = _snap_into_publish_window(_utc(24, 19, 30))
+        self.assertTrue(_utc(24, 20, 0) <= snapped <= _utc(24, 20, 30))
+
+    def _with_log(self, records: list[dict]):
+        tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+        json.dump(records, tmp)
+        tmp.close()
+        self.addCleanup(Path(tmp.name).unlink, missing_ok=True)
+        patcher = mock.patch.object(upload_module, "VIDEOS_LOG_PATH", Path(tmp.name))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_a_full_five_video_batch_never_lands_in_dead_hours(self):
+        # The exact real failure: a batch starting ~18:00 UTC used to push
+        # its 4th/5th videos to ~05:00-09:00 UTC.
+        self._with_log([])
+        now = _utc(24, 18, 0)
+        scheduled = []
+        for _ in range(5):
+            t = _next_publish_time(now=now)
+            scheduled.append(t)
+            self._with_log([{"scheduled_publish_at": s.isoformat()} for s in scheduled])
+        for t in scheduled:
+            self.assertTrue(_in_publish_window(t), f"{t.isoformat()} landed outside the window")
+        self.assertEqual(scheduled, sorted(scheduled), "publish times must stay in order")
+
+    def test_spacing_still_respects_the_minimum_gap(self):
+        self._with_log([{"scheduled_publish_at": _utc(24, 21, 0).isoformat()}])
+        t = _next_publish_time(now=_utc(24, 18, 0))
+        self.assertGreaterEqual(t - _utc(24, 21, 0), timedelta(hours=upload_module.PUBLISH_GAP_MIN_HOURS))
 
 
 if __name__ == "__main__":

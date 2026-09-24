@@ -57,11 +57,26 @@ VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")
 
 # UPLOAD_VISIBILITY=scheduled: upload private with a future publishAt —
 # YouTube auto-flips it public at that time, no process needs to stay
-# running. Each video schedules 2-4 random hours after the latest
-# already-scheduled (not yet public) one, so a batch spreads out over the
-# day instead of all going public back-to-back.
-PUBLISH_GAP_MIN_HOURS = 2.0
-PUBLISH_GAP_MAX_HOURS = 4.0
+# running. Each video schedules a random gap after the latest
+# already-scheduled (not yet public) one, so a batch spreads out instead
+# of all going public back-to-back.
+#
+# Publish window (2026-09-24, real channel data): Shorts going public at
+# 00:00-04:00 UTC (US evening) had a median of ~1,000 views; 04:00-12:00
+# UTC (US overnight) had ~200 -- held after controlling for how old each
+# video was when its views were measured, and within facts and
+# programming separately. The old unconstrained 2-4h gaps pushed the 4th
+# and 5th video of every ~18:00 UTC batch into exactly that dead window.
+# Now every publish time is snapped into 20:00-04:00 UTC (the two best
+# buckets), with tighter gaps so a 5-video batch still fits one window.
+# 4 gaps x 1.75h + 30 min opening jitter = 7.5h, so a 5-video batch that
+# starts at the window opening fits inside one 8h window. A batch that
+# starts mid-window spills its last video(s) to the next evening rather
+# than into dead hours.
+PUBLISH_GAP_MIN_HOURS = 1.25
+PUBLISH_GAP_MAX_HOURS = 1.75
+PUBLISH_WINDOW_START_HOUR_UTC = 20
+PUBLISH_WINDOW_HOURS = 8
 
 # Real feedback (2026-09-13, owner reviewing the actual channel's
 # comment feed): a bot comment on literally EVERY upload read as
@@ -118,12 +133,30 @@ def _build_snippet(video: dict) -> dict:
     }
 
 
-def _next_publish_time() -> datetime:
-    """Random 2-4 hours after the latest already-scheduled-but-not-yet-
-    public video in the log, or 2-4 hours from now if there's no pending
-    one — keeps a whole batch spread out rather than clustered, and
-    keeps spacing correct across separate daily runs too."""
-    now = datetime.now(timezone.utc)
+def _in_publish_window(t: datetime) -> bool:
+    hours_past_start = (t.hour + t.minute / 60 - PUBLISH_WINDOW_START_HOUR_UTC) % 24
+    return hours_past_start < PUBLISH_WINDOW_HOURS
+
+
+def _snap_into_publish_window(t: datetime) -> datetime:
+    """`t` unchanged if it's inside the window, otherwise the next window
+    opening after it plus up to 30 min of jitter (so a batch pushed to
+    the next evening doesn't land on the exact same minute every day)."""
+    if _in_publish_window(t):
+        return t
+    opening = t.replace(hour=PUBLISH_WINDOW_START_HOUR_UTC, minute=0, second=0, microsecond=0)
+    if opening <= t:
+        opening += timedelta(days=1)
+    return opening + timedelta(minutes=random.uniform(0, 30))
+
+
+def _next_publish_time(now: datetime | None = None) -> datetime:
+    """A random gap after the latest already-scheduled-but-not-yet-public
+    video in the log (or after now, if none is pending), snapped into
+    the publish window -- keeps a batch spread out rather than clustered,
+    keeps spacing correct across separate daily runs, and never lands a
+    video in the hours this channel's real data says are dead."""
+    now = now or datetime.now(timezone.utc)
     records = json.loads(VIDEOS_LOG_PATH.read_text(encoding="utf-8")) if VIDEOS_LOG_PATH.exists() else []
     future_times = [
         t
@@ -133,7 +166,7 @@ def _next_publish_time() -> datetime:
     ]
     base = max(future_times) if future_times else now
     gap_hours = random.uniform(PUBLISH_GAP_MIN_HOURS, PUBLISH_GAP_MAX_HOURS)
-    return base + timedelta(hours=gap_hours)
+    return _snap_into_publish_window(base + timedelta(hours=gap_hours))
 
 
 def _build_upload_body(video: dict, visibility: str, scheduled_publish_at: datetime | None) -> dict:
