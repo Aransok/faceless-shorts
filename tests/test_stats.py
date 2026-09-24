@@ -13,7 +13,13 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.stats import fetch_retention, fetch_retention_curve, sync_analytics, weekly_report_data
+from pipeline.stats import (
+    fetch_retention,
+    fetch_retention_curve,
+    fetch_views_by_country,
+    sync_analytics,
+    weekly_report_data,
+)
 
 _LOG_ROW = {
     "video_id": "vid-1",
@@ -128,6 +134,27 @@ class FetchRetentionCurveTest(unittest.TestCase):
         )
         with self.assertRaises(RuntimeError):
             fetch_retention_curve("yt-1")
+
+
+class FetchViewsByCountryTest(unittest.TestCase):
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_sums_country_totals_across_batches(self, mock_creds, mock_build):
+        query = mock_build.return_value.reports.return_value.query
+        query.return_value.execute.side_effect = [
+            {"rows": [["US", 100], ["IN", 40]]},
+            {"rows": [["US", 10], ["DE", 5]]},
+        ]
+        ids = [f"yt-{i}" for i in range(60)]  # 60 ids -> two 50-id batches
+        self.assertEqual(fetch_views_by_country(ids), {"US": 110, "IN": 40, "DE": 5})
+        self.assertEqual(query.call_count, 2)
+        self.assertEqual(query.call_args_list[0].kwargs["dimensions"], "country")
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_no_ids_skips_the_api(self, mock_creds, mock_build):
+        self.assertEqual(fetch_views_by_country([]), {})
+        mock_build.assert_not_called()
 
 
 class SyncAnalyticsRetentionTest(unittest.TestCase):

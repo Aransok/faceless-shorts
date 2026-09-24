@@ -14,6 +14,10 @@ on:
         description: "Optional: a real YouTube video ID to print pipeline/stats.py's fetch_retention_curve() for (manual diagnostic only, no effect on the normal sync above)"
         required: false
         default: ""
+      debug_country_breakdown:
+        description: "Optional: set to 1 to print each template's real audience-country split (manual diagnostic only)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -65,6 +69,16 @@ jobs:
         # sys.path, breaking its own `from pipeline.state import ...`
         # (real failure hit on the first real run of this step).
         run: python -m pipeline.stats "${{ github.event.inputs.debug_retention_curve_video_id }}"
+
+      # Manual diagnostic only, same pattern as the retention-curve step
+      # above: which countries each template's views actually come from.
+      - name: Debug country breakdown (optional)
+        if: github.event.inputs.debug_country_breakdown == '1'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python -m pipeline.stats --countries
 
       - name: Commit updated state
         run: |
