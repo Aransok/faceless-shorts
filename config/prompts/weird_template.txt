@@ -35,6 +35,10 @@ Requirements:
 - At least one beat MUST carry a genuine opinion or reaction that goes
   beyond restating the explanation -- same non-negotiable rule as the
   rest of the channel.
+- End on a line that is still about THIS subject. No generic wrap-up
+  that would fit any topic ("It's weird how the things that work never
+  feel broken enough to change") -- the review step rejects those, and
+  one killed the first real weird video (2026-09-24).
 - Total SCRIPT length across all three beats: 110-145 words, spoken in
   40-55 seconds. edge_tts paces close to ~2.6 words/sec, so aim for the
   lower half. Conversational, no filler, no "did you know" openers, no

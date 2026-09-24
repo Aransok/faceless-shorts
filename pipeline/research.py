@@ -57,7 +57,10 @@ _USED_SLOT = {
 # worth re-offering, and each entry is one short line.
 _USED_HISTORY_LIMIT = 3000
 
-_HOOK_PREFIX = re.compile(r"^\.{3}\s*that\s+", re.IGNORECASE)
+# "... that", "…that" (Unicode ellipsis) or ". . . that" -- the first real
+# run (2026-09-24) parsed 0 hooks from the live page, so accept every
+# ellipsis spelling rather than only three ASCII periods.
+_HOOK_PREFIX = re.compile(r"^(?:\.\s?\.\s?\.|\u2026)\s*that\s+", re.IGNORECASE)
 _PICTURED = re.compile(r"\s*\((?:[\w ]+ )?(?:pictured|illustrated|shown)\)", re.IGNORECASE)
 _MIN_HOOK_CHARS = 40
 _MAX_HOOK_CHARS = 300
@@ -125,7 +128,16 @@ def _wikipedia_get(params: dict) -> dict:
 
 def fetch_dyk_hooks() -> list[str]:
     data = _wikipedia_get({"action": "parse", "page": DYK_PAGE, "prop": "text"})
-    return parse_dyk_hooks(data["parse"]["text"])
+    html = data["parse"]["text"]
+    hooks = parse_dyk_hooks(html)
+    if not hooks:
+        # Diagnostic only: shows the live page's real <li> format in the
+        # run log, since Wikipedia isn't reachable from dev sandboxes.
+        parser = _ListItemTextParser()
+        parser.feed(html)
+        samples = [" ".join(i.split())[:80] for i in parser.items[:3]]
+        print(f"[research] facts: 0 hooks parsed from {len(html)} chars / {len(parser.items)} <li>; first items: {samples!r}")
+    return hooks
 
 
 def fetch_category_names(category: str) -> list[str]:
