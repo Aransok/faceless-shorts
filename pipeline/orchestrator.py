@@ -50,7 +50,17 @@ from pipeline.voice import voice
 # industry estimates, not measured. A modest, easily-reverted nudge
 # rather than betting the whole rotation on an unverified number. Order
 # still deliberately avoids two same-template slots back to back.
-TEMPLATES = ("facts", "programming", "sauce_recipe", "programming", "facts")
+#
+# Reworked to 6 slots (2026-09-24, owner decision after the growth
+# review in ROADMAP.md): 2 facts, 2 food (sauce_recipe + the new
+# non-sauce `food`), 1 programming, 1 new `weird` ("Things You Didn't
+# Know"). Real views: sauce_recipe and facts ran 2.5-3x programming, so
+# programming drops to one slot, kept as a hedge on its much higher
+# RPM estimate. Similar formats (facts/weird, sauce_recipe/food) are
+# never adjacent. 6/day stays under the ~8/day channel upload cap hit
+# for real on 2026-09-22 -- but a manual trigger on top of a normal
+# daily run can still exceed it.
+TEMPLATES = ("facts", "sauce_recipe", "weird", "programming", "food", "facts")
 
 # A previous run stopped here (killed, crashed, or just ended) but the
 # video isn't done and isn't waiting on a human — safe to keep driving.

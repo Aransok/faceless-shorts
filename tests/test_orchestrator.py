@@ -106,6 +106,22 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.mock_plan_veylorn_story.assert_called_once_with()
         self.mock_plan.assert_not_called()
 
+    def test_daily_rotation_is_the_owner_chosen_mix(self):
+        # Owner decision (2026-09-24): 2 facts, 2 food (sauce_recipe +
+        # food), 1 programming, 1 weird.
+        from collections import Counter
+        self.assertEqual(
+            Counter(orchestrator.TEMPLATES),
+            Counter({"facts": 2, "sauce_recipe": 1, "food": 1, "programming": 1, "weird": 1}),
+        )
+
+    def test_similar_formats_are_never_back_to_back(self):
+        similar = [{"facts", "weird"}, {"sauce_recipe", "food"}]
+        seq = orchestrator.TEMPLATES
+        for a, b in zip(seq, seq[1:]):
+            self.assertNotEqual(a, b)
+            self.assertFalse(any({a, b} <= group for group in similar), f"{a} next to {b}")
+
     def test_veylorn_story_never_appears_in_the_default_rotation(self):
         self.assertNotIn("veylorn_story", orchestrator.TEMPLATES)
 

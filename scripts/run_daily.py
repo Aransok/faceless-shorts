@@ -3,7 +3,7 @@ Phase 9. The actual orchestration logic lives in pipeline/orchestrator.py
 — this is just the thin CLI wrapper GitHub Actions (or a local cron) calls.
 
 Usage:
-    python scripts/run_daily.py --count 5
+    python scripts/run_daily.py --count 6
     python scripts/run_daily.py --templates sauce_recipe,sauce_recipe
 
 Per-template topic hints (see plan.py's _topic_hint_block()) come from

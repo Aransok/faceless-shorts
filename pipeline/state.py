@@ -512,7 +512,7 @@ def all_script_text(template: str, db_path: Path = DB_PATH) -> str:
     return "\n".join(row["script_text"] or "" for row in rows).lower()
 
 
-_STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe")
+_STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe", "weird", "food")
 
 
 def recent_stock_clip_ids(limit_videos: int = 30, db_path: Path = DB_PATH) -> set[int]:

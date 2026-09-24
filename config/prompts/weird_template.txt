@@ -1,0 +1,85 @@
+You are writing the script for a 45-second YouTube Short in the "Things
+You Didn't Know" series: ONE everyday thing the viewer has seen a
+thousand times, and the real, surprising reason behind it -- not three
+separate facts. Think "the hidden reason your everyday world looks the
+way it does," explained in three beats.
+
+Avoid these topics (already covered recently): {avoid_topics}
+
+Avoid these specific explanations too (already used): {avoid_facts}
+
+Requirements:
+- Pick ONE specific, concrete everyday subject -- an object, a design
+  detail, a habit, a word, a food, a body quirk, a sign, a rule -- that
+  almost everyone has noticed but almost no one knows the real reason
+  for. It must be something the viewer can picture instantly.
+  - The famous handful are already done to death on YouTube and are
+    OFF-LIMITS unless you have a genuinely new angle on them: the tiny
+    jeans pocket, the hole in a pen cap, round airplane windows, the
+    holes in airplane windows, why pencils are yellow, the hole in a
+    padlock. Prefer something a regular viewer has NOT already seen a
+    Short about.
+- The explanation must be real and checkable. No popular myths stated
+  as fact (if the real story is that a common explanation is a myth,
+  say that plainly -- that can be the whole payoff). If the true origin
+  is disputed, say so rather than picking one version as settled.
+- Three beats, each ~35-45 words:
+  - Beat 1: the everyday thing + the surprising claim about it, stated
+    as the payoff (see the first-line rule below).
+  - Beat 2: the real reason -- the actual history, mechanism, or design
+    constraint, with one concrete detail (a date, a name, a number, a
+    place) that makes it feel real rather than hand-waved.
+  - Beat 3: the twist -- a second layer the viewer didn't see coming
+    (it still matters today, it's the reason for something else, or
+    the "obvious" explanation turns out to be wrong).
+- At least one beat MUST carry a genuine opinion or reaction that goes
+  beyond restating the explanation -- same non-negotiable rule as the
+  rest of the channel.
+- Total SCRIPT length across all three beats: 110-145 words, spoken in
+  40-55 seconds. edge_tts paces close to ~2.6 words/sec, so aim for the
+  lower half. Conversational, no filler, no "did you know" openers, no
+  numbering out loud.
+- The very first line must lead with the PAYOFF -- the concrete,
+  specific surprising thing, stated directly -- not a scene-setting
+  wind-up ("Picture this...") and not a generic tease ("the reason will
+  shock you") that could be pasted onto any topic. What keeps the viewer
+  watching is wanting to know WHY, which beats 2-3 then deliver.
+  - BAD (generic tease): "There's a secret reason behind this everyday object."
+  - GOOD (payoff-first, concrete): "The little metal tab on your soda can
+    was redesigned in 1975 because the old one was littering beaches
+    with millions of razor-sharp pull rings."
+- For each beat, act as the visual director. Give:
+  - SUBJECT: the exact thing shown in THAT beat, 2-5 words (the object
+    itself in beat 1; the historical/mechanical thing in beat 2; the
+    twist's subject in beat 3).
+  - EXACT_QUERIES: 2-3 comma-separated stock-search queries for that
+    subject itself (e.g. "soda can pull tab close up").
+  - REPRESENTATION_QUERIES: 2-3 comma-separated queries for an accurate
+    stand-in of the same TYPE of thing, not a broader category.
+  - CONCEPT_QUERIES: 0-2 comma-separated queries for a visual of the
+    mechanism/process, or "none".
+  - Never use broad generic queries ("history", "interesting",
+    "everyday life", "science") as EXACT or REPRESENTATION queries.
+
+Output EXACTLY in this format, with no extra commentary before or after.
+The field names say FACT_N -- kept as-is because this reuses the same
+parser as the facts template; each FACT_N here is one BEAT of the single
+subject:
+
+TOPIC: <5-8 word label naming the one everyday subject, distinct from the avoid list>
+HOOK: <one sentence -- the payoff-first surprising claim, used later as the video title>
+FACT_1_SCRIPT: <~35-45 word narration for beat 1>
+FACT_1_SUBJECT: <exact subject shown in beat 1, 2-5 words>
+FACT_1_EXACT_QUERIES: <2-3 comma-separated queries>
+FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
+FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">
+FACT_2_SCRIPT: <~35-45 word narration for beat 2>
+FACT_2_SUBJECT: <exact subject shown in beat 2, 2-5 words>
+FACT_2_EXACT_QUERIES: <2-3 comma-separated queries>
+FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
+FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">
+FACT_3_SCRIPT: <~35-45 word narration for beat 3>
+FACT_3_SUBJECT: <exact subject shown in beat 3, 2-5 words>
+FACT_3_EXACT_QUERIES: <2-3 comma-separated queries>
+FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
+FACT_3_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">

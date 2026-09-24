@@ -3312,6 +3312,48 @@ older ones aged out and came back.
 23 new tests (`tests/test_research.py` new; `tests/test_upload.py`,
 `tests/test_orchestrator.py` extended). Full suite: 368 passing.
 
+## New rotation: 2 facts, 2 food, 1 programming, 1 weird (2026-09-24)
+
+Owner decision following the growth review above: lean into what the
+real numbers favor (facts and sauce_recipe ran 2.5-3x programming),
+widen food beyond sauces, keep one programming slot as a hedge on its
+much higher RPM estimate, and add a new "Things You Didn't Know" niche.
+Owner also confirmed ~88% of the audience is in the US, which is
+consistent with the US-evening publish window shipped earlier today.
+
+- `TEMPLATES` (orchestrator.py): `facts, sauce_recipe, weird,
+  programming, food, facts` -- 6/day, similar formats never adjacent.
+  Daily workflow default count 5 -> 6. 6/day stays under the ~8/day
+  channel upload cap actually hit on 2026-09-22, but a manual trigger
+  on top of a normal daily run can still exceed it.
+- New `weird` template ("Things You Didn't Know", badge "DID YOU
+  KNOW"): ONE everyday thing explained over three beats (payoff-first
+  claim -> the real reason with one concrete detail -> a twist), not
+  three separate facts, so it doesn't overlap `facts`. The prompt
+  explicitly rules out the handful of everyday-object explainers
+  already done to death on YouTube (jeans pocket, pen-cap hole, airplane
+  windows...) -- same looping lesson as programming. No research
+  source (nothing free maps onto it); relies on the full-history avoid
+  list.
+- New `food` template (badge "KITCHEN SCIENCE"): three non-sauce
+  kitchen insights with a connecting theme, each with the real "why" and
+  something actionable; sauces explicitly excluded (that's
+  sauce_recipe's series). Research seeds from Wikipedia's Category:
+  Cooking techniques minus anything already covered.
+- Both reuse the facts FACT_N field shape, so parser, voice beat pauses,
+  stock-footage visuals, cross-video clip memory, music, captions, and
+  metadata all work unchanged; each got its own persona file, CTA hints,
+  thumbnail badge, category ID (weird 24 Entertainment, food 26 Howto &
+  Style), and RPM estimate entry.
+- Publish gaps tightened to 1.1-1.4h so a 6-video batch starting at the
+  window opening still fits one 20:00-04:00 UTC evening.
+- Verified locally by assembling each new template's full real prompt
+  (avoid lists, style, persona, CTA, research block) and checking no
+  placeholder was left unfilled.
+
+9 new tests (`tests/test_new_templates.py` new; orchestrator, upload,
+research tests extended). Full suite: 377 passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

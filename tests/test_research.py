@@ -56,11 +56,11 @@ class ParseDykHooksTest(unittest.TestCase):
 
 class CleanSauceTitlesTest(unittest.TestCase):
     def test_strips_disambiguation_and_list_pages(self):
-        names = research.clean_sauce_titles(["Mole (sauce)", "List of sauces", "Chimichurri", "Gravy"])
+        names = research.clean_category_titles(["Mole (sauce)", "List of sauces", "Chimichurri", "Gravy"])
         self.assertEqual(names, ["Mole", "Chimichurri", "Gravy"])
 
     def test_dedupes_after_cleaning(self):
-        self.assertEqual(research.clean_sauce_titles(["Mole (sauce)", "Mole (Mexican sauce)"]), ["Mole"])
+        self.assertEqual(research.clean_category_titles(["Mole (sauce)", "Mole (Mexican sauce)"]), ["Mole"])
 
 
 class SuggestResearchSeedTest(unittest.TestCase):
@@ -109,14 +109,28 @@ class SuggestResearchSeedTest(unittest.TestCase):
         self.assertIsNone(research.suggest_research_seed("facts"))
 
     @mock.patch.object(research, "all_script_text", return_value="we made chimichurri and a basic gravy")
-    @mock.patch.object(research, "fetch_sauce_names")
+    @mock.patch.object(research, "fetch_category_names")
     def test_sauces_already_covered_on_the_channel_are_excluded(self, mock_fetch, _covered):
         mock_fetch.return_value = ["Chimichurri", "Gravy", "Mole", "Romesco"]
         seed = research.suggest_research_seed("sauce_recipe")
+        mock_fetch.assert_called_once_with("Category:Sauces")
         self.assertIn("Mole", seed)
         self.assertIn("Romesco", seed)
         self.assertNotIn("Chimichurri", seed)
         self.assertNotIn("Gravy", seed)
+
+    @mock.patch.object(research, "all_script_text", return_value="we covered brining last week")
+    @mock.patch.object(research, "fetch_category_names")
+    def test_food_seeds_come_from_cooking_techniques_minus_covered(self, mock_fetch, _covered):
+        mock_fetch.return_value = ["Brining", "Velveting", "Nixtamalization"]
+        seed = research.suggest_research_seed("food")
+        mock_fetch.assert_called_once_with("Category:Cooking techniques")
+        self.assertIn("Velveting", seed)
+        self.assertNotIn("Brining", seed)
+        self.assertEqual(sorted(rotation.used_values("research_used_food")), ["Nixtamalization", "Velveting"])
+
+    def test_weird_gets_no_seed(self):
+        self.assertIsNone(research.suggest_research_seed("weird"))
 
     @mock.patch.object(research, "fetch_dyk_hooks", side_effect=RuntimeError("connect rejected"))
     def test_network_failure_falls_back_to_none(self, _fetch):
