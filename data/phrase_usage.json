@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Fast one, but a good one:",
-    "One thing before you scroll:",
-    "One fact, zero fluff:",
-    "Ten seconds, one genuinely wild fact:",
-    "Skip the intro, here's the point:",
-    "You have ten seconds, here's the fact:",
     "Three seconds, one wild fact:",
     "Here's the fact, no buildup:",
     "Straight to it:",
@@ -14,15 +8,15 @@
     "Quick one:",
     "Here's a fact that'll ruin your day, in a good way:",
     "Fast fact:",
-    "Here's your fact for the day:"
+    "Here's your fact for the day:",
+    "No intro, just the fact:",
+    "Fast one, but a good one:",
+    "Here's something you'll repeat to someone today:",
+    "One thing before you scroll:",
+    "One fact, zero fluff:",
+    "Quick hit:"
   ],
   "script_structures": [
-    "State the surprising part first, explain second, exit third.",
-    "Keep it to three short beats max.",
-    "State it, then immediately back it up with the 'why'.",
-    "Rapid-fire delivery, minimal setup, straight to the point.",
-    "Skip context entirely unless it's needed to land the punchline.",
-    "Treat every sentence like it has to earn its place.",
     "Structure it as claim, quick evidence, quick close.",
     "Front-load the payoff, spend the rest of the time justifying it.",
     "One sentence of setup max, then the payoff.",
@@ -31,15 +25,15 @@
     "Lead with the number or stat, then explain it in one breath.",
     "No warmup \u2014 open directly on the strangest detail.",
     "Say the wildest part first, everything else is just support.",
-    "One idea, delivered fast, no tangents."
+    "One idea, delivered fast, no tangents.",
+    "Deliver it as a single escalating thought, no pauses.",
+    "Zero throat-clearing \u2014 first word is already the content.",
+    "Keep it to three short beats max.",
+    "State the surprising part first, explain second, exit third.",
+    "State the surprising claim first, then the one-line reason why.",
+    "State it, then immediately back it up with the 'why'."
   ],
   "phrasing_styles": [
-    "Punch each key word slightly \u2014 cadence matters here.",
-    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
-    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
-    "Rapid cadence, but land the final word hard.",
-    "Matter-of-fact but fast, like reading a highlight reel.",
-    "Staccato rhythm \u2014 short bursts, clear breaks.",
     "Talk like you're genuinely in a hurry to tell someone.",
     "Bright and quick, almost a little breathless.",
     "Confident and quick, like you already know this lands.",
@@ -48,7 +42,13 @@
     "Short, punchy sentences. No wasted words.",
     "Each sentence lands like its own mic drop.",
     "Quick with a wink \u2014 this is fun, not frantic.",
-    "Clipped and efficient \u2014 every word working."
+    "Clipped and efficient \u2014 every word working.",
+    "High energy, like you're genuinely excited to share this.",
+    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
+    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
+    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
+    "Urgent but controlled \u2014 fast doesn't mean sloppy.",
+    "Rapid cadence, but land the final word hard."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "center_punch_mid"
+    "corner_badge_late"
   ],
   "code_theme": [
-    "dracula",
-    "one-dark"
+    "one-dark",
+    "solarized-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -72,5 +72,21 @@
   ],
   "current_approach": [
     "fast_cuts"
+  ],
+  "research_used_sauces": [
+    "Chili sauce and paste",
+    "Mayonnaise",
+    "Ancho\u00efade",
+    "Fra Diavolo sauce",
+    "Sauce Divine",
+    "Salad cream"
+  ],
+  "research_used_food": [
+    "Shirred eggs",
+    "Pur\u00e9e",
+    "Jugging",
+    "Food drying",
+    "Infusion",
+    "Braising"
   ]
 }
