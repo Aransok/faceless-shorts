@@ -18,6 +18,10 @@ on:
         description: "Optional: set to 1 to print each template's real audience-country split (manual diagnostic only)"
         required: false
         default: ""
+      reconcile_uploads:
+        description: "Optional: 'list' to show channel videos missing from data/videos.json, or comma-separated IDs (ID or ID:template) to re-register them"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -36,7 +40,15 @@ jobs:
   sync-analytics:
     runs-on: ubuntu-latest
     steps:
+      # ref: main (not the default github.sha) -- real incident 2026-09-22:
+      # a run queued behind another state writer checked out the commit
+      # from when it was QUEUED, ran on stale state.db, and its push hit an
+      # unmergeable binary conflict (a real batch's records were lost).
+      # ref: main checks out whatever main is when this job actually starts,
+      # i.e. after the run ahead of it in the concurrency group pushed.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
@@ -80,11 +92,29 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python -m pipeline.stats --countries
 
+      # Manual repair only: scripts/reconcile_uploads.py diffs the channel's
+      # real uploads against data/videos.json (real incident 2026-09-22:
+      # 3 live videos lost their records). 'list' is a dry run; anything
+      # else is passed as explicit IDs to re-register.
+      - name: Reconcile uploads (optional)
+        if: github.event.inputs.reconcile_uploads != ''
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          RECONCILE: ${{ github.event.inputs.reconcile_uploads }}
+        run: |
+          if [ "$RECONCILE" = "list" ]; then
+            python scripts/reconcile_uploads.py
+          else
+            python scripts/reconcile_uploads.py --apply "$RECONCILE"
+          fi
+
       - name: Commit updated state
         run: |
           git config user.name "faceless-shorts-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add state.db
+          git add state.db data/videos.json
           if git diff --cached --quiet; then
             echo "no state changes to commit"
             exit 0

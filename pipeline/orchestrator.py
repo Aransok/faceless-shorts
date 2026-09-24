@@ -6,9 +6,13 @@ See SPEC.md / ROADMAP.md Phase 9.
 
 from __future__ import annotations
 
+import json
+import os
 import sys
 import time
 import traceback
+from datetime import datetime, timezone
+from pathlib import Path
 
 from pipeline.assemble import assemble
 from pipeline.captions import captions
@@ -61,6 +65,25 @@ from pipeline.voice import voice
 # for real on 2026-09-22 -- but a manual trigger on top of a normal
 # daily run can still exceed it.
 TEMPLATES = ("facts", "sauce_recipe", "weird", "programming", "food", "facts")
+
+# Daily upload cap (2026-09-24). Real incident 2026-09-22: a manual
+# trigger plus the (4h-late) scheduled run each uploaded a full batch the
+# same day; YouTube rejected uploads past ~8 with uploadLimitExceeded, and
+# 2 finished videos were wasted. New videos per UTC day are capped here,
+# counting what's already in data/videos.json, so a second run the same
+# day only makes up the difference (usually zero). DAILY_UPLOAD_CAP
+# overrides it.
+DAILY_UPLOAD_CAP = 6
+VIDEOS_LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "videos.json"
+
+
+def _uploads_today(now: datetime | None = None) -> int:
+    now = now or datetime.now(timezone.utc)
+    if not VIDEOS_LOG_PATH.exists():
+        return 0
+    records = json.loads(VIDEOS_LOG_PATH.read_text(encoding="utf-8"))
+    return sum(1 for r in records if datetime.fromisoformat(r["uploaded_at"]).date() == now.date())
+
 
 # A previous run stopped here (killed, crashed, or just ended) but the
 # video isn't done and isn't waiting on a human — safe to keep driving.
@@ -219,6 +242,12 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
 
     topic_hints = topic_hints or {}
     sequence = templates if templates else [TEMPLATES[i % len(TEMPLATES)] for i in range(count)]
+    cap = int(os.environ.get("DAILY_UPLOAD_CAP", DAILY_UPLOAD_CAP))
+    room = max(0, cap - _uploads_today() - len(resumable_ids))
+    if len(sequence) > room:
+        print(f"daily upload cap: {cap}/day, {_uploads_today()} already uploaded today, "
+              f"{len(resumable_ids)} resumed -- starting {room} of {len(sequence)} new video(s)")
+        sequence = sequence[:room]
     for i, template in enumerate(sequence):
         print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()

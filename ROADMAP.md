@@ -3386,6 +3386,26 @@ winning window, or keep evening if it's inconclusive.
 
 9 new tests. Full suite: 386 passing.
 
+## Fixes for the 2026-09-22 incident: stale checkout, upload cap, lost records (2026-09-24)
+
+- **Stale checkout (root cause of the lost records):** `actions/checkout`
+  defaults to the commit from when a run was *queued*. A run waiting in
+  the `faceless-shorts-state-writer` concurrency group therefore started
+  from a state.db that was already out of date, and its push hit a
+  binary conflict it couldn't resolve. All 6 workflows now check out
+  `ref: main`, so they start from whatever main is when the job
+  actually begins.
+- **Daily upload cap:** `run_daily` trims its batch so the day's total
+  (uploads already logged in data/videos.json today + resumable videos
+  + new ones) stays at or under `DAILY_UPLOAD_CAP` (default 6, can be
+  overridden via env). On 9/22 YouTube started rejecting uploads past
+  ~8 in one day.
+- **Lost records:** `scripts/reconcile_uploads.py` lists channel uploads
+  that are missing from data/videos.json. With `--apply ID[:template],...`
+  it re-registers them in state.db and videos.json, marked
+  `"recovered": true`. You can run it manually through sync-analytics.yml's
+  `reconcile_uploads` input: `list` does a dry run, and IDs apply.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
