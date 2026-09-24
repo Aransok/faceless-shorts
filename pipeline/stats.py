@@ -161,6 +161,52 @@ def fetch_retention_curve(youtube_video_id: str) -> list[dict]:
     ]
 
 
+def fetch_views_by_country(youtube_video_ids: list[str]) -> dict[str, int]:
+    """{country_code: views} summed across the given videos -- the real
+    audience geography behind a set of uploads. Owner question
+    (2026-09-24): is programming's audience outside the US, and so
+    better served by a different publish window than the US-evening one
+    the channel-wide data picked? dimensions=country aggregates across
+    every ID in the filter, so batches are summed rather than joined."""
+    if not youtube_video_ids:
+        return {}
+    creds = _load_credentials()
+    analytics = build("youtubeAnalytics", "v2", credentials=creds)
+    today = datetime.now(timezone.utc).date().isoformat()
+    totals: dict[str, int] = {}
+    for i in range(0, len(youtube_video_ids), _RETENTION_BATCH_SIZE):
+        batch = youtube_video_ids[i : i + _RETENTION_BATCH_SIZE]
+        resp = (
+            analytics.reports()
+            .query(
+                ids="channel==MINE",
+                startDate=_RETENTION_START_DATE,
+                endDate=today,
+                metrics="views",
+                dimensions="country",
+                filters="video==" + ",".join(batch),
+            )
+            .execute()
+        )
+        for country, views in resp.get("rows", []):
+            totals[country] = totals.get(country, 0) + int(views)
+    return totals
+
+
+def _print_country_breakdown() -> None:
+    by_template: dict[str, list[str]] = {}
+    for r in all_uploads():
+        by_template.setdefault(r["template"], []).append(r["youtube_video_id"])
+    for template, ids in sorted(by_template.items()):
+        totals = fetch_views_by_country(ids)
+        total = sum(totals.values())
+        if not total:
+            continue
+        top = sorted(totals.items(), key=lambda kv: -kv[1])[:8]
+        shares = ", ".join(f"{c} {v / total:.0%}" for c, v in top)
+        print(f"{template:16} {len(ids):3} videos, {total:6} views: {shares}")
+
+
 def _fetch_retention_or_empty(youtube_video_ids: list[str]) -> dict[str, dict]:
     """Shared fail-soft wrapper (CLAUDE.md's "fail soft, not hard" rule):
     a token that hasn't been re-authorized with yt-analytics.readonly yet
@@ -243,6 +289,9 @@ if __name__ == "__main__":
     import sys
 
     video_id_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    if video_id_arg == "--countries":
+        _print_country_breakdown()
+        raise SystemExit(0)
     if not video_id_arg:
         uploads = all_uploads()
         if not uploads:
