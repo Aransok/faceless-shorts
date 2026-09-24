@@ -43,6 +43,9 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.plan_veylorn_story_patcher = patch.object(orchestrator, "plan_veylorn_story")
         self.run_video_patcher = patch.object(orchestrator, "run_video_to_completion")
         self.list_by_status_patcher = patch.object(orchestrator, "list_by_status", return_value=[])
+        self.uploads_today_patcher = patch.object(orchestrator, "_uploads_today", return_value=0)
+        self.mock_uploads_today = self.uploads_today_patcher.start()
+        self.addCleanup(self.uploads_today_patcher.stop)
         self.research_patcher = patch.object(orchestrator, "suggest_research_seed", return_value=None)
         self.mock_research = self.research_patcher.start()
         self.addCleanup(self.research_patcher.stop)
@@ -168,6 +171,40 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.assertEqual(call.kwargs.get("topic_hint"), "owner's pick")
         self.assertIsNone(call.kwargs.get("research_seed"))
         self.mock_research.assert_not_called()
+
+    def test_second_run_same_day_only_makes_up_the_difference(self):
+        # Real incident 2026-09-22: manual + scheduled run both uploaded a
+        # full batch and hit YouTube's daily upload limit.
+        self.mock_uploads_today.return_value = 4
+        orchestrator.run_daily(count=6)
+        self.assertEqual(self.mock_plan.call_count, orchestrator.DAILY_UPLOAD_CAP - 4)
+
+    def test_cap_reached_starts_no_new_videos(self):
+        self.mock_uploads_today.return_value = orchestrator.DAILY_UPLOAD_CAP
+        orchestrator.run_daily(count=6)
+        self.mock_plan.assert_not_called()
+
+    def test_resumed_videos_count_against_the_cap(self):
+        with patch.object(orchestrator, "list_by_status") as mock_list:
+            mock_list.side_effect = lambda status: [{"id": "r1"}, {"id": "r2"}] if status == "scripted" else []
+            orchestrator.run_daily(count=6)
+        self.assertEqual(self.mock_plan.call_count, orchestrator.DAILY_UPLOAD_CAP - 2)
+
+    def test_uploads_today_counts_only_the_current_utc_day(self):
+        import json, tempfile
+        from datetime import datetime, timezone
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump([
+                {"uploaded_at": "2026-09-24T18:00:00+00:00"},
+                {"uploaded_at": "2026-09-24T01:00:00+00:00"},
+                {"uploaded_at": "2026-09-23T23:59:00+00:00"},
+            ], f)
+        self.addCleanup(Path(f.name).unlink)
+        self.uploads_today_patcher.stop()
+        with patch.object(orchestrator, "VIDEOS_LOG_PATH", Path(f.name)):
+            n = orchestrator._uploads_today(now=datetime(2026, 9, 24, 20, tzinfo=timezone.utc))
+        self.uploads_today_patcher.start()
+        self.assertEqual(n, 2)
 
     def test_template_with_no_matching_hint_gets_none(self):
         orchestrator.run_daily(count=5, templates=["sauce_recipe"], topic_hints={"facts": "unrelated hint"})
