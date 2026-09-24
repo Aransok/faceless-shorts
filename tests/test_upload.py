@@ -23,7 +23,9 @@ from pipeline.upload import (
     CTA_COMMENT_PROBABILITY,
     _generate_cta_comment,
     _in_publish_window,
+    _next_programming_arm,
     _next_publish_time,
+    _schedule_publish,
     _snap_into_publish_window,
     post_cta_comment,
     upload,
@@ -206,6 +208,61 @@ class PublishWindowTest(unittest.TestCase):
         self._with_log([{"scheduled_publish_at": _utc(24, 21, 0).isoformat()}])
         t = _next_publish_time(now=_utc(24, 18, 0))
         self.assertGreaterEqual(t - _utc(24, 21, 0), timedelta(hours=upload_module.PUBLISH_GAP_MIN_HOURS))
+
+
+
+class ProgrammingTimingExperimentTest(unittest.TestCase):
+    """Owner-approved A/B (2026-09-24): programming alternates between a
+    US-morning slot (12:00-15:30 UTC) and the normal evening window."""
+
+    _with_log = PublishWindowTest._with_log
+
+    def test_first_programming_upload_starts_with_morning(self):
+        self.assertEqual(_next_programming_arm([]), "morning")
+
+    def test_arms_strictly_alternate_from_the_last_programming_upload(self):
+        log = [
+            {"template": "programming", "publish_arm": "morning"},
+            {"template": "facts"},
+        ]
+        self.assertEqual(_next_programming_arm(log), "evening")
+        log.append({"template": "programming", "publish_arm": "evening"})
+        self.assertEqual(_next_programming_arm(log), "morning")
+
+    def test_morning_arm_lands_in_the_next_us_morning(self):
+        self._with_log([])
+        t, arm = _schedule_publish("programming", now=_utc(24, 18, 0))
+        self.assertEqual(arm, "morning")
+        self.assertTrue(_utc(25, 12, 0) <= t <= _utc(25, 15, 30), t.isoformat())
+
+    def test_morning_arm_can_use_today_if_there_is_still_room(self):
+        self._with_log([])
+        t, _ = _schedule_publish("programming", now=_utc(24, 9, 0))
+        self.assertTrue(_utc(24, 12, 0) <= t <= _utc(24, 15, 30), t.isoformat())
+
+    def test_evening_arm_uses_the_normal_window(self):
+        self._with_log([{"template": "programming", "publish_arm": "morning"}])
+        t, arm = _schedule_publish("programming", now=_utc(24, 18, 0))
+        self.assertEqual(arm, "evening")
+        self.assertTrue(_in_publish_window(t))
+
+    def test_other_templates_never_get_an_arm(self):
+        self._with_log([])
+        t, arm = _schedule_publish("facts", now=_utc(24, 18, 0))
+        self.assertIsNone(arm)
+        self.assertTrue(_in_publish_window(t))
+
+    def test_a_morning_scheduled_video_does_not_push_tonights_batch_to_tomorrow(self):
+        # Real bug this guards against: evening spacing used the latest
+        # future publish time of ANY kind, so tomorrow-morning's
+        # programming slot would drag tonight's remaining videos to
+        # tomorrow night.
+        self._with_log([
+            {"scheduled_publish_at": _utc(24, 21, 0).isoformat()},
+            {"template": "programming", "publish_arm": "morning", "scheduled_publish_at": _utc(25, 13, 0).isoformat()},
+        ])
+        t = _next_publish_time(now=_utc(24, 18, 0))
+        self.assertTrue(_utc(24, 22, 0) <= t <= _utc(24, 22, 30), t.isoformat())
 
 
 if __name__ == "__main__":

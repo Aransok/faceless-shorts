@@ -152,23 +152,75 @@ def _snap_into_publish_window(t: datetime) -> datetime:
     return opening + timedelta(minutes=random.uniform(0, 30))
 
 
+def _load_upload_log() -> list[dict]:
+    return json.loads(VIDEOS_LOG_PATH.read_text(encoding="utf-8")) if VIDEOS_LOG_PATH.exists() else []
+
+
 def _next_publish_time(now: datetime | None = None) -> datetime:
     """A random gap after the latest already-scheduled-but-not-yet-public
-    video in the log (or after now, if none is pending), snapped into
-    the publish window -- keeps a batch spread out rather than clustered,
-    keeps spacing correct across separate daily runs, and never lands a
-    video in the hours this channel's real data says are dead."""
+    evening-window video in the log (or after now, if none is pending),
+    snapped into the publish window -- keeps a batch spread out rather
+    than clustered, keeps spacing correct across separate daily runs, and
+    never lands a video in the hours this channel's real data says are
+    dead. Only evening-window slots count as the base: a programming
+    video scheduled into the next MORNING (see the experiment below)
+    would otherwise push the rest of tonight's batch to tomorrow night."""
     now = now or datetime.now(timezone.utc)
-    records = json.loads(VIDEOS_LOG_PATH.read_text(encoding="utf-8")) if VIDEOS_LOG_PATH.exists() else []
     future_times = [
         t
-        for r in records
+        for r in _load_upload_log()
         if r.get("scheduled_publish_at")
         and (t := datetime.fromisoformat(r["scheduled_publish_at"])) > now
+        and _in_publish_window(t)
     ]
     base = max(future_times) if future_times else now
     gap_hours = random.uniform(PUBLISH_GAP_MIN_HOURS, PUBLISH_GAP_MAX_HOURS)
     return _snap_into_publish_window(base + timedelta(hours=gap_hours))
+
+
+# Programming publish-time experiment (owner-approved 2026-09-24; evaluate
+# from ~2026-10-08). Programming's audience is 93% US (real Analytics
+# country data), and its early data was split: 4 of its top 6 went public
+# 12:00-16:00 UTC (US morning -- developers before work), but so did 2 of
+# its worst 3, and its two best went public in US evening. Six videos is
+# a coin flip, so each programming upload now alternates between a US
+# morning slot and the normal evening window, and records which arm it
+# used ("publish_arm" in data/videos.json) so the two can be compared on
+# real views once each arm has ~7 videos.
+PROGRAMMING_MORNING_START_HOUR_UTC = 12
+PROGRAMMING_MORNING_HOURS = 3.5  # 12:00-15:30 UTC = 8:00-11:30 US Eastern
+_MORNING_MIN_LEAD_HOURS = 1.0
+
+
+def _next_programming_arm(records: list[dict]) -> str:
+    """Strict alternation from the last programming upload that actually
+    succeeded (the log is only written after a successful upload, so a
+    failed one can't skew the balance)."""
+    arms = [r["publish_arm"] for r in records if r.get("template") == "programming" and r.get("publish_arm")]
+    return "evening" if arms and arms[-1] == "morning" else "morning"
+
+
+def _next_morning_slot(now: datetime) -> datetime:
+    earliest = now + timedelta(hours=_MORNING_MIN_LEAD_HOURS)
+    start = earliest.replace(hour=PROGRAMMING_MORNING_START_HOUR_UTC, minute=0, second=0, microsecond=0)
+    end = start + timedelta(hours=PROGRAMMING_MORNING_HOURS)
+    if end <= earliest:
+        start += timedelta(days=1)
+        end += timedelta(days=1)
+    lo = max(start, earliest)
+    return lo + timedelta(seconds=random.uniform(0, (end - lo).total_seconds()))
+
+
+def _schedule_publish(template: str, now: datetime | None = None) -> tuple[datetime, str | None]:
+    """(publish time, experiment arm or None). Only programming is part of
+    the timing experiment; every other template uses the evening window."""
+    now = now or datetime.now(timezone.utc)
+    if template != "programming":
+        return _next_publish_time(now=now), None
+    arm = _next_programming_arm(_load_upload_log())
+    if arm == "morning":
+        return _next_morning_slot(now), arm
+    return _next_publish_time(now=now), arm
 
 
 def _build_upload_body(video: dict, visibility: str, scheduled_publish_at: datetime | None) -> dict:
@@ -200,7 +252,9 @@ def update_remote_metadata(video_id: str) -> None:
     youtube.videos().update(part="snippet", body=body).execute()
 
 
-def _log_uploaded_video(video: dict, youtube_video_id: str, scheduled_publish_at: datetime | None) -> None:
+def _log_uploaded_video(
+    video: dict, youtube_video_id: str, scheduled_publish_at: datetime | None, publish_arm: str | None = None
+) -> None:
     """Appends one record to data/videos.json — video ID, upload
     timestamp, template, and approach tag — feeding the weekly stats job
     (ROADMAP.md Phase 10 #4) once enough videos/time have accumulated.
@@ -218,6 +272,7 @@ def _log_uploaded_video(video: dict, youtube_video_id: str, scheduled_publish_at
             "template": video["template"],
             "approach": video["approach"],
             "scheduled_publish_at": scheduled_publish_at.isoformat() if scheduled_publish_at else None,
+            **({"publish_arm": publish_arm} if publish_arm else {}),
         }
     )
     VIDEOS_LOG_PATH.write_text(json.dumps(records, indent=2), encoding="utf-8")
@@ -236,7 +291,9 @@ def upload(video_id: str) -> str:
     visibility = os.environ.get("UPLOAD_VISIBILITY", "private")
     if visibility not in VALID_VISIBILITY:
         raise ValueError(f"invalid UPLOAD_VISIBILITY {visibility!r}, expected one of {VALID_VISIBILITY}")
-    scheduled_publish_at = _next_publish_time() if visibility == "scheduled" else None
+    scheduled_publish_at, publish_arm = (
+        _schedule_publish(video["template"]) if visibility == "scheduled" else (None, None)
+    )
 
     creds = _load_credentials()
     youtube = build("youtube", "v3", credentials=creds)
@@ -248,7 +305,7 @@ def upload(video_id: str) -> str:
     youtube_video_id = response["id"]
 
     update_video(video_id, status="uploaded", youtube_video_id=youtube_video_id)
-    _log_uploaded_video(video, youtube_video_id, scheduled_publish_at)
+    _log_uploaded_video(video, youtube_video_id, scheduled_publish_at, publish_arm)
 
     try:
         upload_thumbnail(video_id, youtube)

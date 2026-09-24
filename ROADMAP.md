@@ -3354,6 +3354,38 @@ consistent with the US-evening publish window shipped earlier today.
 9 new tests (`tests/test_new_templates.py` new; orchestrator, upload,
 research tests extended). Full suite: 377 passing.
 
+## Programming audience check + publish-time experiment (2026-09-24)
+
+Owner hunch: some programming Shorts did well, maybe its audience isn't
+US-time. Checked with real YouTube Analytics country data (new
+`fetch_views_by_country()` in `pipeline/stats.py`, run via
+sync-analytics.yml's manual `debug_country_breakdown` input):
+programming 93% US (4,565 views), facts 82%, sauce_recipe 74%.
+Programming is the MOST US-concentrated format -- the "non-US audience"
+premise doesn't hold.
+
+What the data does hint at is US MORNING: 4 of programming's top 6 went
+public 12:00-16:00 UTC (8am-noon Eastern -- plausible for developers
+before work), but 2 of its worst 3 did too, and its two best went public
+in US evening. n=6 is a coin flip, so rather than move it, the owner
+approved an A/B: `pipeline/upload.py`'s `_schedule_publish()` now
+alternates each programming upload between a 12:00-15:30 UTC slot
+("morning") and the normal evening window ("evening"), strictly, keyed
+off the last successful programming upload's `publish_arm` recorded in
+data/videos.json (so a failed upload can't skew the balance). Every
+other template is unaffected.
+
+Real bug avoided while wiring it: evening spacing keyed off the latest
+future publish time of any kind, so a next-morning programming slot would
+have pushed the rest of that evening's batch to the following night.
+Evening spacing now only considers evening-window slots.
+
+**Evaluate from ~2026-10-08** (~7 videos per arm): compare real views
+(measured at similar ages) by `publish_arm`; move programming to the
+winning window, or keep evening if it's inconclusive.
+
+9 new tests. Full suite: 386 passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
