@@ -3240,6 +3240,78 @@ pipeline starts working, not just before the final commit; or moving
 away from committing a binary SQLite file from CI entirely), not a
 quick patch bolted onto this incident's cleanup.
 
+## Growth review: publish window, topic looping, fresh-topic research (2026-09-24)
+
+Owner: views look bad, some under 100, "we won't get the 10 mil for 90
+days", and "I feel like we are looping through the same list of
+topics". Pulled the real synced data (67 Shorts, views measured 2-14
+days after publish) rather than guessing.
+
+**Where the channel actually is.** 36,463 total Shorts views; median
+per video ~400-700 depending on week, not "under 100" -- but roughly 1
+in 6 videos does land under 100, and no video has ever broken ~1,400.
+Distribution is bimodal (either ~1,000 or ~100-300), i.e. every video
+gets YouTube's initial test audience and none has been pushed past it.
+~2,300 views/day against the Shorts YPP thresholds (per multiple 2026
+sources: 10M Shorts views/90 days + 1,000 subs for ad revenue; 3M/90
+days + 500 subs for the lower fan-funding tier) is roughly 50x short of
+10M and 15x short of 3M. Those thresholds are reached by a handful of
+breakout videos, not by lifting the median -- so the levers below are
+about giving more videos a real shot at breaking out, not a promise of
+hitting 10M. (One aggregated source claimed the thresholds rise to 20M
+in 2027; couldn't verify it against YouTube's own page -- blocked from
+this sandbox -- so it's noted, not relied on.)
+
+**Findings that held up to confound checks:**
+- Publish hour: 00:00-04:00 UTC (US evening) median ~1,000 views vs.
+  04:00-12:00 UTC (US overnight) ~200, still true restricted to videos
+  measured at 7+ days old, and within facts and programming
+  separately. The old "2-4h random gap after the last one" scheduling
+  pushed the 4th/5th video of every ~18:00 UTC batch straight into the
+  dead window. -> `pipeline/upload.py` now snaps every publish time
+  into 20:00-04:00 UTC (the two best buckets), with 1.25-1.75h gaps so
+  a 5-video batch fits one window; overflow goes to the next evening,
+  never into dead hours.
+- Template: sauce_recipe (median ~950) and facts (~780) still run 2.5-3x
+  programming (~310) -- same as every earlier review.
+- Daily volume: days with 6-9 uploads had lower medians than days with
+  2-4, but that's confounded with other changes over the same period;
+  logged as a signal, not acted on.
+- `fast_cuts` approach median ~900 vs `storytelling_hook` ~380, but n=5
+  -- too small to act on yet; the weekly approach rotation will keep
+  collecting it.
+
+**Topic looping -- confirmed, worst in programming.** Five exact
+repeats uploaded within ~9 days of the original (mutable default args,
+CPython small-int cache, SQL NOT IN + NULL, C array-to-pointer decay,
+Rust debug/release overflow), plus sauce_recipe circling back to pan
+sauces five times. Cause: the LLM reaches for the same ~30 famous
+examples, and the avoid-list only covered the last 25 topic labels, so
+older ones aged out and came back.
+- `pipeline/plan.py`: `TOPIC_HISTORY_LIMIT = 150` -- the topic-label
+  avoid-list now covers a template's whole history (labels are ~8
+  words; beat summaries stay on the 25-video window).
+- `pipeline/research.py` (new): fresh candidates from real, current,
+  free sources before planning, owner's own ask ("make a quick research
+  or something and post new cool things"). facts: Wikipedia "Did you
+  know" hooks (Wikipedia:Recent additions -- editor-verified surprising
+  facts about brand-new articles, dozens per week). sauce_recipe:
+  Wikipedia Category:Sauces minus anything already in this channel's
+  past scripts. Offered candidates are recorded in phrase_usage.json
+  and never offered again. plan() receives them as a soft menu
+  (`_research_seed_block`), not a required topic -- DYK hooks vary a lot
+  in general-audience appeal, so the model can skip weak ones. A manual
+  topic hint still always wins. Fails soft to normal planning on any
+  error; `ENABLE_RESEARCH_TOPICS=0` turns it off. programming has no
+  research source yet (nothing free maps cleanly onto "a real gotcha").
+- Not verifiable from this sandbox (Wikipedia is egress-blocked here,
+  though reachable from CI -- the real-image beat already uses
+  Wikimedia from CI). The first real daily run's log will show
+  `[research] facts: offering ...` or the fail-soft message.
+
+23 new tests (`tests/test_research.py` new; `tests/test_upload.py`,
+`tests/test_orchestrator.py` extended). Full suite: 368 passing.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

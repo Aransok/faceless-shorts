@@ -20,6 +20,7 @@ from pipeline.plan_quiz import plan_quiz
 from pipeline.plan_veylorn import plan_veylorn_story
 from pipeline.render_family_game import render_family_game_night
 from pipeline.render_veylorn import render_veylorn_story
+from pipeline.research import suggest_research_seed
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
 from pipeline.visuals_code import visuals_code
@@ -235,7 +236,11 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
                 # by the normal daily rotation.
                 video_id = plan_veylorn_story()
             else:
-                video_id = plan(template, topic_hint=topic_hints.get(template))
+                # A manual hint is a deliberate owner choice and always
+                # wins; research only fills in when there isn't one.
+                topic_hint = topic_hints.get(template)
+                research_seed = None if topic_hint else suggest_research_seed(template)
+                video_id = plan(template, topic_hint=topic_hint, research_seed=research_seed)
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"
             print(f"plan() failed for {template}: {error_message}")

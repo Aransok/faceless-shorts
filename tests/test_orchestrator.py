@@ -43,6 +43,9 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.plan_veylorn_story_patcher = patch.object(orchestrator, "plan_veylorn_story")
         self.run_video_patcher = patch.object(orchestrator, "run_video_to_completion")
         self.list_by_status_patcher = patch.object(orchestrator, "list_by_status", return_value=[])
+        self.research_patcher = patch.object(orchestrator, "suggest_research_seed", return_value=None)
+        self.mock_research = self.research_patcher.start()
+        self.addCleanup(self.research_patcher.stop)
         self.mock_plan = self.plan_patcher.start()
         self.mock_plan_game_night = self.plan_game_night_patcher.start()
         self.mock_plan_family_game_night = self.plan_family_game_night_patcher.start()
@@ -56,7 +59,7 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.addCleanup(self.run_video_patcher.stop)
         self.addCleanup(self.list_by_status_patcher.stop)
 
-        self.mock_plan.side_effect = lambda template, topic_hint=None: f"vid-{template}"
+        self.mock_plan.side_effect = lambda template, **kwargs: f"vid-{template}"
         self.mock_plan_game_night.side_effect = lambda: "vid-game_night"
         self.mock_plan_family_game_night.side_effect = lambda: "vid-family_game_night"
         self.mock_plan_veylorn_story.side_effect = lambda: "vid-veylorn_story"
@@ -134,6 +137,21 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         calls = {c.args[0]: c.kwargs.get("topic_hint") for c in self.mock_plan.call_args_list}
         self.assertEqual(calls["facts"], "the bone collector caterpillar")
         self.assertEqual(calls["programming"], "vibecoding bugs")
+
+    def test_research_seed_passed_when_no_manual_hint(self):
+        self.mock_research.side_effect = lambda template: f"seed for {template}"
+        orchestrator.run_daily(count=1, templates=["facts"])
+        call = self.mock_plan.call_args_list[0]
+        self.assertEqual(call.kwargs.get("research_seed"), "seed for facts")
+        self.assertIsNone(call.kwargs.get("topic_hint"))
+
+    def test_manual_hint_wins_and_research_is_never_called(self):
+        self.mock_research.side_effect = lambda template: f"seed for {template}"
+        orchestrator.run_daily(count=1, templates=["facts"], topic_hints={"facts": "owner's pick"})
+        call = self.mock_plan.call_args_list[0]
+        self.assertEqual(call.kwargs.get("topic_hint"), "owner's pick")
+        self.assertIsNone(call.kwargs.get("research_seed"))
+        self.mock_research.assert_not_called()
 
     def test_template_with_no_matching_hint_gets_none(self):
         orchestrator.run_daily(count=5, templates=["sauce_recipe"], topic_hints={"facts": "unrelated hint"})

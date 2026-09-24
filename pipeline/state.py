@@ -495,6 +495,23 @@ def recent_beats(template: str, limit_videos: int = 15, db_path: Path = DB_PATH)
     return summaries
 
 
+def all_script_text(template: str, db_path: Path = DB_PATH) -> str:
+    """Every narration beat ever written for `template`, joined and
+    lowercased -- for a cheap "has this channel already covered X?"
+    substring check (pipeline/research.py), across all history rather
+    than recent_beats()'s windowed, truncated summaries."""
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT vs.script_text FROM video_steps vs
+            JOIN videos v ON v.id = vs.video_id
+            WHERE v.template = ?
+            """,
+            (template,),
+        ).fetchall()
+    return "\n".join(row["script_text"] or "" for row in rows).lower()
+
+
 _STOCK_FOOTAGE_TEMPLATES = ("facts", "sauce_recipe")
 
 

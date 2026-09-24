@@ -34,6 +34,15 @@ def _record_recent(slot: str, value: str, limit: int) -> None:
     ROTATION_LOG_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def used_values(slot: str) -> list[str]:
+    return _load_recent(slot)
+
+
+def mark_used(slot: str, values: list[str], limit: int) -> None:
+    for value in values:
+        _record_recent(slot, value, limit)
+
+
 def pick_rotating(slot: str, pool: list[str], limit: int) -> str:
     """Random pick from pool, preferring items not used in the slot's last
     `limit` picks. Falls back to the full pool if every candidate has been

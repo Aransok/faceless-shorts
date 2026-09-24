@@ -55,6 +55,18 @@ TEMPLATES = {
 # extra words in the avoid-list per generation call) -- worth it against
 # a real, observed repeat, not a hypothetical one.
 RECENT_TOPICS_LIMIT = 25
+
+# Topic LABELS (not item summaries) now cover a template's whole history
+# (2026-09-24). Real looping found in production: with a 25-topic window,
+# programming re-uploaded the same famous gotchas once they aged out --
+# mutable default args (9/7 + 9/15), CPython small-int cache (9/7 + 9/16),
+# SQL NOT IN + NULL (9/9 + 9/19), C array-to-pointer decay (9/6 + 9/15),
+# Rust debug/release overflow (9/6 + 9/14). The LLM keeps reaching for the
+# same ~30 textbook gotchas; only the full list stops it. A label is ~8
+# words, so even 150 of them is a few hundred prompt tokens -- unlike
+# recent_beats(), which stays on RECENT_TOPICS_LIMIT because each beat
+# summary is ~15 words x 3 per video.
+TOPIC_HISTORY_LIMIT = 150
 VALID_STEP_COUNTS = (2, 3, 4)
 
 # Phase 17: authenticity review pass (pipeline/review_script.py). Up to
@@ -517,12 +529,37 @@ def _topic_hint_block(topic_hint: str) -> str:
     )
 
 
-def plan(template: str, topic_hint: str | None = None) -> str:
+def _research_seed_block(research_seed: str) -> str:
+    """Appended when pipeline/research.py found fresh, real candidates
+    (e.g. Wikipedia's "Did you know" hooks) and no manual topic hint was
+    given. Softer than _topic_hint_block(): a menu to pick from, not a
+    required subject -- research candidates vary a lot in how interesting
+    they are to a general audience, so the model keeps the right to skip
+    all of them rather than being forced onto a dull one."""
+    return (
+        "\n\nFRESH TOPIC CANDIDATES (researched today from a real, current "
+        "source -- this channel has not covered these yet):\n"
+        f"{research_seed}\n\n"
+        "Strongly prefer building this video around one of these over "
+        "anything from your own general knowledge -- this channel's real "
+        "problem is repeating the same famous examples everyone has seen. "
+        "Pick the candidate that is most genuinely surprising to a broad, "
+        "non-specialist audience; skip niche sports stats, local politics, "
+        "and anything that only makes sense with background knowledge. "
+        "Only state facts you can stand behind -- a candidate's framing is a "
+        "starting point, not something to repeat unchecked. If none of them "
+        "would make a genuinely strong Short, ignore this list entirely and "
+        "pick your own topic (still avoiding everything in the avoid lists "
+        "above).\n"
+    )
+
+
+def plan(template: str, topic_hint: str | None = None, research_seed: str | None = None) -> str:
     if template not in TEMPLATES:
         raise ValueError(f"unknown template: {template!r} (expected {sorted(TEMPLATES)})")
 
     prompt_body = TEMPLATES[template].read_text(encoding="utf-8")
-    avoid = recent_topics(template, limit=RECENT_TOPICS_LIMIT)
+    avoid = recent_topics(template, limit=TOPIC_HISTORY_LIMIT)
     prompt = prompt_body.replace("{avoid_topics}", ", ".join(avoid) if avoid else "(none yet)")
     # facts/sauce_recipe are both 3-item-per-video templates -- see
     # recent_beats()'s docstring for the real overlap bug (two
@@ -538,6 +575,8 @@ def plan(template: str, topic_hint: str | None = None) -> str:
 
     if topic_hint:
         prompt += _topic_hint_block(topic_hint)
+    elif research_seed:
+        prompt += _research_seed_block(research_seed)
 
     style = pick_style()
     prompt += style_guidance_block(style)
