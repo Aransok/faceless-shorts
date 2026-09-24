@@ -50,6 +50,15 @@ class ParseDykHooksTest(unittest.TestCase):
         self.assertFalse(any("John Smith" in h for h in hooks), "34-char hook is below the minimum")
         self.assertFalse(any("main page" in h.lower() for h in hooks))
 
+    def test_accepts_unicode_and_spaced_ellipsis(self):
+        html = (
+            "<ul><li>\u2026 that the oldest known recipe for beer is written as a hymn to a goddess?</li>"
+            "<li>. . . that a lighthouse in Wales was lit by candles until the nineteen-twenties?</li></ul>"
+        )
+        hooks = research.parse_dyk_hooks(html)
+        self.assertEqual(len(hooks), 2)
+        self.assertTrue(hooks[0].startswith("the oldest known recipe"))
+
     def test_empty_html_gives_no_hooks(self):
         self.assertEqual(research.parse_dyk_hooks(""), [])
 
