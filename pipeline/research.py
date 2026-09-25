@@ -152,22 +152,19 @@ def _format_seed(template: str, picks: list[str]) -> str:
     if template == "facts":
         return (
             "Real facts from Wikipedia's 'Did you know' section (each is about "
-            "a newly written, editor-reviewed article). Anchor one of the three "
-            "facts on the strongest of these, and let the connecting theme grow "
-            f"from it:\n{lines}"
+            "a newly written, editor-reviewed article). Build today's one fact "
+            f"on the strongest of these:\n{lines}"
         )
     if template == "food":
         return (
             "Real cooking techniques from Wikipedia this channel has never "
-            "covered. Build at least one of today's three items around one "
-            "you can explain accurately (the real why + what to do), and let "
-            f"the connecting theme grow from it:\n{lines}"
+            "covered. Build today's video around one you can explain "
+            f"accurately (the real why + what to do):\n{lines}"
         )
     return (
         "Real sauces from Wikipedia's list of sauces that this channel has "
-        "never made. Build at least one of today's three sauces around one "
-        "you know a real, accurate recipe for, and let the connecting theme "
-        f"grow from it:\n{lines}"
+        "never made. Build today's video around one you know a real, "
+        f"accurate recipe for:\n{lines}"
     )
 
 

@@ -53,7 +53,11 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 # "programming" (visuals_code.py already has its own deliberate two-stage
 # fade-to-blank between steps) or "quiz_longform" (its own
 # COUNTDOWN_SECONDS pause system).
-BEAT_PAUSE_SECONDS = 3.5
+# Cut from 3.5s to 0.6s 2026-09-25: videos are now ONE subject in three
+# beats (~22s), so beats are parts of one story, not separate items that
+# need a hard break -- and 7s of silence per video is exactly where
+# viewers swipe away (real data: they left at ~20s regardless of length).
+BEAT_PAUSE_SECONDS = 0.6
 _PAUSED_TEMPLATES = {"facts", "sauce_recipe", "weird", "food"}
 
 # game_night: gameplay/reveal/countdown/suspense beats show a real

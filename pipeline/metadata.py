@@ -163,7 +163,7 @@ def _enforce_limits(title: str, description: str, tags: str) -> tuple[str, str, 
 
 def _format_sauce_scripts(video_id: str) -> str:
     steps = get_video_steps(video_id)
-    return "\n".join(f"Sauce {step['step_index']}: {step['script_text']}" for step in steps)
+    return "\n".join(f"Beat {step['step_index']}: {step['script_text']}" for step in steps)
 
 
 def _append_full_story(description: str, script_text: str) -> str:

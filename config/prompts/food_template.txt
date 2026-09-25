@@ -1,8 +1,8 @@
-You are writing the script for a 45-second YouTube Short covering THREE
-real, useful food insights -- kitchen science, techniques, storage,
-ingredient swaps, or quick dishes -- spoken fast enough to fit three in
-one video. This channel already has a separate "Sauce Secrets" series,
-so this one is about everything in the kitchen EXCEPT sauces.
+You are writing the script for a 20-25 second YouTube Short about ONE
+real, useful food insight -- kitchen science, a technique, storage, an
+ingredient swap, or a quick dish. This channel already has a separate
+"Sauce Secrets" series, so this one is about everything in the kitchen
+EXCEPT sauces.
 
 Avoid these topics (already covered recently): {avoid_topics}
 
@@ -12,30 +12,27 @@ theme): {avoid_items}
 Requirements:
 - NO sauces, dressings, dips, or condiments as a main item -- those
   belong to the Sauce Secrets series.
-- Pick THREE items that share a real connecting theme -- not a random
-  grab-bag. The connection can be loose ("foods you've been storing
-  wrong", "cheap swaps that beat the expensive version", "the science
-  of why your X comes out soggy") but it must be real and felt.
-  - BAD (no connection): one bread tip, one steak tip, one smoothie tip.
-  - GOOD (real connecting angle -- "things your fridge is quietly
-    ruining"): tomatoes losing flavor below 12°C, bread going stale
-    faster in the fridge than on the counter, onions softening next to
-    potatoes -- each landing the same "you've been doing this wrong"
-    feeling.
-- Each item gets ~35-45 words and must include BOTH the real "why"
-  (the actual science or cause, stated plainly) AND something the viewer
-  can actually do today -- a real quantity, temperature, or time where
-  it matters, not a vague gesture.
+- Pick ONE specific insight and give it three beats:
+  - Beat 1 (~15-20 words): the payoff (see the first-line rule below).
+  - Beat 2 (~20-25 words): the real "why" -- the actual science or
+    cause, stated plainly.
+  - Beat 3 (~15-20 words): what to do about it today -- a real
+    quantity, temperature, or time where it matters -- or a genuine
+    reaction. Still about THIS insight; no generic wrap-up.
 - Only state things you're confident are true. Common kitchen myths
   (searing "seals in juices", oil in pasta water stops sticking, etc.)
   may only appear as myths being corrected, never stated as fact.
-- At least ONE of the three items MUST carry a genuine opinion or
-  reaction beyond stating the tip -- same non-negotiable rule as the rest
-  of the channel. Don't let all three flatten into a read-aloud tip list.
-- Total SCRIPT length across all three items: 120-155 words, spoken in
-  45-60 seconds. edge_tts paces close to ~2.6 words/sec, so aim for the
-  lower half. Conversational, no filler, no "did you know" openers, no
-  numbering out loud.
+- At least one beat MUST carry a genuine opinion or reaction beyond
+  stating the tip -- same non-negotiable rule as the rest of the channel.
+- Total SCRIPT length across all three beats: 50-65 words -- a HARD
+  limit, spoken in about 20-25 seconds (edge_tts paces ~2.6 words/sec).
+  Why so short (2026-09-25): real channel data -- viewers left at ~20s
+  no matter how long the video was (45-50s videos averaged 35-47%
+  watched), and YouTube stops pushing a Short past its ~1,000-view test
+  audience when most viewers leave early. A 22s video watched for 20s
+  is nearly complete, and replays count.
+  Conversational, no filler, no "did you know" openers, no numbering
+  out loud, no "subscribe"/"follow" lines.
 - The very first line must lead with the PAYOFF -- the concrete,
   specific surprise, stated directly -- not scene-setting and not a
   generic tease like "this will change how you cook" that could be
@@ -45,13 +42,13 @@ Requirements:
   - GOOD (payoff-first, concrete): "Your fridge is making your tomatoes
     taste like water -- below 12°C they stop producing the compounds
     that make them taste like anything."
-- For each item, act as the visual director -- the viewer wants to see
+- For each beat, act as the visual director -- the viewer wants to see
   the actual food or kitchen action being described, not generic
   kitchen filler. Give:
   - SUBJECT: the food and its defining action in 2-5 words (e.g. "tomatoes
     in fridge", "bread going stale").
   - EXACT_QUERIES: 2-3 comma-separated queries for the exact food/action
-    in THAT item (e.g. "slicing ripe tomato close up").
+    in THAT beat (e.g. "slicing ripe tomato close up").
   - REPRESENTATION_QUERIES: 2-3 comma-separated queries for a close
     stand-in -- same food or a visually similar action.
   - CONCEPT_QUERIES: 0-2 comma-separated queries for a broader supporting
@@ -63,19 +60,19 @@ Output EXACTLY in this format, with no extra commentary before or after.
 The field names say FACT_N -- kept as-is because this reuses the same
 parser as the facts template:
 
-TOPIC: <5-8 word label covering the set, distinct from the avoid list>
-HOOK: <one sentence -- the strongest payoff/surprise across the three, used later as the video title>
-FACT_1_SCRIPT: <~35-45 word narration for item 1 -- the why + what to do>
+TOPIC: <5-8 word label naming the one insight, distinct from the avoid list>
+HOOK: <one sentence -- the payoff/surprise, used later as the video title>
+FACT_1_SCRIPT: <~15-20 word narration for beat 1 -- the payoff>
 FACT_1_SUBJECT: <food + defining action, 2-5 words>
 FACT_1_EXACT_QUERIES: <2-3 comma-separated queries>
 FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
 FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">
-FACT_2_SCRIPT: <~35-45 word narration for item 2 -- the why + what to do>
+FACT_2_SCRIPT: <~20-25 word narration for beat 2 -- the why>
 FACT_2_SUBJECT: <food + defining action, 2-5 words>
 FACT_2_EXACT_QUERIES: <2-3 comma-separated queries>
 FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
 FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">
-FACT_3_SCRIPT: <~35-45 word narration for item 3 -- the why + what to do>
+FACT_3_SCRIPT: <~15-20 word narration for beat 3 -- what to do>
 FACT_3_SUBJECT: <food + defining action, 2-5 words>
 FACT_3_EXACT_QUERIES: <2-3 comma-separated queries>
 FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries>

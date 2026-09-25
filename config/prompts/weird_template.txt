@@ -1,4 +1,4 @@
-You are writing the script for a 45-second YouTube Short in the "Things
+You are writing the script for a 20-25 second YouTube Short in the "Things
 You Didn't Know" series: ONE everyday thing the viewer has seen a
 thousand times, and the real, surprising reason behind it -- not three
 separate facts. Think "the hidden reason your everyday world looks the
@@ -23,7 +23,7 @@ Requirements:
   as fact (if the real story is that a common explanation is a myth,
   say that plainly -- that can be the whole payoff). If the true origin
   is disputed, say so rather than picking one version as settled.
-- Three beats, each ~35-45 words:
+- Three beats, each ~15-25 words:
   - Beat 1: the everyday thing + the surprising claim about it, stated
     as the payoff (see the first-line rule below).
   - Beat 2: the real reason -- the actual history, mechanism, or design
@@ -39,9 +39,13 @@ Requirements:
   that would fit any topic ("It's weird how the things that work never
   feel broken enough to change") -- the review step rejects those, and
   one killed the first real weird video (2026-09-24).
-- Total SCRIPT length across all three beats: 110-145 words, spoken in
-  40-55 seconds. edge_tts paces close to ~2.6 words/sec, so aim for the
-  lower half. Conversational, no filler, no "did you know" openers, no
+- Total SCRIPT length across all three beats: 50-65 words -- a HARD
+  limit, spoken in about 20-25 seconds (edge_tts paces ~2.6 words/sec).
+  Why so short (2026-09-25): real channel data -- viewers left at ~20s
+  no matter how long the video was (45-50s videos averaged 35-47%
+  watched), and YouTube stops pushing a Short past its ~1,000-view test
+  audience when most viewers leave early. A 22s video watched for 20s
+  is nearly complete, and replays count. Conversational, no filler, no "did you know" openers, no
   numbering out loud.
 - The very first line must lead with the PAYOFF -- the concrete,
   specific surprising thing, stated directly -- not a scene-setting
@@ -72,17 +76,17 @@ subject:
 
 TOPIC: <5-8 word label naming the one everyday subject, distinct from the avoid list>
 HOOK: <one sentence -- the payoff-first surprising claim, used later as the video title>
-FACT_1_SCRIPT: <~35-45 word narration for beat 1>
+FACT_1_SCRIPT: <~15-25 word narration for beat 1>
 FACT_1_SUBJECT: <exact subject shown in beat 1, 2-5 words>
 FACT_1_EXACT_QUERIES: <2-3 comma-separated queries>
 FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
 FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">
-FACT_2_SCRIPT: <~35-45 word narration for beat 2>
+FACT_2_SCRIPT: <~15-25 word narration for beat 2>
 FACT_2_SUBJECT: <exact subject shown in beat 2, 2-5 words>
 FACT_2_EXACT_QUERIES: <2-3 comma-separated queries>
 FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries>
 FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries, or "none">
-FACT_3_SCRIPT: <~35-45 word narration for beat 3>
+FACT_3_SCRIPT: <~15-25 word narration for beat 3>
 FACT_3_SUBJECT: <exact subject shown in beat 3, 2-5 words>
 FACT_3_EXACT_QUERIES: <2-3 comma-separated queries>
 FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries>

@@ -461,8 +461,8 @@ def _duplicate_item_feedback(template: str, parsed: dict) -> str | None:
     i, j = pair
     return (
         f"Items {i + 1} and {j + 1} open with the same technique/phrase as each "
-        "other -- rewrite so all three items are clearly distinct from ONE "
-        "ANOTHER, not just distinct from past videos:\n"
+        "other -- rewrite so each beat opens differently from the others, "
+        "not just distinct from past videos:\n"
         f"  item {i + 1}: {items[i]}\n"
         f"  item {j + 1}: {items[j]}"
     )
