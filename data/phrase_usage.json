@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Three seconds, one wild fact:",
-    "Here's the fact, no buildup:",
-    "Straight to it:",
-    "This'll take ten seconds and it's worth it:",
-    "This one's short and it's a lot:",
-    "Quick one:",
     "Here's a fact that'll ruin your day, in a good way:",
     "Fast fact:",
     "Here's your fact for the day:",
@@ -14,15 +8,15 @@
     "Here's something you'll repeat to someone today:",
     "One thing before you scroll:",
     "One fact, zero fluff:",
-    "Quick hit:"
+    "Quick hit:",
+    "Skip the intro, here's the point:",
+    "Three seconds, one wild fact:",
+    "Here's the fact, no buildup:",
+    "Ten seconds, one genuinely wild fact:",
+    "Straight to it:",
+    "You have ten seconds, here's the fact:"
   ],
   "script_structures": [
-    "Structure it as claim, quick evidence, quick close.",
-    "Front-load the payoff, spend the rest of the time justifying it.",
-    "One sentence of setup max, then the payoff.",
-    "One fact, one twist, done.",
-    "Compress the whole idea into two beats: claim, then proof.",
-    "Lead with the number or stat, then explain it in one breath.",
     "No warmup \u2014 open directly on the strangest detail.",
     "Say the wildest part first, everything else is just support.",
     "One idea, delivered fast, no tangents.",
@@ -31,15 +25,15 @@
     "Keep it to three short beats max.",
     "State the surprising part first, explain second, exit third.",
     "State the surprising claim first, then the one-line reason why.",
-    "State it, then immediately back it up with the 'why'."
+    "State it, then immediately back it up with the 'why'.",
+    "Skip context entirely unless it's needed to land the punchline.",
+    "Structure it as claim, quick evidence, quick close.",
+    "Treat every sentence like it has to earn its place.",
+    "Front-load the payoff, spend the rest of the time justifying it.",
+    "One sentence of setup max, then the payoff.",
+    "One fact, one twist, done."
   ],
   "phrasing_styles": [
-    "Talk like you're genuinely in a hurry to tell someone.",
-    "Bright and quick, almost a little breathless.",
-    "Confident and quick, like you already know this lands.",
-    "Energetic without being shouty.",
-    "Snappy, with a little grin in the delivery.",
-    "Short, punchy sentences. No wasted words.",
     "Each sentence lands like its own mic drop.",
     "Quick with a wink \u2014 this is fun, not frantic.",
     "Clipped and efficient \u2014 every word working.",
@@ -48,7 +42,13 @@
     "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
     "Urgent but controlled \u2014 fast doesn't mean sloppy.",
-    "Rapid cadence, but land the final word hard."
+    "Rapid cadence, but land the final word hard.",
+    "Matter-of-fact but fast, like reading a highlight reel.",
+    "Punch each key word slightly \u2014 cadence matters here.",
+    "Staccato rhythm \u2014 short bursts, clear breaks.",
+    "Talk like you're genuinely in a hurry to tell someone.",
+    "Bright and quick, almost a little breathless.",
+    "Confident and quick, like you already know this lands."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -79,7 +79,13 @@
     "Ancho\u00efade",
     "Fra Diavolo sauce",
     "Sauce Divine",
-    "Salad cream"
+    "Salad cream",
+    "Lobster sauce",
+    "Caruso sauce",
+    "Thambuli",
+    "Gastrique",
+    "Louis dressing",
+    "Genevoise sauce"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -87,6 +93,12 @@
     "Jugging",
     "Food drying",
     "Infusion",
-    "Braising"
+    "Braising",
+    "Paste",
+    "Blanching",
+    "Pre-ferment",
+    "Rotisserie",
+    "Degreasing",
+    "Juicing"
   ]
 }
