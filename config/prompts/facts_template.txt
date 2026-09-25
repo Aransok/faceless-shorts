@@ -1,7 +1,7 @@
-You are writing the script for a 45-second YouTube Short delivering
-THREE quick, distinct facts in rapid succession — not one fact explored
-for the full runtime. Think "rapid-fire wild facts," not a single deep
-dive.
+You are writing the script for a 20-25 second YouTube Short about ONE
+surprising fact, told in three quick beats: the payoff, the why/how,
+the twist. One idea, told tight enough that viewers watch to the very
+end -- not a list of several facts.
 
 Avoid these topics (already covered recently): {avoid_topics}
 
@@ -9,39 +9,28 @@ Avoid these specific facts too (already used, even if under a different
 theme): {avoid_facts}
 
 Requirements:
-- Pick THREE specific, narrow facts that share a real connecting theme or
-  angle — not a random grab-bag of unrelated trivia. The connection can be
-  loose (a category, a place, a mechanism, a "things that break your
-  intuition about X" angle) but it must be real and stated or implied
-  clearly enough that a viewer feels it, not three facts that just happen
-  to be in the same video.
-  - BAD (zero connection, feels like three separate videos stitched
-    together): a mantis shrimp fact, a Finland traffic-fine fact, an
-    English-dictionary fact.
-  - GOOD (loose but real connecting angle — "things that sound made up
-    but check out"): three facts all under a "this shouldn't be legal /
-    real / possible, but it is" framing, each landing that same feeling.
-- Each fact gets roughly 30-40 words — short, punchy, one clear idea,
-  not a mini-essay. Move fast.
-- At least ONE of the three facts MUST include a genuine hook or opinion
-  that goes beyond restating the fact — this is non-negotiable, the same
-  requirement as before, just now scoped to one beat instead of the
-  whole script. The other two can be tighter, more matter-of-fact "wait,
-  what?" deliveries — but don't let all three flatten into plain trivia
-  lines. A rapid-fire format is not an excuse to drop the point of view
-  entirely.
-  - BAD (all three flat, no POV anywhere): "Octopuses have three hearts.
-    Bananas are berries but strawberries aren't. Honey never spoils."
-  - GOOD (fact 2 carries a real opinion, others still punchy): "Octopuses
-    have three hearts. Bananas are botanically berries, but strawberries
-    aren't — which means the produce aisle has been lying to you your
-    whole life. Honey found in Egyptian tombs is still edible after
-    3,000 years; nothing else on earth just refuses to rot."
-- Total SCRIPT length across all three facts combined: 110-145 words,
-  spoken in 40-55 seconds total. edge_tts paces close to ~2.6 words/sec,
-  so aim for the lower half (closer to 110-125 total) if you want to
-  land comfortably under 55 seconds. Conversational pace, no filler, no
-  "did you know" openers, no numbering out loud ("fact one...").
+- Pick ONE specific, narrow fact -- a real number, name, event, animal,
+  object or place -- and give it three beats:
+  - Beat 1 (~15-20 words): the payoff, stated concretely (see the
+    first-line rule below).
+  - Beat 2 (~20-25 words): the real why/how, with one concrete detail (a
+    date, a name, a number, a place) that makes it feel real.
+  - Beat 3 (~15-20 words): the twist or reaction -- a second layer the
+    viewer didn't see coming, or a genuine opinion about it. It must
+    still be about THIS fact; no generic wrap-up that would fit any
+    video.
+- At least one beat MUST carry a genuine opinion or reaction that goes
+  beyond restating the fact -- non-negotiable, same as the rest of the
+  channel.
+- Total SCRIPT length across all three beats: 50-65 words -- a HARD
+  limit, spoken in about 20-25 seconds (edge_tts paces ~2.6 words/sec).
+  Why so short (2026-09-25): real channel data -- viewers left at ~20s
+  no matter how long the video was (45-50s videos averaged 35-47%
+  watched), and YouTube stops pushing a Short past its ~1,000-view test
+  audience when most viewers leave early. A 22s video watched for 20s
+  is nearly complete, and replays count.
+  Conversational pace, no filler, no "did you know" openers, no
+  numbering out loud, no "subscribe"/"follow" lines.
 - The very first line must lead with the PAYOFF, not build up to it —
   the single most concrete, surprising, specific detail of the fact (a
   real number, name, or outcome), stated directly. Two ways this still
@@ -71,10 +60,10 @@ Requirements:
     - GOOD (payoff-first — the specific twist, stated as fact): "The
       doctor the guillotine is named after spent his final years
       begging France to take his name off it."
-- For each fact, act as the visual director, not just a keyword
+- For each beat, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual interesting thing being
   described, not generic footage that merely relates to the topic. For
-  each fact, give:
+  each beat, give:
   - SUBJECT: the exact primary subject in 2-5 words — the specific
     object, animal, place, invention, food, or thing the fact is
     actually about (e.g. "Oxford Electric Bell", not "science" or
@@ -112,19 +101,19 @@ Requirements:
 
 Output EXACTLY in this format, with no extra commentary before or after:
 
-TOPIC: <5-8 word label covering the set, distinct from the avoid list>
-HOOK: <one sentence — the strongest opinion/gotcha across the three, used later as the video title>
-FACT_1_SCRIPT: <~30-40 word narration for fact 1>
+TOPIC: <5-8 word label naming the one fact, distinct from the avoid list>
+HOOK: <one sentence — the payoff/gotcha, used later as the video title>
+FACT_1_SCRIPT: <~15-20 word narration for beat 1>
 FACT_1_SUBJECT: <exact primary subject, 2-5 words>
 FACT_1_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
 FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
 FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">
-FACT_2_SCRIPT: <~30-40 word narration for fact 2>
+FACT_2_SCRIPT: <~20-25 word narration for beat 2>
 FACT_2_SUBJECT: <exact primary subject, 2-5 words>
 FACT_2_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
 FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
 FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">
-FACT_3_SCRIPT: <~30-40 word narration for fact 3>
+FACT_3_SCRIPT: <~15-20 word narration for beat 3>
 FACT_3_SUBJECT: <exact primary subject, 2-5 words>
 FACT_3_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
 FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>

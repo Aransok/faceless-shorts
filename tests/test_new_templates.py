@@ -57,5 +57,24 @@ class NewTemplatesWiringTest(unittest.TestCase):
             self.assertEqual(parsed["topic"], "a topic")
 
 
+class ShortFormatLengthTest(unittest.TestCase):
+    """2026-09-25: videos cut to ~20-30s (viewers left at ~20s regardless
+    of length). Guards the prompts and the beat pause from drifting back."""
+
+    def test_every_shorts_prompt_sets_the_short_word_budget(self):
+        prompts = Path(__file__).resolve().parent.parent / "config" / "prompts"
+        for name in ("facts", "sauce_recipe", "weird", "food"):
+            text = (prompts / f"{name}_template.txt").read_text(encoding="utf-8")
+            self.assertIn("50-65 words", text, name)
+            self.assertNotIn("110-145", text, name)
+            self.assertNotIn("120-155", text, name)
+        self.assertIn("60-75 words", (prompts / "programming_template.txt").read_text(encoding="utf-8"))
+
+    def test_beat_pause_is_a_breath_not_a_gap(self):
+        from pipeline import voice
+
+        self.assertLessEqual(voice.BEAT_PAUSE_SECONDS, 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

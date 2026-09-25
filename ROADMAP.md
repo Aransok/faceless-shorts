@@ -3406,6 +3406,33 @@ winning window, or keep evening if it's inconclusive.
   `"recovered": true`. You can run it manually through sync-analytics.yml's
   `reconcile_uploads` input: `list` does a dry run, and IDs apply.
 
+## Short format: one subject, ~22s, no silent gaps; quiz schedule off (2026-09-25)
+
+Owner: "our strategy doesn't work, I don't get good views." Real data
+from 75 videos with stats: none got past ~1,370 views, and the best
+series were stuck near ~1,000 (sauce median 953, facts 784, programming
+316). That looks like YouTube's test audience for each new Short, which
+it only widens when most viewers keep watching. Ours watched ~17-21s of
+43-51s videos, 35-47% on average.
+
+- facts, sauce_recipe, food: changed from three items per video to ONE
+  subject in three beats (payoff -> why/method -> twist/trick), 50-65
+  words, ~20-25s. weird: same length limit, format unchanged.
+  programming: 60-75 words (~25-30s) in 2-3 steps. The FACT_N / STEP_N
+  output fields stay the same, so parsing, visuals and voice work
+  unchanged.
+- voice.BEAT_PAUSE_SECONDS cut from 3.5s to 0.6s. It added 7s of
+  silence to every facts/sauce/weird/food video.
+- Updated to match: the facts persona, the sauce metadata prompt (one
+  recipe block), CTA comment hints, research-seed wording, and the
+  repeated-opener feedback.
+- weekly-quiz.yml schedule removed; it can still be run by hand. The 4
+  quizzes with stats got 2-5 views each. game_night, family_game_night
+  and veylorn_story were already out of the daily rotation (they only
+  run when requested by hand).
+- Judge after ~7 days of uploads, not one: compare avg_view_percentage
+  (target 70%+) and whether any video gets past ~1,400 views.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

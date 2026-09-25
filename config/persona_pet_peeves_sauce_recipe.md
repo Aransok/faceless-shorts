@@ -15,8 +15,7 @@ the viewer pay attention to? Why does this step matter?
 
 ## Recurring opinions / pet peeves (sauce_recipe)
 Draw from these naturally where they actually fit the sauce — don't force
-more than one into a single video, and never force one into all three
-sauces in the same script:
+more than one into a single video:
 - Jarred pre-minced garlic tastes flat and slightly bitter next to
   actual fresh cloves — the extra thirty seconds is worth it.
 - Bottled lemon/lime juice is a genuinely different, duller flavor than

@@ -135,14 +135,14 @@ _TEMPLATE_HINTS = {
         "share": "e.g. a developer who'd recognize this exact mistake from their own code.",
     },
     "facts": {
-        "comment_question": "e.g. which of the facts in this video was the most surprising, or which one they'd already heard.",
+        "comment_question": "e.g. whether they already knew this fact, or what part surprised them most.",
         "save": "e.g. a real situation where this specific fact would come up again.",
         "share": "e.g. someone who'd specifically care about this exact topic.",
     },
     "sauce_recipe": {
-        "comment_question": "e.g. which of the three sauces they'd actually make first.",
+        "comment_question": "e.g. whether they'd actually make this sauce, or what they'd serve it with.",
         "save": "e.g. the next time they have the specific ingredients/situation this sauce calls for.",
-        "share": "e.g. someone who cooks, or who'd specifically use one of these sauces.",
+        "share": "e.g. someone who cooks, or who'd specifically use this sauce.",
     },
     "weird": {
         "comment_question": "e.g. whether they already knew the real reason, or believed the common myth.",
@@ -150,7 +150,7 @@ _TEMPLATE_HINTS = {
         "share": "e.g. someone who uses or notices this exact thing every day.",
     },
     "food": {
-        "comment_question": "e.g. which of the three they've been doing wrong, or what they'll change first.",
+        "comment_question": "e.g. whether they've been doing this wrong, or what they'll change.",
         "save": "e.g. the next time they're actually cooking or storing this specific food.",
         "share": "e.g. someone who cooks, or who does exactly the thing this corrects.",
     },

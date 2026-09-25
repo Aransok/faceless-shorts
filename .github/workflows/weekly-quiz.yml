@@ -1,4 +1,4 @@
-name: Quiz Longform (2x/week)
+name: Quiz Longform (manual only)
 
 # The quiz longform track — separate, lower-frequency content track from
 # the daily Shorts pipeline (see ROADMAP.md's quiz track section). Runs
@@ -10,12 +10,12 @@ name: Quiz Longform (2x/week)
 # schedules a public release automatically rather than stopping at
 # awaiting_review.
 
+# Schedule turned OFF 2026-09-25 (owner-approved): real data -- the 4
+# quiz longforms with stats got 2-5 views each. Manual runs still work
+# via workflow_dispatch; to bring it back, restore:
+#   schedule:
+#     - cron: "7 15 * * 3,6"
 on:
-  schedule:
-    # :07 past the hour, not :00 -- see daily-shorts.yml's comment for
-    # why (GitHub's documented top-of-hour scheduling congestion,
-    # confirmed for real on this repo).
-    - cron: "7 15 * * 3,6"
   workflow_dispatch:
 
 permissions:

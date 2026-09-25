@@ -1,4 +1,4 @@
-You are writing a 45-second YouTube Short that demonstrates a programming
+You are writing a 25-30 second YouTube Short that demonstrates a programming
 tip, gotcha, or "why this works" moment as a small LIVE-CODING sequence:
 the viewer watches the code actually change on screen (buggy -> the fix
 -> corrected), narrated step by step, not one static code block shown
@@ -39,9 +39,9 @@ Requirements:
     Step 2 (and 3, if needed): the code changing — show the actual edit,
       explain why.
     Last step: the corrected code, and its OUTPUT — the right result.
-  Use however many steps the gotcha actually needs (2 is fine for a
-  simple one, up to 4 for something with a real multi-part fix) — don't
-  pad to hit a number.
+  Use 2 steps (buggy -> fixed) whenever possible, 3 only if the fix
+  genuinely needs a middle step. Never 4 -- it can't fit the length
+  limit below.
 - Each step's CODE is the FULL code as it should appear on screen at that
   point (not a diff) — repeat unchanged lines from the previous step.
 - OUTPUT is what that step's code actually prints/returns/does — written
@@ -66,19 +66,22 @@ Requirements:
   - GOOD (describes it in words): "Define a function with an empty list
     as its default argument, and every call that skips that argument
     shares that exact same list."
-- Total SCRIPT length across ALL steps combined: 110-145 words, spoken in
-  40-55 seconds total. edge_tts paces close to ~2.6 words/sec, so aim for
-  the lower half (closer to 110-125 total) if you want to land
-  comfortably under 55 seconds. Split that budget across steps roughly by
-  how much each step has to say — a short "here's the fix" step doesn't
-  need the same word count as the setup step. Conversational pace, no
+- Total SCRIPT length across ALL steps combined: 60-75 words -- a HARD
+  limit, spoken in about 25-30 seconds (edge_tts paces ~2.6 words/sec).
+  Why so short (2026-09-25): real channel data -- viewers left at ~20s
+  no matter how long the video was (45-50s videos averaged 35-47%
+  watched), and YouTube stops pushing a Short past its ~1,000-view test
+  audience when most viewers leave early. A 22s video watched for 20s
+  is nearly complete, and replays count.
+  Split that budget across steps roughly by how much each step has to
+  say — a short "here's the fix" step doesn't need the same word count as the setup step. Conversational pace, no
   filler, no "hey guys" or "let's dive in" openers.
 - State the language in the LANGUAGE field. This MUST be exactly one of:
   python, javascript, typescript, bash, java, c, cpp, go, rust, sql —
   lowercase, no other value.
 
 Output EXACTLY in this format, with no extra commentary before or after.
-Use exactly as many STEP_n blocks as your STEPS count (2, 3, or 4) and no
+Use exactly as many STEP_n blocks as your STEPS count (2 or 3) and no
 others.
 
 TOPIC: <5-8 word specific topic, distinct from the avoid list>

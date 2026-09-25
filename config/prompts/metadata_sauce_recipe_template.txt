@@ -1,7 +1,7 @@
 You are writing the YouTube Shorts title, description, and tags for a
 "Sauce Secrets" video that has already been scripted, voiced, and
 rendered. Your job is to make it findable and clickable — AND to give
-viewers the actual written recipes in the description, since the spoken
+viewers the actual written recipe in the description, since the spoken
 narration goes by too fast to follow while cooking.
 
 Video template: {template}
@@ -9,18 +9,18 @@ Topic: {topic}
 Hook: {hook}
 Full narration script: {script_text}
 
-The three sauces, in order, as spoken in the video:
+The video covers ONE sauce, in three spoken beats (payoff, method, trick):
 {sauce_scripts}
 
 Requirements:
 - TITLE: under 100 characters (YouTube's hard limit), written to make
   someone stop scrolling. Lead with the hook or the most surprising
-  concrete detail, not a generic label like "3 Sauces You Need to Know".
+  concrete detail, not a generic label like "Easy Garlic Sauce Recipe".
   Put the strongest real search term EARLY in the title — someone
   searching "quick chimichurri recipe" should see that phrase (or close
   to it) near the front. Do not put hashtags in the title.
-  - Never write a title that just SUMMARIZES the video ("3 No-Cook
-    Sauces") — it gives the viewer the whole answer with nothing left to
+  - Never write a title that just SUMMARIZES the video ("No-Cook
+    Chimichurri") — it gives the viewer the whole answer with nothing left to
     watch for. Lead with the surprising/contrarian detail instead (a
     sauce that looks wrong until one step, an ingredient that sounds
     fake) — never invent a detail the video doesn't actually show.
@@ -32,8 +32,8 @@ Requirements:
   1. First line restates the hook in different words AND works real
      search terms in naturally (this is what shows before "...more" gets
      clicked, and it's what search weights most heavily).
-  2. Then, for EACH of the three sauces, a short written recipe block
-     reformatted from that sauce's narration above into a real
+  2. Then ONE short written recipe block for the sauce, reformatted
+     from the narration above into a real
      ingredient list + method — not a verbatim copy of the spoken lines,
      but faithful to the same quantities and technique actually said (no
      inventing new quantities or steps that weren't in the narration).
@@ -41,7 +41,6 @@ Requirements:
      🥣 <Sauce name>
      Ingredients: <comma-separated list with real quantities>
      Method: <1-2 short sentences, real technique verbs>
-     Leave a blank line between each of the three blocks.
   3. Then a one-line call-to-action mentioning the channel by name:
      ByteBits. Always say "subscribe" — NEVER "follow" (this is YouTube,
      not Instagram/TikTok). Do not invent channel facts (upload schedule,
@@ -53,16 +52,16 @@ Requirements:
           when the file is already vertical and under 60 seconds.
        2. 2-3 broad category tags (e.g. #Cooking, #Recipes, #SauceSecrets)
           — these CAN repeat across videos, they're the category.
-       3. 4-5 tags specific to THIS video's exact three sauces (e.g.
-          #Chimichurri #GarlicButterSauce #TomatoSauce) — not a generic
+       3. 4-5 tags specific to THIS video's exact sauce and its
+          ingredients (e.g. #Chimichurri #Parsley #SteakSauce) — not a generic
           block reused across videos.
      - NEVER exceed 15 hashtags total — this is YouTube's hard cap, and
        going over it silently discards EVERY hashtag, not just the
        extras past 15. Exactly 8 is the target.
   Keep the whole description under 5000 characters (YouTube's limit) —
-  three recipe blocks plus the rest should comfortably land under 1200.
+  the recipe block plus the rest should comfortably land under 1000.
 - TAGS: 8-15 comma-separated search tags specific to this video's actual
-  three sauces (real terms someone would search, e.g. "chimichurri
+  sauce (real terms someone would search, e.g. "chimichurri
   recipe", "garlic butter sauce", "quick tomato sauce"), not generic
   filler like "video, youtube, shorts".
 

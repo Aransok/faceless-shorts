@@ -1,8 +1,8 @@
-You are writing the script for a 45-second YouTube Short covering THREE
-sauces you can actually make at home — real ingredients, real method,
-spoken fast enough to fit three in one video. This is BiteBits' "Sauce
-Secrets" series: a distinct, recognizable sub-series, not a random
-cooking video mixed into the feed.
+You are writing the script for a 20-25 second YouTube Short about ONE
+sauce you can actually make at home -- real ingredients, real method,
+and the one trick that makes it work. This is BiteBits' "Sauce Secrets"
+series: a distinct, recognizable sub-series, not a random cooking video
+mixed into the feed.
 
 Avoid these topics (already covered recently): {avoid_topics}
 
@@ -10,52 +10,28 @@ Avoid these specific sauces too (already used, even if under a
 different theme): {avoid_sauces}
 
 Requirements:
-- Pick THREE specific sauces that share a real connecting theme — not a
-  random grab-bag. The connection can be loose (a cuisine, an occasion,
-  "sauces that taste fancy but take five minutes," "the sauce everyone
-  gets wrong") but it must be real and felt, not three sauces that just
-  happen to be in the same video.
-  - BAD (zero connection, feels like three separate videos stitched
-    together): a French beurre blanc, a Thai peanut sauce, a basic BBQ
-    sauce, with no stated or implied link between them.
-  - GOOD (real connecting angle — "the five-minute versions of sauces
-    people assume take an hour"): a quick tomato sauce, a quick chimichurri,
-    a quick garlic-butter pan sauce, each landing that same "faster than
-    you think" feeling.
-- For each sauce, compress a short ingredient list AND the actual method
-  into ONE spoken narration beat, ~35-45 words — real quantities where it
-  matters (a tablespoon, a clove, a cup), real technique verbs (mince,
-  simmer, whisk, reduce), not a vague gesture at a recipe. This is a
-  script to be spoken aloud, not a written recipe card — write it as
-  something a person would actually say while cooking, not a list read
-  out loud ("First you'll need... then you...").
-  - BAD (reads like a written recipe, not spoken): "Ingredients: two
-    cloves garlic, one tablespoon butter, one cup cream. Instructions:
-    mince the garlic. Melt the butter. Add the cream. Simmer for five
-    minutes."
-  - GOOD (spoken, concrete, still a real usable method): "Mince two
-    cloves of garlic, melt a tablespoon of butter over medium heat, add
-    the garlic for thirty seconds until it's fragrant, not brown, then
-    pour in a cup of cream and let it simmer down until it coats the
-    back of a spoon."
-- At least ONE of the three sauces MUST include a genuine hook or opinion
-  that goes beyond stating the method — this is non-negotiable, same
-  requirement as the rest of the channel. The other two can be tighter,
-  more matter-of-fact deliveries — but don't let all three flatten into a
-  read-aloud recipe card with zero point of view.
-  - BAD (all three flat, no POV anywhere): "Mince the garlic and cook it
-    in butter. Whisk the eggs with lemon juice. Simmer the tomatoes with
-    basil."
-  - GOOD (one sauce carries a real opinion, others still punchy): "Mince
-    the garlic and cook it gently in butter — rush this step and it
-    turns bitter, which is the actual reason most people's garlic butter
-    tastes off. Whisk the eggs with lemon juice over low heat until it
-    thickens. Simmer the tomatoes with basil until they break down."
-- Total SCRIPT length across all three sauces combined: 120-155 words,
-  spoken in 45-60 seconds total. edge_tts paces close to ~2.6 words/sec,
-  so aim for the lower half if you want to land comfortably under 60
-  seconds. Conversational pace, no filler, no "did you know" openers, no
-  numbering out loud ("sauce one...").
+- Pick ONE specific sauce and give it three beats:
+  - Beat 1 (~15-20 words): the payoff -- the concrete surprise or result
+    (see the first-line rule below).
+  - Beat 2 (~20-25 words): the short ingredient list AND the actual
+    method, spoken -- real quantities where it matters (a tablespoon, a
+    clove, a cup), real technique verbs (mince, simmer, whisk, reduce).
+    Write it the way a person talks while cooking, not a recipe card
+    read aloud ("Ingredients: ... Instructions: ...").
+  - Beat 3 (~15-20 words): the trick or the opinion -- the one step
+    people get wrong and why, or a genuine reaction. Still about THIS
+    sauce; no generic wrap-up that would fit any video.
+- At least one beat MUST carry a genuine opinion or reaction beyond
+  stating the method -- non-negotiable, same as the rest of the channel.
+- Total SCRIPT length across all three beats: 50-65 words -- a HARD
+  limit, spoken in about 20-25 seconds (edge_tts paces ~2.6 words/sec).
+  Why so short (2026-09-25): real channel data -- viewers left at ~20s
+  no matter how long the video was (45-50s videos averaged 35-47%
+  watched), and YouTube stops pushing a Short past its ~1,000-view test
+  audience when most viewers leave early. A 22s video watched for 20s
+  is nearly complete, and replays count.
+  Conversational pace, no filler, no "did you know" openers, no
+  numbering out loud, no "subscribe"/"follow" lines.
 - The very first line must lead with the PAYOFF — the actual, concrete
   surprise or result, not a flat description of the sauce ("Picture
   this..."/scene-setting is banned for the same reason as before) and
@@ -73,9 +49,9 @@ Requirements:
   - GOOD (payoff-first — the specific, concrete surprise): "This sauce
     looks completely broken and grainy right up until the last ten
     seconds, when one spoon of cold butter pulls it together."
-- For each sauce, act as the visual director, not just a keyword
+- For each beat, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual cooking action or dish
-  being described, not generic kitchen filler. For each sauce, give:
+  being described, not generic kitchen filler. For each beat, give:
   - SUBJECT: the sauce/dish and its defining action in 2-5 words (e.g.
     "simmering tomato sauce", "whisked chimichurri").
   - EXACT_QUERIES: 2-3 comma-separated queries for the exact cooking
@@ -96,21 +72,21 @@ Requirements:
 Output EXACTLY in this format, with no extra commentary before or after.
 The field names below say FACT_N — kept exactly as-is (not renamed to
 SAUCE_N) because this reuses the same parser as the facts template; the
-content is a sauce, the field name is just plumbing:
+content is one beat of the sauce, the field name is just plumbing:
 
-TOPIC: <5-8 word label covering the set, distinct from the avoid list>
-HOOK: <one sentence — the strongest opinion/gotcha across the three, used later as the video title>
-FACT_1_SCRIPT: <~35-45 word spoken narration for sauce 1 — ingredients + method>
+TOPIC: <5-8 word label naming the one sauce, distinct from the avoid list>
+HOOK: <one sentence — the payoff/trick, used later as the video title>
+FACT_1_SCRIPT: <~15-20 word spoken narration for beat 1 — the payoff>
 FACT_1_SUBJECT: <sauce/dish + defining action, 2-5 words>
 FACT_1_EXACT_QUERIES: <2-3 comma-separated queries for the exact action in this beat>
 FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries for a close stand-in>
 FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries for a supporting shot, or "none">
-FACT_2_SCRIPT: <~35-45 word spoken narration for sauce 2 — ingredients + method>
+FACT_2_SCRIPT: <~20-25 word spoken narration for beat 2 — ingredients + method>
 FACT_2_SUBJECT: <sauce/dish + defining action, 2-5 words>
 FACT_2_EXACT_QUERIES: <2-3 comma-separated queries for the exact action in this beat>
 FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries for a close stand-in>
 FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries for a supporting shot, or "none">
-FACT_3_SCRIPT: <~35-45 word spoken narration for sauce 3 — ingredients + method>
+FACT_3_SCRIPT: <~15-20 word spoken narration for beat 3 — the trick/opinion>
 FACT_3_SUBJECT: <sauce/dish + defining action, 2-5 words>
 FACT_3_EXACT_QUERIES: <2-3 comma-separated queries for the exact action in this beat>
 FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries for a close stand-in>
