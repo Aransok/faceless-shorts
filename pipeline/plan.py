@@ -145,8 +145,15 @@ class ClaudeUsageLimitError(RuntimeError):
 # repeat this again, the pattern now also matches the general "hit your
 # <anything> limit" shape those all share, which should catch any future
 # period-name variant without another real failure first.
+#
+# Also real 2026-09-25: every video failed with "Your organization has
+# disabled Claude subscription access for Claude Code · Use an Anthropic
+# API key instead, or ask your admin to enable access". That is not a
+# code bug either -- the backend is simply unavailable to this account --
+# so it gets the same free Groq fallback instead of a zero-video day.
 _USAGE_LIMIT_PATTERN = re.compile(
-    r"usage limit|session limit|weekly limit|limit reached|rate.?limit exceeded|hit your \w+ limit",
+    r"usage limit|session limit|weekly limit|limit reached|rate.?limit exceeded|hit your \w+ limit"
+    r"|disabled claude subscription access|ask your admin to enable access",
     re.IGNORECASE,
 )
 

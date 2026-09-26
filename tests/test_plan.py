@@ -165,6 +165,25 @@ class CallLlmFallbackTest(unittest.TestCase):
             result = call_llm("prompt")
         self.assertEqual(result, "fallback script")
 
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_subscription_access_disabled_falls_back(self, mock_run, mock_which, mock_post):
+        # Real 2026-09-25 failure text: the account lost Claude Code
+        # subscription access -- the whole run produced zero videos.
+        mock_run.return_value = mock.Mock(
+            returncode=1,
+            stdout="Your organization has disabled Claude subscription access for Claude Code "
+            "\u00b7 Use an Anthropic API key instead, or ask your admin to enable access",
+            stderr="",
+        )
+        mock_post.return_value = mock.Mock()
+        mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
+        with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            result = call_llm("prompt")
+        self.assertEqual(result, "fallback script")
+
     @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
     @mock.patch("pipeline.plan.subprocess.run")
     def test_usage_limit_without_fallback_configured_raises(self, mock_run, mock_which):
