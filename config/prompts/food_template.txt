@@ -22,6 +22,13 @@ Requirements:
 - Only state things you're confident are true. Common kitchen myths
   (searing "seals in juices", oil in pasta water stops sticking, etc.)
   may only appear as myths being corrected, never stated as fact.
+- Every beat must add NEW information. Never restate beat 1's claim in
+  a later beat, and never reuse the same phrase or sentence shape twice
+  ("it actually works" ... "because it actually works"; "that's how
+  they X" ... "it's how they X"). In a ~22s script any repeat is
+  obvious, and the review step rejects it -- real 2026-09-26 run: 3 of
+  6 videos were dropped for exactly this. Each beat should also open
+  with different words than the others.
 - At least one beat MUST carry a genuine opinion or reaction beyond
   stating the tip -- same non-negotiable rule as the rest of the channel.
 - Total SCRIPT length across all three beats: 50-65 words -- a HARD

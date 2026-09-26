@@ -63,6 +63,23 @@ class ParseDykHooksTest(unittest.TestCase):
         self.assertEqual(research.parse_dyk_hooks(""), [])
 
 
+class FetchDykHooksTest(unittest.TestCase):
+    def test_follows_redirects_and_falls_back_to_the_main_page_set(self):
+        stub = "<ul><li>Wikipedia:Did you know archive</li></ul>"
+        calls = []
+
+        def fake_get(params):
+            calls.append(params)
+            html = stub if params["page"] == research.DYK_PAGE else _DYK_HTML
+            return {"parse": {"text": html}}
+
+        with mock.patch.object(research, "_wikipedia_get", side_effect=fake_get):
+            hooks = research.fetch_dyk_hooks()
+        self.assertTrue(all(c["redirects"] == 1 for c in calls))
+        self.assertEqual([c["page"] for c in calls], [research.DYK_PAGE, research.DYK_FALLBACK_PAGE])
+        self.assertIn("a moth can hear bat calls pitched higher than any other animal can", hooks)
+
+
 class CleanSauceTitlesTest(unittest.TestCase):
     def test_strips_disambiguation_and_list_pages(self):
         names = research.clean_category_titles(["Mole (sauce)", "List of sauces", "Chimichurri", "Gravy"])

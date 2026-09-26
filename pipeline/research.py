@@ -41,6 +41,7 @@ from pipeline.wikimedia import USER_AGENT
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 DYK_PAGE = "Wikipedia:Recent additions"
+DYK_FALLBACK_PAGE = "Template:Did you know"
 # Templates seeded from a Wikipedia category's article titles.
 CATEGORY_SOURCE = {
     "sauce_recipe": "Category:Sauces",
@@ -127,9 +128,18 @@ def _wikipedia_get(params: dict) -> dict:
 
 
 def fetch_dyk_hooks() -> list[str]:
-    data = _wikipedia_get({"action": "parse", "page": DYK_PAGE, "prop": "text"})
-    html = data["parse"]["text"]
-    hooks = parse_dyk_hooks(html)
+    # redirects=1: the real 2026-09-26 run showed "Recent additions" is a
+    # redirect page -- without following it the API returns the 5KB
+    # redirect stub (0 hooks). Template:Did you know (the current set on
+    # the Main Page) is the fallback if the redirect target has none.
+    hooks: list[str] = []
+    html = ""
+    for page in (DYK_PAGE, DYK_FALLBACK_PAGE):
+        data = _wikipedia_get({"action": "parse", "page": page, "prop": "text", "redirects": 1})
+        html = data["parse"]["text"]
+        hooks = parse_dyk_hooks(html)
+        if hooks:
+            break
     if not hooks:
         # Diagnostic only: shows the live page's real <li> format in the
         # run log, since Wikipedia isn't reachable from dev sandboxes.
