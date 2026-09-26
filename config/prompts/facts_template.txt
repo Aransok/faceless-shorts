@@ -19,6 +19,13 @@ Requirements:
     viewer didn't see coming, or a genuine opinion about it. It must
     still be about THIS fact; no generic wrap-up that would fit any
     video.
+- Every beat must add NEW information. Never restate beat 1's claim in
+  a later beat, and never reuse the same phrase or sentence shape twice
+  ("it actually works" ... "because it actually works"; "that's how
+  they X" ... "it's how they X"). In a ~22s script any repeat is
+  obvious, and the review step rejects it -- real 2026-09-26 run: 3 of
+  6 videos were dropped for exactly this. Each beat should also open
+  with different words than the others.
 - At least one beat MUST carry a genuine opinion or reaction that goes
   beyond restating the fact -- non-negotiable, same as the rest of the
   channel.
