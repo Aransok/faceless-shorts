@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Here's a fact that'll ruin your day, in a good way:",
-    "Fast fact:",
-    "Here's your fact for the day:",
-    "No intro, just the fact:",
-    "Fast one, but a good one:",
-    "Here's something you'll repeat to someone today:",
     "One thing before you scroll:",
     "One fact, zero fluff:",
     "Quick hit:",
@@ -14,15 +8,15 @@
     "Here's the fact, no buildup:",
     "Ten seconds, one genuinely wild fact:",
     "Straight to it:",
-    "You have ten seconds, here's the fact:"
+    "You have ten seconds, here's the fact:",
+    "This one's short and it's a lot:",
+    "Quick one:",
+    "Fast fact:",
+    "Here's a fact that'll ruin your day, in a good way:",
+    "This'll take ten seconds and it's worth it:",
+    "Fast one, but a good one:"
   ],
   "script_structures": [
-    "No warmup \u2014 open directly on the strangest detail.",
-    "Say the wildest part first, everything else is just support.",
-    "One idea, delivered fast, no tangents.",
-    "Deliver it as a single escalating thought, no pauses.",
-    "Zero throat-clearing \u2014 first word is already the content.",
-    "Keep it to three short beats max.",
     "State the surprising part first, explain second, exit third.",
     "State the surprising claim first, then the one-line reason why.",
     "State it, then immediately back it up with the 'why'.",
@@ -31,15 +25,15 @@
     "Treat every sentence like it has to earn its place.",
     "Front-load the payoff, spend the rest of the time justifying it.",
     "One sentence of setup max, then the payoff.",
-    "One fact, one twist, done."
+    "One fact, one twist, done.",
+    "Rapid-fire delivery, minimal setup, straight to the point.",
+    "Compress the whole idea into two beats: claim, then proof.",
+    "Lead with the number or stat, then explain it in one breath.",
+    "No warmup \u2014 open directly on the strangest detail.",
+    "Say the wildest part first, everything else is just support.",
+    "One idea, delivered fast, no tangents."
   ],
   "phrasing_styles": [
-    "Each sentence lands like its own mic drop.",
-    "Quick with a wink \u2014 this is fun, not frantic.",
-    "Clipped and efficient \u2014 every word working.",
-    "High energy, like you're genuinely excited to share this.",
-    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
-    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
     "Urgent but controlled \u2014 fast doesn't mean sloppy.",
     "Rapid cadence, but land the final word hard.",
@@ -48,7 +42,13 @@
     "Staccato rhythm \u2014 short bursts, clear breaks.",
     "Talk like you're genuinely in a hurry to tell someone.",
     "Bright and quick, almost a little breathless.",
-    "Confident and quick, like you already know this lands."
+    "Confident and quick, like you already know this lands.",
+    "Snappy, with a little grin in the delivery.",
+    "Energetic without being shouty.",
+    "Short, punchy sentences. No wasted words.",
+    "Quick with a wink \u2014 this is fun, not frantic.",
+    "Clipped and efficient \u2014 every word working.",
+    "No filler words at all \u2014 'um', 'like', 'basically' banned."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "corner_badge_late"
+    "late_banner_cadence"
   ],
   "code_theme": [
-    "one-dark",
-    "solarized-dark"
+    "solarized-dark",
+    "monokai"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -85,7 +85,13 @@
     "Thambuli",
     "Gastrique",
     "Louis dressing",
-    "Genevoise sauce"
+    "Genevoise sauce",
+    "Almadroc",
+    "Coulis",
+    "Gravy",
+    "Monkey gland sauce",
+    "Sepen",
+    "Sauce P\u00e9rigueux"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -99,6 +105,12 @@
     "Pre-ferment",
     "Rotisserie",
     "Degreasing",
-    "Juicing"
+    "Juicing",
+    "Teriyaki",
+    "Y\u016ban-yaki",
+    "Smoke ring",
+    "Coal-fired pizza",
+    "K\u0101lua",
+    "Grilling"
   ]
 }

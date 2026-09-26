@@ -716,5 +716,30 @@
     "template": "facts",
     "approach": "fast_cuts",
     "scheduled_publish_at": "2026-09-25T00:08:49.916553+00:00"
+  },
+  {
+    "video_id": "aabe3a5e-ad23-4f94-b2cb-620bef93f6fb",
+    "youtube_video_id": "LffGiWLw3i4",
+    "uploaded_at": "2026-09-26T08:28:37.057330+00:00",
+    "template": "sauce_recipe",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-26T20:06:27.803800+00:00"
+  },
+  {
+    "video_id": "74a242e9-5113-4dbc-91f8-1af2f83a7d9e",
+    "youtube_video_id": "pO3RRCClpQM",
+    "uploaded_at": "2026-09-26T08:36:40.711535+00:00",
+    "template": "programming",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-26T21:15:17.990068+00:00",
+    "publish_arm": "evening"
+  },
+  {
+    "video_id": "14a43642-2736-434a-9330-442bd17d7a32",
+    "youtube_video_id": "hK8eTOtbFZc",
+    "uploaded_at": "2026-09-26T08:45:47.259877+00:00",
+    "template": "facts",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-26T22:24:08.107487+00:00"
   }
 ]
