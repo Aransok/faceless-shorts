@@ -1,8 +1,5 @@
 {
   "hook_openers": [
-    "One thing before you scroll:",
-    "One fact, zero fluff:",
-    "Quick hit:",
     "Skip the intro, here's the point:",
     "Three seconds, one wild fact:",
     "Here's the fact, no buildup:",
@@ -14,12 +11,12 @@
     "Fast fact:",
     "Here's a fact that'll ruin your day, in a good way:",
     "This'll take ten seconds and it's worth it:",
-    "Fast one, but a good one:"
+    "Fast one, but a good one:",
+    "Here's your fact for the day:",
+    "One thing before you scroll:",
+    "Here's something you'll repeat to someone today:"
   ],
   "script_structures": [
-    "State the surprising part first, explain second, exit third.",
-    "State the surprising claim first, then the one-line reason why.",
-    "State it, then immediately back it up with the 'why'.",
     "Skip context entirely unless it's needed to land the punchline.",
     "Structure it as claim, quick evidence, quick close.",
     "Treat every sentence like it has to earn its place.",
@@ -31,12 +28,12 @@
     "Lead with the number or stat, then explain it in one breath.",
     "No warmup \u2014 open directly on the strangest detail.",
     "Say the wildest part first, everything else is just support.",
-    "One idea, delivered fast, no tangents."
+    "One idea, delivered fast, no tangents.",
+    "Keep it to three short beats max.",
+    "State the surprising part first, explain second, exit third.",
+    "State the surprising claim first, then the one-line reason why."
   ],
   "phrasing_styles": [
-    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
-    "Urgent but controlled \u2014 fast doesn't mean sloppy.",
-    "Rapid cadence, but land the final word hard.",
     "Matter-of-fact but fast, like reading a highlight reel.",
     "Punch each key word slightly \u2014 cadence matters here.",
     "Staccato rhythm \u2014 short bursts, clear breaks.",
@@ -48,7 +45,10 @@
     "Short, punchy sentences. No wasted words.",
     "Quick with a wink \u2014 this is fun, not frantic.",
     "Clipped and efficient \u2014 every word working.",
-    "No filler words at all \u2014 'um', 'like', 'basically' banned."
+    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
+    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
+    "High energy, like you're genuinely excited to share this.",
+    "Fast-talking but still totally clear, never rushed to the point of mumbling."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,7 +60,7 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "save_for_later_early"
   ],
   "code_theme": [
     "solarized-dark",
@@ -91,7 +91,13 @@
     "Gravy",
     "Monkey gland sauce",
     "Sepen",
-    "Sauce P\u00e9rigueux"
+    "Sauce P\u00e9rigueux",
+    "Fond",
+    "Resek agvaniyot",
+    "Rainbow sauce",
+    "Maltaise sauce",
+    "Noisette sauce",
+    "Mushroom sauce"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -112,5 +118,13 @@
     "Coal-fired pizza",
     "K\u0101lua",
     "Grilling"
+  ],
+  "research_used_facts": [
+    "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
+    "a parallel local government operated independently of British rule in Medinipur during the 1942 Quit India Movement",
+    "Patriarch Bernard fled battle on a mule, then cut off its tail so the Turks could not catch him by it",
+    "Swiss architect Luigi Snozzi became a professor at EPFL after students staged a sit-in over the withdrawal of his appointment",
+    "the creator of the manga series I Can't Say No to the Lonely Girl used fashion magazines for students as a reference for her character designs",
+    "South Korean footballer Ahn Jung-hwan's contract with Italian club Perugia was cancelled after he scored the golden goal against Italy in a World Cup match"
   ]
 }
