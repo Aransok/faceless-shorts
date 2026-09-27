@@ -11,6 +11,7 @@ Usage:
     python scripts/reconcile_uploads.py                 # list only
     python scripts/reconcile_uploads.py --apply ID1,ID2 # re-register those
     python scripts/reconcile_uploads.py --apply ID1:food,ID2
+    python scripts/reconcile_uploads.py --catalog       # every video + views, TSV
 
 --apply takes explicit IDs on purpose: the channel may also have videos
 uploaded by hand that the pipeline never made. The template is inferred
@@ -69,11 +70,15 @@ def _fetch_channel_videos(youtube) -> list[dict]:
         page = resp.get("nextPageToken")
         if not page:
             break
+    # The uploads playlist can list the same video twice across pages
+    # (seen for real in the 2026-09-24 listing) -- dedupe, keeping order.
+    ids = list(dict.fromkeys(ids))
     videos = []
     for i in range(0, len(ids), 50):
-        resp = youtube.videos().list(part="snippet,status", id=",".join(ids[i : i + 50])).execute()
+        resp = youtube.videos().list(part="snippet,status,statistics", id=",".join(ids[i : i + 50])).execute()
         for item in resp.get("items", []):
             videos.append({
+                "views": int(item.get("statistics", {}).get("viewCount", 0)),
                 "id": item["id"],
                 "title": item["snippet"]["title"],
                 "description": item["snippet"].get("description", ""),
@@ -108,6 +113,14 @@ def main() -> None:
     since = min(datetime.fromisoformat(r["uploaded_at"]) for r in log) if log else datetime.min
     youtube = build("youtube", "v3", credentials=_load_credentials())
     channel = _fetch_channel_videos(youtube)
+    if "--catalog" in sys.argv:
+        # For finding near-duplicate topics to clean up before a YPP
+        # review (2026-09-27): every public video with its views.
+        print("CATALOG\tid\tpublished\tviews\tprivacy\ttracked\ttitle")
+        for v in sorted(channel, key=lambda v: v["uploaded_at"]):
+            print(f"CATALOG\t{v['id']}\t{v['uploaded_at'][:10]}\t{v['views']}\t{v['privacy']}\t"
+                  f"{'yes' if v['id'] in tracked else 'no'}\t{v['title']}")
+        return
     untracked = find_untracked(channel, tracked, since)
 
     print(f"{len(channel)} videos on channel, {len(tracked)} tracked, {len(untracked)} untracked since {since.date()}:")

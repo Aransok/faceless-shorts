@@ -19,7 +19,7 @@ on:
         required: false
         default: ""
       reconcile_uploads:
-        description: "Optional: 'list' to show channel videos missing from data/videos.json, or comma-separated IDs (ID or ID:template) to re-register them"
+        description: "Optional: 'list' to show channel videos missing from data/videos.json, 'catalog' for every video with views, or comma-separated IDs (ID or ID:template) to re-register them"
         required: false
         default: ""
 
@@ -106,6 +106,8 @@ jobs:
         run: |
           if [ "$RECONCILE" = "list" ]; then
             python scripts/reconcile_uploads.py
+          elif [ "$RECONCILE" = "catalog" ]; then
+            python scripts/reconcile_uploads.py --catalog
           else
             python scripts/reconcile_uploads.py --apply "$RECONCILE"
           fi
