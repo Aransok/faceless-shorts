@@ -389,10 +389,56 @@ def _parse_programming_response(text: str) -> dict:
     }
 
 
+# On-screen hook (2026-09-26, owner: "do some cool hooks"). Most Shorts
+# viewers scroll with the sound off and decide within about a second, but
+# the hook only existed as narration and a title nobody sees in the
+# feed. The model now also writes a 3-6 word on-screen hook, which
+# assemble.py shows in big text for the video's first ~2.5s. It's an
+# extra trailing line so every template's own field parser stays as-is.
+SCREEN_HOOK_MAX_WORDS = 6
+SCREEN_HOOK_MAX_CHARS = 40
+_SCREEN_HOOK_LINE = re.compile(r"^\s*SCREEN_HOOK:[ \t]*(.*?)[ \t]*$", re.MULTILINE)
+
+_SCREEN_HOOK_BLOCK = """
+
+--- ON-SCREEN HOOK (required) ---
+After everything above, add ONE more line at the very end of your output:
+SCREEN_HOOK: <3-6 words shown in huge text over the first 2.5 seconds>
+Most viewers scroll with the sound OFF, so this text alone has to stop
+the scroll. Make it a curiosity gap about THIS video's most surprising
+specific detail -- a number, a contradiction, or a "wait, what?" claim.
+Never give away the answer, and never write generic bait that could sit
+on any video ("YOU WON'T BELIEVE THIS", "WAIT FOR IT", "MIND BLOWN").
+  - GOOD: "THIS BELL HASN'T STOPPED SINCE 1840" / "YOUR FRIDGE IS RUINING THESE" /
+    "PYTHON LIES ABOUT 257" / "THE PINK RING ISN'T BLOOD"
+  - BAD: "AMAZING FACT" / "WATCH TILL THE END" / "THIS IS CRAZY"
+"""
+
+
+def _extract_screen_hook(raw: str) -> tuple[str, str | None]:
+    """Splits the SCREEN_HOOK line off the model output. Returns (the
+    output without it, a clean on-screen hook or None). None -- no
+    overlay, the video renders exactly as before -- when the line is
+    missing or too long for big on-screen text. Never raises: a bad
+    on-screen hook must not cost the whole video."""
+    match = _SCREEN_HOOK_LINE.search(raw)
+    if match is None:
+        return raw, None
+    stripped = (raw[: match.start()] + raw[match.end():]).strip()
+    text = " ".join(match.group(1).strip().strip("\"'*").split()).upper()
+    if not text or len(text.split()) > SCREEN_HOOK_MAX_WORDS or len(text) > SCREEN_HOOK_MAX_CHARS:
+        return stripped, None
+    return stripped, text
+
+
 def _parse_response(template: str, raw: str) -> dict:
+    raw, screen_hook = _extract_screen_hook(raw)
     if template == "programming":
-        return _parse_programming_response(raw)
-    return _parse_facts_response(raw)
+        parsed = _parse_programming_response(raw)
+    else:
+        parsed = _parse_facts_response(raw)
+    parsed["screen_hook"] = screen_hook
+    return parsed
 
 
 def _extract_narration(template: str, parsed: dict) -> str:
@@ -468,8 +514,8 @@ def _duplicate_item_feedback(template: str, parsed: dict) -> str | None:
     i, j = pair
     return (
         f"Items {i + 1} and {j + 1} open with the same technique/phrase as each "
-        "other -- rewrite so each beat opens differently from the others, "
-        "not just distinct from past videos:\n"
+        "other -- rewrite so all three items are clearly distinct from ONE "
+        "ANOTHER, not just distinct from past videos:\n"
         f"  item {i + 1}: {items[i]}\n"
         f"  item {j + 1}: {items[j]}"
     )
@@ -605,6 +651,7 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
     last_cta_type = next(iter(recent_cta_types(limit=1)), None)
     cta_angle = pick_cta_angle(milestone_line, last_cta_type=last_cta_type)
     prompt += cta_guidance_block(cta_angle, template, milestone_line)
+    prompt += _SCREEN_HOOK_BLOCK
 
     parsed = _generate_reviewed(template, prompt)
 
@@ -618,6 +665,7 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
             code_snippet=parsed["steps"][-1]["code_snippet"],
             language=parsed["language"],
             hook=parsed["hook"],
+            screen_hook=parsed["screen_hook"],
             approach=style["approach"],
             cta_angle=cta_angle["name"],
             hook_opener_used=style["hook_opener"],
@@ -631,6 +679,7 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
             status="scripted",
             script_text=full_script,
             hook=parsed["hook"],
+            screen_hook=parsed["screen_hook"],
             approach=style["approach"],
             cta_angle=cta_angle["name"],
             hook_opener_used=style["hook_opener"],

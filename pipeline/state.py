@@ -63,6 +63,7 @@ _COLUMNS = (
     "avg_view_percentage",
     "avg_view_duration_seconds",
     "family_game_segments_json",
+    "screen_hook",
     "created_at",
     "updated_at",
 )
@@ -170,6 +171,10 @@ def init_db(db_path: Path = DB_PATH) -> None:
         # while the new scope still isn't granted, just has no value here
         # rather than failing the whole sync (see sync_analytics()'s
         # fail-soft retention handling).
+        # Big on-screen hook text for a Short's first ~2.5s (2026-09-26,
+        # owner: "do some cool hooks") -- see assemble.render_hook_overlay().
+        if "screen_hook" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN screen_hook TEXT")
         if "avg_view_percentage" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN avg_view_percentage REAL")
         if "avg_view_duration_seconds" not in existing_cols:
