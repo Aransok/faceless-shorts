@@ -213,6 +213,68 @@ def render_cta_overlay(out_path: Path, text: str) -> tuple[int, int]:
     return badge_w, badge_h
 
 
+# On-screen hook (2026-09-26, owner: "do some cool hooks"): the video's
+# SCREEN_HOOK (see plan.py) in huge text over the first HOOK_SECONDS, for
+# the sound-off majority who decide within about a second. Sits in the
+# upper third: below brand.TOP_SAFE_ZONE_RATIO and well above the
+# caption zone (brand.CAPTION_MARGIN_V_RATIO_PORTRAIT, ~62% down).
+HOOK_SECONDS = 2.6
+HOOK_FADE_OUT = 0.3
+HOOK_Y_FRACTION = 0.16
+HOOK_MAX_WIDTH_FRACTION = 0.88
+HOOK_FONT_SIZES = (96, 84, 72, 62)  # largest that fits in HOOK_MAX_LINES wins
+HOOK_MAX_LINES = 3
+HOOK_TEXT_COLOR = (255, 255, 255, 255)
+HOOK_STROKE_COLOR = (0, 0, 0, 255)
+HOOK_BAND_OPACITY = 200
+
+
+def _wrap_words(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
+    lines: list[str] = []
+    for word in text.split():
+        candidate = f"{lines[-1]} {word}" if lines else word
+        if lines and draw.textlength(candidate, font=font) <= max_width:
+            lines[-1] = candidate
+        else:
+            lines.append(word)
+    return lines
+
+
+def render_hook_overlay(out_path: Path, text: str, frame_width: int) -> tuple[int, int]:
+    """Renders the on-screen hook as a transparent PNG: big white text
+    with a black outline on a brand-gradient band. Picks the largest font
+    size that wraps into HOOK_MAX_LINES. Returns the PNG's (width, height)."""
+    max_width = int(frame_width * HOOK_MAX_WIDTH_FRACTION)
+    pad_x, pad_y, line_gap, stroke = 36, 26, 14, 6
+    draw = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    for size in HOOK_FONT_SIZES:
+        font = ImageFont.truetype(str(FONT_BOLD_PATH), size)
+        lines = _wrap_words(draw, text, font, max_width - 2 * pad_x)
+        if len(lines) <= HOOK_MAX_LINES and all(
+            draw.textlength(line, font=font) <= max_width - 2 * pad_x for line in lines
+        ):
+            break
+    ascent, descent = font.getmetrics()
+    line_h = ascent + descent
+    text_w = max(int(draw.textlength(line, font=font)) for line in lines)
+    band_w = min(max_width, text_w + 2 * pad_x + 2 * stroke)
+    band_h = len(lines) * line_h + (len(lines) - 1) * line_gap + 2 * pad_y
+
+    img = Image.new("RGBA", (band_w, band_h), (0, 0, 0, 0))
+    paste_gradient_rounded_rect(img, (0, 0, band_w, band_h), 28, BRAND_INDIGO, BRAND_TEAL, opacity=HOOK_BAND_OPACITY)
+    draw = ImageDraw.Draw(img)
+    y = pad_y
+    for line in lines:
+        line_w = draw.textlength(line, font=font)
+        draw.text(
+            ((band_w - line_w) / 2, y), line, font=font, fill=HOOK_TEXT_COLOR,
+            stroke_width=stroke, stroke_fill=HOOK_STROKE_COLOR,
+        )
+        y += line_h + line_gap
+    img.save(out_path)
+    return band_w, band_h
+
+
 def assemble(video_id: str, music_track: Path | None = None) -> str:
     video = get_video(video_id)
     if video is None:
@@ -256,11 +318,28 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
         cta_input_index = 3 if use_music else 2
         cmd += ["-loop", "1", "-i", str(cta_path)]
 
+        base_label = "0:v"
+        hook_filter = ""
+        screen_hook = video.get("screen_hook")
+        if screen_hook:
+            hook_path = tmp_dir / "hook.png"
+            hook_w, _ = render_hook_overlay(hook_path, screen_hook, width)
+            hook_input_index = cta_input_index + 1
+            cmd += ["-loop", "1", "-t", f"{HOOK_SECONDS:.3f}", "-i", str(hook_path)]
+            hook_filter = (
+                f"[{hook_input_index}:v]format=rgba,"
+                f"fade=t=out:st={HOOK_SECONDS - HOOK_FADE_OUT:.3f}:d={HOOK_FADE_OUT}:alpha=1[hook];"
+                f"[0:v][hook]overlay={(width - hook_w) // 2}:{int(height * HOOK_Y_FRACTION)}:"
+                f"format=auto:eof_action=pass[vhook];"
+            )
+            base_label = "vhook"
+
         cta_filter = (
+            f"{hook_filter}"
             f"[{cta_input_index}:v]format=rgba,"
             f"fade=t=in:st={fade_in_start:.3f}:d={CTA_FADE_IN}:alpha=1,"
             f"fade=t=out:st={fade_out_start:.3f}:d={CTA_FADE_OUT}:alpha=1[cta];"
-            f"[0:v][cta]overlay={cta_x}:{cta_y}:format=auto[vout]"
+            f"[{base_label}][cta]overlay={cta_x}:{cta_y}:format=auto[vout]"
         )
         if use_music:
             # normalize=0 is load-bearing: amix's default normalize=1

@@ -3433,6 +3433,29 @@ it only widens when most viewers keep watching. Ours watched ~17-21s of
 - Judge after ~7 days of uploads, not one: compare avg_view_percentage
   (target 70%+) and whether any video gets past ~1,400 views.
 
+## Reverted the short format; added on-screen hooks (2026-09-27)
+
+The owner saw the first ~22s videos at under ~200 views and asked to
+"bring it back and do some cool hooks". Caveat for later analysis: those
+videos were less than a day old when judged, and older videos also sat
+at 60-90 views at 2-3 days. The revert was the owner's call either way.
+
+- Restored everything the short-format commit (5aa9749) changed: facts,
+  sauce and food back to three items per video (~45-50s), programming
+  and weird back to their old length, the 3.5s beat pause, the facts
+  persona, the sauce metadata prompt, CTA hints and research-seed
+  wording. The no-repeat prompt rule (ebb5fd3) went too; it was written
+  for the short format.
+- Kept: the weekly-quiz schedule off, the Groq fallback for disabled
+  Claude access, and the Wikipedia DYK redirect fix.
+- New: an on-screen hook. plan() appends a SCREEN_HOOK instruction to
+  every Shorts prompt: a 3-6 word curiosity line, with generic bait
+  banned. _extract_screen_hook() splits it off before the field
+  parsers, and it is stored in videos.screen_hook. assemble.py shows it
+  in big outlined text on a brand band over the first 2.6s, in the upper
+  third, clear of the captions. If the line is missing or too long, the
+  video renders exactly as before.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
