@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Skip the intro, here's the point:",
-    "Three seconds, one wild fact:",
-    "Here's the fact, no buildup:",
-    "Ten seconds, one genuinely wild fact:",
-    "Straight to it:",
-    "You have ten seconds, here's the fact:",
     "This one's short and it's a lot:",
     "Quick one:",
     "Fast fact:",
@@ -14,15 +8,15 @@
     "Fast one, but a good one:",
     "Here's your fact for the day:",
     "One thing before you scroll:",
-    "Here's something you'll repeat to someone today:"
+    "Here's something you'll repeat to someone today:",
+    "One fact, zero fluff:",
+    "No intro, just the fact:",
+    "Three seconds, one wild fact:",
+    "Here's the fact, no buildup:",
+    "Ten seconds, one genuinely wild fact:",
+    "Skip the intro, here's the point:"
   ],
   "script_structures": [
-    "Skip context entirely unless it's needed to land the punchline.",
-    "Structure it as claim, quick evidence, quick close.",
-    "Treat every sentence like it has to earn its place.",
-    "Front-load the payoff, spend the rest of the time justifying it.",
-    "One sentence of setup max, then the payoff.",
-    "One fact, one twist, done.",
     "Rapid-fire delivery, minimal setup, straight to the point.",
     "Compress the whole idea into two beats: claim, then proof.",
     "Lead with the number or stat, then explain it in one breath.",
@@ -31,15 +25,15 @@
     "One idea, delivered fast, no tangents.",
     "Keep it to three short beats max.",
     "State the surprising part first, explain second, exit third.",
-    "State the surprising claim first, then the one-line reason why."
+    "State the surprising claim first, then the one-line reason why.",
+    "State it, then immediately back it up with the 'why'.",
+    "Deliver it as a single escalating thought, no pauses.",
+    "Structure it as claim, quick evidence, quick close.",
+    "Skip context entirely unless it's needed to land the punchline.",
+    "Front-load the payoff, spend the rest of the time justifying it.",
+    "Treat every sentence like it has to earn its place."
   ],
   "phrasing_styles": [
-    "Matter-of-fact but fast, like reading a highlight reel.",
-    "Punch each key word slightly \u2014 cadence matters here.",
-    "Staccato rhythm \u2014 short bursts, clear breaks.",
-    "Talk like you're genuinely in a hurry to tell someone.",
-    "Bright and quick, almost a little breathless.",
-    "Confident and quick, like you already know this lands.",
     "Snappy, with a little grin in the delivery.",
     "Energetic without being shouty.",
     "Short, punchy sentences. No wasted words.",
@@ -48,7 +42,13 @@
     "No filler words at all \u2014 'um', 'like', 'basically' banned.",
     "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "High energy, like you're genuinely excited to share this.",
-    "Fast-talking but still totally clear, never rushed to the point of mumbling."
+    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
+    "Rapid cadence, but land the final word hard.",
+    "Matter-of-fact but fast, like reading a highlight reel.",
+    "Each sentence lands like its own mic drop.",
+    "Punch each key word slightly \u2014 cadence matters here.",
+    "Urgent but controlled \u2014 fast doesn't mean sloppy.",
+    "Talk like you're genuinely in a hurry to tell someone."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "save_for_later_early"
+    "corner_badge_late"
   ],
   "code_theme": [
-    "solarized-dark",
-    "monokai"
+    "monokai",
+    "one-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -97,7 +97,13 @@
     "Rainbow sauce",
     "Maltaise sauce",
     "Noisette sauce",
-    "Mushroom sauce"
+    "Mushroom sauce",
+    "Creole sauce",
+    "Peruvian huacatay",
+    "Relish",
+    "Mojo",
+    "Onion sauce",
+    "Mild sauce"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -117,7 +123,13 @@
     "Smoke ring",
     "Coal-fired pizza",
     "K\u0101lua",
-    "Grilling"
+    "Grilling",
+    "One pot pasta",
+    "Roasting",
+    "Panning",
+    "Steeping",
+    "Parbaking",
+    "Shocking"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -125,6 +137,18 @@
     "Patriarch Bernard fled battle on a mule, then cut off its tail so the Turks could not catch him by it",
     "Swiss architect Luigi Snozzi became a professor at EPFL after students staged a sit-in over the withdrawal of his appointment",
     "the creator of the manga series I Can't Say No to the Lonely Girl used fashion magazines for students as a reference for her character designs",
-    "South Korean footballer Ahn Jung-hwan's contract with Italian club Perugia was cancelled after he scored the golden goal against Italy in a World Cup match"
+    "South Korean footballer Ahn Jung-hwan's contract with Italian club Perugia was cancelled after he scored the golden goal against Italy in a World Cup match",
+    "the French Navy used catapults on their ships after trials with the dispatch ship Bapaume concluded that launching platforms were unsafe",
+    "VTuber Nekomata Okayu stars in two romantic visual novels",
+    "spider pulsars eat away their stellar mates by irradiating them",
+    "a 500-year-old style of Korean patchwork has been compared to modern abstract art",
+    "Los Errantes robbed banks in Cuba, Chile and Argentina before finally being caught attempting to assassinate Spanish king Alfonso XIII in France",
+    "Sydney Towle modeled at Miami Swim Week despite living with terminal cancer",
+    "gooners can reach a \"goon state\" in their \"goon caves\"",
+    "a brewery owner who sheltered pianist Henryk Sztompka and his family after the Warsaw Uprising in 1944 brought in a piano so that he could continue practicing",
+    "Brazilian actor Arlindo Lopes portrayed the lead character in the stage adaptation of the 1971 American film Harold and Maude on three separate occasions between 2007 and 2022",
+    "it took Jersey Jack ten years to secure the license for the Harry Potter pinball machine",
+    "the dismissal of Mykhailo Fedorov, the Ukrainian minister of defence, sparked a series of protests demanding the removal of the commander-in-chief instead",
+    "Victor Amalraj captained three professional football clubs based in Kolkata"
   ]
 }
