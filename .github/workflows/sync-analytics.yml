@@ -18,6 +18,10 @@ on:
         description: "Optional: set to 1 to print each template's real audience-country split (manual diagnostic only)"
         required: false
         default: ""
+      debug_daily_views:
+        description: "Optional: set to 1 to print the whole channel's real day-by-day view totals for the last 14 days (manual diagnostic only)"
+        required: false
+        default: ""
       reconcile_uploads:
         description: "Optional: 'list' to show channel videos missing from data/videos.json, 'catalog' for every video with views, or comma-separated IDs (ID or ID:template) to re-register them"
         required: false
@@ -91,6 +95,19 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python -m pipeline.stats --countries
+
+      # Manual diagnostic only, same pattern as the two debug steps above:
+      # the channel's real day-by-day view totals, independent of any
+      # single video's own 48h-14d sync-eligibility window (real ask
+      # 2026-09-28: "views sick last 3 days" -- per-video stats can't
+      # settle that when the newest videos are still under 48h old).
+      - name: Debug daily views (optional)
+        if: github.event.inputs.debug_daily_views == '1'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python -m pipeline.stats --daily
 
       # Manual repair only: scripts/reconcile_uploads.py diffs the channel's
       # real uploads against data/videos.json (real incident 2026-09-22:

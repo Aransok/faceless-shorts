@@ -193,6 +193,35 @@ def fetch_views_by_country(youtube_video_ids: list[str]) -> dict[str, int]:
     return totals
 
 
+def fetch_channel_daily_views(days: int = 14) -> list[tuple[str, int]]:
+    """[(date_iso, views), ...] for the whole channel, one row per day --
+    channel-wide daily trend, not tied to any single video's own age
+    window the way sync_analytics()'s per-video stats are. Owner ask
+    (2026-09-28): "views sick last 3 days" -- per-video stats can't
+    answer that on their own since a video needs 48h before it's even
+    synced; this answers it directly regardless of any video's age."""
+    creds = _load_credentials()
+    analytics = build("youtubeAnalytics", "v2", credentials=creds)
+    today = datetime.now(timezone.utc).date()
+    start = (today - timedelta(days=days)).isoformat()
+    resp = (
+        analytics.reports()
+        .query(ids="channel==MINE", startDate=start, endDate=today.isoformat(), metrics="views", dimensions="day")
+        .execute()
+    )
+    return [(row[0], int(row[1])) for row in resp.get("rows", [])]
+
+
+def _print_channel_daily_views(days: int = 14) -> None:
+    rows = fetch_channel_daily_views(days)
+    if not rows:
+        print("no channel-level daily data returned")
+        return
+    for date, views in rows:
+        print(f"{date}  {views:6} views")
+    print(f"total over {len(rows)} day(s): {sum(v for _, v in rows)}")
+
+
 def _print_country_breakdown() -> None:
     by_template: dict[str, list[str]] = {}
     for r in all_uploads():
@@ -291,6 +320,9 @@ if __name__ == "__main__":
     video_id_arg = sys.argv[1] if len(sys.argv) > 1 else None
     if video_id_arg == "--countries":
         _print_country_breakdown()
+        raise SystemExit(0)
+    if video_id_arg == "--daily":
+        _print_channel_daily_views()
         raise SystemExit(0)
     if not video_id_arg:
         uploads = all_uploads()
