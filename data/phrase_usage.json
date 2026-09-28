@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "This one's short and it's a lot:",
-    "Quick one:",
-    "Fast fact:",
-    "Here's a fact that'll ruin your day, in a good way:",
-    "This'll take ten seconds and it's worth it:",
-    "Fast one, but a good one:",
     "Here's your fact for the day:",
     "One thing before you scroll:",
     "Here's something you'll repeat to someone today:",
@@ -14,15 +8,15 @@
     "Three seconds, one wild fact:",
     "Here's the fact, no buildup:",
     "Ten seconds, one genuinely wild fact:",
-    "Skip the intro, here's the point:"
+    "Skip the intro, here's the point:",
+    "Straight to it:",
+    "This one's short and it's a lot:",
+    "Quick one:",
+    "Fast fact:",
+    "You have ten seconds, here's the fact:",
+    "Quick hit:"
   ],
   "script_structures": [
-    "Rapid-fire delivery, minimal setup, straight to the point.",
-    "Compress the whole idea into two beats: claim, then proof.",
-    "Lead with the number or stat, then explain it in one breath.",
-    "No warmup \u2014 open directly on the strangest detail.",
-    "Say the wildest part first, everything else is just support.",
-    "One idea, delivered fast, no tangents.",
     "Keep it to three short beats max.",
     "State the surprising part first, explain second, exit third.",
     "State the surprising claim first, then the one-line reason why.",
@@ -31,15 +25,15 @@
     "Structure it as claim, quick evidence, quick close.",
     "Skip context entirely unless it's needed to land the punchline.",
     "Front-load the payoff, spend the rest of the time justifying it.",
-    "Treat every sentence like it has to earn its place."
+    "Treat every sentence like it has to earn its place.",
+    "One sentence of setup max, then the payoff.",
+    "Zero throat-clearing \u2014 first word is already the content.",
+    "One fact, one twist, done.",
+    "Rapid-fire delivery, minimal setup, straight to the point.",
+    "Compress the whole idea into two beats: claim, then proof.",
+    "Lead with the number or stat, then explain it in one breath."
   ],
   "phrasing_styles": [
-    "Snappy, with a little grin in the delivery.",
-    "Energetic without being shouty.",
-    "Short, punchy sentences. No wasted words.",
-    "Quick with a wink \u2014 this is fun, not frantic.",
-    "Clipped and efficient \u2014 every word working.",
-    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
     "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "High energy, like you're genuinely excited to share this.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
@@ -48,7 +42,13 @@
     "Each sentence lands like its own mic drop.",
     "Punch each key word slightly \u2014 cadence matters here.",
     "Urgent but controlled \u2014 fast doesn't mean sloppy.",
-    "Talk like you're genuinely in a hurry to tell someone."
+    "Talk like you're genuinely in a hurry to tell someone.",
+    "Confident and quick, like you already know this lands.",
+    "Staccato rhythm \u2014 short bursts, clear breaks.",
+    "Energetic without being shouty.",
+    "Short, punchy sentences. No wasted words.",
+    "Bright and quick, almost a little breathless.",
+    "Snappy, with a little grin in the delivery."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "corner_badge_late"
+    "center_punch_mid"
   ],
   "code_theme": [
-    "monokai",
-    "one-dark"
+    "one-dark",
+    "nord"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -103,7 +103,13 @@
     "Relish",
     "Mojo",
     "Onion sauce",
-    "Mild sauce"
+    "Mild sauce",
+    "Tarator",
+    "Pecel",
+    "Vinaigrette",
+    "Parsley sauce",
+    "Au jus",
+    "Salvitxada"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -129,7 +135,13 @@
     "Panning",
     "Steeping",
     "Parbaking",
-    "Shocking"
+    "Shocking",
+    "Curdling",
+    "Dum pukht",
+    "Breading",
+    "Clay pot cooking",
+    "Charbroiler",
+    "En papillote"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -149,6 +161,18 @@
     "Brazilian actor Arlindo Lopes portrayed the lead character in the stage adaptation of the 1971 American film Harold and Maude on three separate occasions between 2007 and 2022",
     "it took Jersey Jack ten years to secure the license for the Harry Potter pinball machine",
     "the dismissal of Mykhailo Fedorov, the Ukrainian minister of defence, sparked a series of protests demanding the removal of the commander-in-chief instead",
-    "Victor Amalraj captained three professional football clubs based in Kolkata"
+    "Victor Amalraj captained three professional football clubs based in Kolkata",
+    "a French soprano abandoned her opera career to become a nun",
+    "one of the few surviving \"Dutch Billy\"\u2013style buildings is a house in Dublin",
+    "Niko Resources pleaded guilty to bribery in Canada over the Chhatak Gas Field explosion, but the Bangladeshi officials whom it bribed were acquitted at home",
+    "Davis Creek Regional Park was part of a ranch known for its Thoroughbred horses",
+    "Trump's NLRB general counsel called for the re-legalization of captive audience meetings, in which employees are often coerced to listen to anti-union speeches",
+    "Dan Petro, a violent spirit in Haitian Vodou, is the apotheosis of a legendary rebel priest",
+    "California Creek and Dakota Creek are in Washington",
+    "a 2026 Women's Africa Cup of Nations team featuring Rose Alufandika, Mercy Sikelo, Esther Maulidi, Ireen Khumalo, and Maggie Chavula went from being ranked 153rd to making the final and qualifying for the World Cup",
+    "the 1986 Greek constitutional amendment elevated the prime minister into a \"parliamentary autocrat\" by stripping away most powers of the president",
+    "an Olympic wrestler from the Philippines became a mayor in Southern California",
+    "Kai Cenat's Streamer University received more than 1 million applications within minutes of opening enrollment",
+    "Greek communists defended the Right against the socialist prime minister's attacks during the 1985 parliamentary election, even though they had been persecuted by the Right in the 1950s"
   ]
 }
