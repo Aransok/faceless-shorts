@@ -1,6 +1,5 @@
 {
   "hook_openers": [
-    "Here's your fact for the day:",
     "One thing before you scroll:",
     "Here's something you'll repeat to someone today:",
     "One fact, zero fluff:",
@@ -14,10 +13,10 @@
     "Quick one:",
     "Fast fact:",
     "You have ten seconds, here's the fact:",
-    "Quick hit:"
+    "Quick hit:",
+    "Fast one, but a good one:"
   ],
   "script_structures": [
-    "Keep it to three short beats max.",
     "State the surprising part first, explain second, exit third.",
     "State the surprising claim first, then the one-line reason why.",
     "State it, then immediately back it up with the 'why'.",
@@ -31,10 +30,10 @@
     "One fact, one twist, done.",
     "Rapid-fire delivery, minimal setup, straight to the point.",
     "Compress the whole idea into two beats: claim, then proof.",
-    "Lead with the number or stat, then explain it in one breath."
+    "Lead with the number or stat, then explain it in one breath.",
+    "Say the wildest part first, everything else is just support."
   ],
   "phrasing_styles": [
-    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
     "High energy, like you're genuinely excited to share this.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
     "Rapid cadence, but land the final word hard.",
@@ -48,7 +47,8 @@
     "Energetic without being shouty.",
     "Short, punchy sentences. No wasted words.",
     "Bright and quick, almost a little breathless.",
-    "Snappy, with a little grin in the delivery."
+    "Snappy, with a little grin in the delivery.",
+    "Clipped and efficient \u2014 every word working."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -173,6 +173,12 @@
     "the 1986 Greek constitutional amendment elevated the prime minister into a \"parliamentary autocrat\" by stripping away most powers of the president",
     "an Olympic wrestler from the Philippines became a mayor in Southern California",
     "Kai Cenat's Streamer University received more than 1 million applications within minutes of opening enrollment",
-    "Greek communists defended the Right against the socialist prime minister's attacks during the 1985 parliamentary election, even though they had been persecuted by the Right in the 1950s"
+    "Greek communists defended the Right against the socialist prime minister's attacks during the 1985 parliamentary election, even though they had been persecuted by the Right in the 1950s",
+    "96-year-old social-media influencer Lillian Droniak's proposed rules for her funeral include a requirement to get drunk",
+    "a pedestrian bridge linking two Luxembourg City neighbourhoods began receiving opposition in the neighbourhood it crosses 18 years before its construction started",
+    "Kalpana Chawla was the first Indian woman to go to space",
+    "the dinosaur that laid the eggs identified as Umbellaoolithus is unknown, but it ate plants",
+    "a factory making portable nuclear reactors is being built on an old Manhattan Project site in Tennessee",
+    "Frank Lloyd Wright used urine in the construction of a college campus"
   ]
 }
