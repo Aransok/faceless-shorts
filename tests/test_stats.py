@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.stats import (
     fetch_retention,
     fetch_retention_curve,
+    fetch_channel_daily_views,
     fetch_views_by_country,
     sync_analytics,
     weekly_report_data,
@@ -155,6 +156,26 @@ class FetchViewsByCountryTest(unittest.TestCase):
     def test_no_ids_skips_the_api(self, mock_creds, mock_build):
         self.assertEqual(fetch_views_by_country([]), {})
         mock_build.assert_not_called()
+
+
+class FetchChannelDailyViewsTest(unittest.TestCase):
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_returns_one_row_per_day_with_dimensions_day(self, mock_creds, mock_build):
+        query = mock_build.return_value.reports.return_value.query
+        query.return_value.execute.return_value = {
+            "rows": [["2026-09-26", 500], ["2026-09-27", 640], ["2026-09-28", 210]]
+        }
+        rows = fetch_channel_daily_views(days=3)
+        self.assertEqual(rows, [("2026-09-26", 500), ("2026-09-27", 640), ("2026-09-28", 210)])
+        self.assertEqual(query.call_args.kwargs["dimensions"], "day")
+        self.assertEqual(query.call_args.kwargs["ids"], "channel==MINE")
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_empty_response_gives_empty_list(self, mock_creds, mock_build):
+        mock_build.return_value.reports.return_value.query.return_value.execute.return_value = {}
+        self.assertEqual(fetch_channel_daily_views(), [])
 
 
 class SyncAnalyticsRetentionTest(unittest.TestCase):
