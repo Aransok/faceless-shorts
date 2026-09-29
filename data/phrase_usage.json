@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "One thing before you scroll:",
-    "Here's something you'll repeat to someone today:",
-    "One fact, zero fluff:",
-    "No intro, just the fact:",
-    "Three seconds, one wild fact:",
-    "Here's the fact, no buildup:",
     "Ten seconds, one genuinely wild fact:",
     "Skip the intro, here's the point:",
     "Straight to it:",
@@ -14,15 +8,15 @@
     "Fast fact:",
     "You have ten seconds, here's the fact:",
     "Quick hit:",
-    "Fast one, but a good one:"
+    "Fast one, but a good one:",
+    "This'll take ten seconds and it's worth it:",
+    "Here's a fact that'll ruin your day, in a good way:",
+    "One thing before you scroll:",
+    "One fact, zero fluff:",
+    "Here's something you'll repeat to someone today:",
+    "No intro, just the fact:"
   ],
   "script_structures": [
-    "State the surprising part first, explain second, exit third.",
-    "State the surprising claim first, then the one-line reason why.",
-    "State it, then immediately back it up with the 'why'.",
-    "Deliver it as a single escalating thought, no pauses.",
-    "Structure it as claim, quick evidence, quick close.",
-    "Skip context entirely unless it's needed to land the punchline.",
     "Front-load the payoff, spend the rest of the time justifying it.",
     "Treat every sentence like it has to earn its place.",
     "One sentence of setup max, then the payoff.",
@@ -31,15 +25,15 @@
     "Rapid-fire delivery, minimal setup, straight to the point.",
     "Compress the whole idea into two beats: claim, then proof.",
     "Lead with the number or stat, then explain it in one breath.",
-    "Say the wildest part first, everything else is just support."
+    "Say the wildest part first, everything else is just support.",
+    "Keep it to three short beats max.",
+    "State the surprising part first, explain second, exit third.",
+    "State the surprising claim first, then the one-line reason why.",
+    "State it, then immediately back it up with the 'why'.",
+    "Deliver it as a single escalating thought, no pauses.",
+    "One idea, delivered fast, no tangents."
   ],
   "phrasing_styles": [
-    "High energy, like you're genuinely excited to share this.",
-    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
-    "Rapid cadence, but land the final word hard.",
-    "Matter-of-fact but fast, like reading a highlight reel.",
-    "Each sentence lands like its own mic drop.",
-    "Punch each key word slightly \u2014 cadence matters here.",
     "Urgent but controlled \u2014 fast doesn't mean sloppy.",
     "Talk like you're genuinely in a hurry to tell someone.",
     "Confident and quick, like you already know this lands.",
@@ -48,7 +42,13 @@
     "Short, punchy sentences. No wasted words.",
     "Bright and quick, almost a little breathless.",
     "Snappy, with a little grin in the delivery.",
-    "Clipped and efficient \u2014 every word working."
+    "Clipped and efficient \u2014 every word working.",
+    "Quick with a wink \u2014 this is fun, not frantic.",
+    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
+    "No filler words at all \u2014 'um', 'like', 'basically' banned.",
+    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
+    "Matter-of-fact but fast, like reading a highlight reel.",
+    "Each sentence lands like its own mic drop."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "center_punch_mid"
+    "late_banner_cadence"
   ],
   "code_theme": [
-    "one-dark",
-    "nord"
+    "nord",
+    "monokai"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -109,7 +109,13 @@
     "Vinaigrette",
     "Parsley sauce",
     "Au jus",
-    "Salvitxada"
+    "Salvitxada",
+    "Colbert sauce",
+    "Salsa golf",
+    "Cardinal sauce",
+    "Agrodolce",
+    "Kasundi",
+    "Mumbo sauce"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -141,7 +147,13 @@
     "Breading",
     "Clay pot cooking",
     "Charbroiler",
-    "En papillote"
+    "En papillote",
+    "Tempering",
+    "Broasting",
+    "Smothering",
+    "Simmering",
+    "Fond",
+    "High-altitude cooking"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -179,6 +191,18 @@
     "Kalpana Chawla was the first Indian woman to go to space",
     "the dinosaur that laid the eggs identified as Umbellaoolithus is unknown, but it ate plants",
     "a factory making portable nuclear reactors is being built on an old Manhattan Project site in Tennessee",
-    "Frank Lloyd Wright used urine in the construction of a college campus"
+    "Frank Lloyd Wright used urine in the construction of a college campus",
+    "Boy with Baby Carriage was the first of 322 cover illustrations produced by Norman Rockwell for The Saturday Evening Post",
+    "Ivan Murray Johnston's prediction that Penstemon angelicus would be described as its own species came true more than five decades later",
+    "Robert Iau asked a question that led to the demolition of Singapore's National Theatre",
+    "the Flying Doctors episode \"Return of the Hero\" marked the first time that an Australian drama tackled the subject of AIDS",
+    "Barry Pryor's plays in a 1969 American football game were credited to Gary Tucker",
+    "Galena Creek Regional Park was used for training for the 1960 Winter Olympics",
+    "the French goat cheese charolais has a \"slight cellar perfume\" according to the Ark of Taste",
+    "Swiss architect Fritz Metzger designed a church with a floor plan shaped like a fish's belly",
+    "Obinna Ekezie Jr. trained at an elite basketball academy in Nigeria founded by his father",
+    "the first script for The Last of Us season 2 was submitted about 90 minutes before the 2023 Writers Guild of America strike",
+    "the host of a college radio station led the effort to get \"Say Hello to Someone in Massachusetts\" designated as the official state polka",
+    "Impress Holdings published the first email-based magazine in Japan"
   ]
 }
