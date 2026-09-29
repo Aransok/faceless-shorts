@@ -1564,5 +1564,13 @@
     "template": "facts",
     "approach": "fast_cuts",
     "scheduled_publish_at": "2026-09-29T23:48:03.860298+00:00"
+  },
+  {
+    "video_id": "419986fb-4ade-45f6-948e-8026d47ec887",
+    "youtube_video_id": "BGH4E56z1UM",
+    "uploaded_at": "2026-09-29T19:25:05.803403+00:00",
+    "template": "facts",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-09-30T01:08:16.032082+00:00"
   }
 ]

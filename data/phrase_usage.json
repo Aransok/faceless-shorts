@@ -1,6 +1,5 @@
 {
   "hook_openers": [
-    "Ten seconds, one genuinely wild fact:",
     "Skip the intro, here's the point:",
     "Straight to it:",
     "This one's short and it's a lot:",
@@ -14,10 +13,10 @@
     "One thing before you scroll:",
     "One fact, zero fluff:",
     "Here's something you'll repeat to someone today:",
-    "No intro, just the fact:"
+    "No intro, just the fact:",
+    "Here's your fact for the day:"
   ],
   "script_structures": [
-    "Front-load the payoff, spend the rest of the time justifying it.",
     "Treat every sentence like it has to earn its place.",
     "One sentence of setup max, then the payoff.",
     "Zero throat-clearing \u2014 first word is already the content.",
@@ -31,10 +30,10 @@
     "State the surprising claim first, then the one-line reason why.",
     "State it, then immediately back it up with the 'why'.",
     "Deliver it as a single escalating thought, no pauses.",
-    "One idea, delivered fast, no tangents."
+    "One idea, delivered fast, no tangents.",
+    "Structure it as claim, quick evidence, quick close."
   ],
   "phrasing_styles": [
-    "Urgent but controlled \u2014 fast doesn't mean sloppy.",
     "Talk like you're genuinely in a hurry to tell someone.",
     "Confident and quick, like you already know this lands.",
     "Staccato rhythm \u2014 short bursts, clear breaks.",
@@ -48,7 +47,8 @@
     "No filler words at all \u2014 'um', 'like', 'basically' banned.",
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
     "Matter-of-fact but fast, like reading a highlight reel.",
-    "Each sentence lands like its own mic drop."
+    "Each sentence lands like its own mic drop.",
+    "High energy, like you're genuinely excited to share this."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,7 +60,7 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "center_punch_mid"
   ],
   "code_theme": [
     "nord",
@@ -203,6 +203,12 @@
     "Obinna Ekezie Jr. trained at an elite basketball academy in Nigeria founded by his father",
     "the first script for The Last of Us season 2 was submitted about 90 minutes before the 2023 Writers Guild of America strike",
     "the host of a college radio station led the effort to get \"Say Hello to Someone in Massachusetts\" designated as the official state polka",
-    "Impress Holdings published the first email-based magazine in Japan"
+    "Impress Holdings published the first email-based magazine in Japan",
+    "Swiss designer Hans Bellmann used a single screw in the construction of his award-winning chair, the Einpunkt-Stuhl",
+    "Dejan Vuk Stankovi\u0107's appointment as a Serbian government minister was opposed by supporters of the student-led anti-corruption protests",
+    "175 families helped to plant bamboo in Wang Wang and Fu Ni's enclosure at Adelaide Zoo",
+    "the structuralist pods of the Callam Offices are suspended above a floodplain",
+    "the cross-bracing trusses and geometric windows of the Chapel of the Apostles have been said to evoke a \"multifaceted diamond\"",
+    "the focus on suffering in the Letter of Peter to Philip suggests that the author, the intended readers, or both may have been familiar with persecution"
   ]
 }
