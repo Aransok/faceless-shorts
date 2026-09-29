@@ -222,6 +222,95 @@ def _print_channel_daily_views(days: int = 14) -> None:
     print(f"total over {len(rows)} day(s): {sum(v for _, v in rows)}")
 
 
+def fetch_channel_daily_impressions(days: int = 14) -> list[tuple[str, int, float]]:
+    """[(date_iso, impressions, ctr_percent), ...] -- Shorts-feed
+    impressions and click-through rate, channel-wide, by day. Owner ask
+    (2026-09-29): "YouTube either doesn't show our shorts or we suck" --
+    views alone can't tell those apart. Low impressions = YouTube isn't
+    surfacing the videos (a reach/algorithm problem). Normal/high
+    impressions but low CTR/views = it IS shown but people scroll past
+    (a thumbnail/hook problem). Same yt-analytics.readonly scope as
+    fetch_retention(); some accounts don't get an impressions row for a
+    given day (documented Shorts-feed quirk), which just means the day
+    is missing from the result, not that the call failed."""
+    creds = _load_credentials()
+    analytics = build("youtubeAnalytics", "v2", credentials=creds)
+    today = datetime.now(timezone.utc).date()
+    start = (today - timedelta(days=days)).isoformat()
+    resp = (
+        analytics.reports()
+        .query(
+            ids="channel==MINE",
+            startDate=start,
+            endDate=today.isoformat(),
+            metrics="impressions,impressionsClickThroughRate",
+            dimensions="day",
+        )
+        .execute()
+    )
+    return [(row[0], int(row[1]), float(row[2])) for row in resp.get("rows", [])]
+
+
+def _print_channel_daily_impressions(days: int = 14) -> None:
+    try:
+        rows = fetch_channel_daily_impressions(days)
+    except Exception as exc:
+        print(f"impressions fetch failed ({exc}) -- account may not have Shorts-feed impressions data")
+        return
+    if not rows:
+        print("no impressions data returned (common gap in the Shorts-feed report -- not necessarily zero reach)")
+        return
+    for date, impressions, ctr in rows:
+        print(f"{date}  {impressions:7} impressions  {ctr:5.2f}% CTR")
+
+
+# Health flags this channel could plausibly trip that would silently cut
+# distribution without touching the script/render pipeline at all --
+# checked directly against the Data API's own source of truth, not
+# inferred from view counts.
+def check_video_health(youtube_video_ids: list[str]) -> dict[str, dict]:
+    """{youtube_video_id: {"privacy", "upload_status", "made_for_kids",
+    "rejection_reason"}} for the given IDs. madeForKids in particular is
+    a real, common way for a channel's own reach to collapse: kids
+    content loses personalized recommendations and most of the
+    Shorts-feed surfacing that drives new-viewer discovery."""
+    if not youtube_video_ids:
+        return {}
+    creds = _load_credentials()
+    youtube = build("youtube", "v3", credentials=creds)
+    health: dict[str, dict] = {}
+    for i in range(0, len(youtube_video_ids), 50):
+        batch = youtube_video_ids[i : i + 50]
+        resp = youtube.videos().list(part="status", id=",".join(batch)).execute()
+        for item in resp.get("items", []):
+            st = item["status"]
+            health[item["id"]] = {
+                "privacy": st.get("privacyStatus"),
+                "upload_status": st.get("uploadStatus"),
+                "made_for_kids": st.get("madeForKids"),
+                "rejection_reason": st.get("rejectionReason"),
+            }
+    return health
+
+
+def _print_recent_video_health(n: int = 10) -> None:
+    recent = sorted(all_uploads(), key=lambda r: r["uploaded_at"])[-n:]
+    health = check_video_health([r["youtube_video_id"] for r in recent])
+    for r in recent:
+        h = health.get(r["youtube_video_id"], {})
+        flags = []
+        if h.get("privacy") not in ("public", "unlisted"):
+            flags.append(f"privacy={h.get('privacy')}")
+        if h.get("upload_status") not in ("processed", None):
+            flags.append(f"upload_status={h.get('upload_status')}")
+        if h.get("made_for_kids"):
+            flags.append("MADE_FOR_KIDS")
+        if h.get("rejection_reason"):
+            flags.append(f"rejected={h.get('rejection_reason')}")
+        flag_str = ", ".join(flags) if flags else "ok"
+        print(f"{r['uploaded_at'][:16]}  {r['template']:12}  {r['youtube_video_id']}  {flag_str}")
+
+
 def _print_country_breakdown() -> None:
     by_template: dict[str, list[str]] = {}
     for r in all_uploads():
@@ -323,6 +412,12 @@ if __name__ == "__main__":
         raise SystemExit(0)
     if video_id_arg == "--daily":
         _print_channel_daily_views()
+        raise SystemExit(0)
+    if video_id_arg == "--impressions":
+        _print_channel_daily_impressions()
+        raise SystemExit(0)
+    if video_id_arg == "--health":
+        _print_recent_video_health()
         raise SystemExit(0)
     if not video_id_arg:
         uploads = all_uploads()
