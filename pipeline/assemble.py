@@ -4,6 +4,7 @@ video, with the subscribe/share CTA overlay. See SPEC.md.
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -218,6 +219,20 @@ def render_cta_overlay(out_path: Path, text: str) -> tuple[int, int]:
 # the sound-off majority who decide within about a second. Sits in the
 # upper third: below brand.TOP_SAFE_ZONE_RATIO and well above the
 # caption zone (brand.CAPTION_MARGIN_V_RATIO_PORTRAIT, ~62% down).
+#
+# Turned OFF by default (2026-09-29, owner: "we can't get past 100
+# views"): the first real batch of hook videos (9/27-9/29, 11 videos)
+# came in at 3-284 views, weaker than the short-format batch it followed
+# (9/26, 424-993) and weaker than this channel's own pre-hook baseline.
+# 11 videos isn't proof the hook itself is the cause -- three format
+# changes in five days left no clean signal either way -- but it's the
+# newest variable and the weakest batch, so it's the one to remove
+# first. plan.py keeps writing SCREEN_HOOK into state.db either way (a
+# few words per prompt, harmless), just not rendered into the video, so
+# the data is still there if this ever gets a real A/B test later.
+# Re-enable with ENABLE_SCREEN_HOOK_OVERLAY=1.
+ENABLE_SCREEN_HOOK_OVERLAY = os.environ.get("ENABLE_SCREEN_HOOK_OVERLAY", "0") == "1"
+
 HOOK_SECONDS = 2.6
 HOOK_FADE_OUT = 0.3
 HOOK_Y_FRACTION = 0.16
@@ -320,7 +335,7 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
 
         base_label = "0:v"
         hook_filter = ""
-        screen_hook = video.get("screen_hook")
+        screen_hook = video.get("screen_hook") if ENABLE_SCREEN_HOOK_OVERLAY else None
         if screen_hook:
             hook_path = tmp_dir / "hook.png"
             hook_w, _ = render_hook_overlay(hook_path, screen_hook, width)
