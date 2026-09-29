@@ -14,8 +14,10 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.stats import (
+    check_video_health,
     fetch_retention,
     fetch_retention_curve,
+    fetch_channel_daily_impressions,
     fetch_channel_daily_views,
     fetch_views_by_country,
     sync_analytics,
@@ -176,6 +178,73 @@ class FetchChannelDailyViewsTest(unittest.TestCase):
     def test_empty_response_gives_empty_list(self, mock_creds, mock_build):
         mock_build.return_value.reports.return_value.query.return_value.execute.return_value = {}
         self.assertEqual(fetch_channel_daily_views(), [])
+
+
+class FetchChannelDailyImpressionsTest(unittest.TestCase):
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_returns_impressions_and_ctr_per_day(self, mock_creds, mock_build):
+        query = mock_build.return_value.reports.return_value.query
+        query.return_value.execute.return_value = {
+            "rows": [["2026-09-27", 12000, 3.5], ["2026-09-28", 9000, 2.1]]
+        }
+        rows = fetch_channel_daily_impressions(days=2)
+        self.assertEqual(rows, [("2026-09-27", 12000, 3.5), ("2026-09-28", 9000, 2.1)])
+        self.assertEqual(query.call_args.kwargs["metrics"], "impressions,impressionsClickThroughRate")
+        self.assertEqual(query.call_args.kwargs["dimensions"], "day")
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_empty_response_gives_empty_list(self, mock_creds, mock_build):
+        mock_build.return_value.reports.return_value.query.return_value.execute.return_value = {}
+        self.assertEqual(fetch_channel_daily_impressions(), [])
+
+
+class CheckVideoHealthTest(unittest.TestCase):
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_extracts_status_fields_keyed_by_video_id(self, mock_creds, mock_build):
+        mock_build.return_value.videos.return_value.list.return_value.execute.return_value = {
+            "items": [
+                {
+                    "id": "yt-1",
+                    "status": {
+                        "privacyStatus": "public",
+                        "uploadStatus": "processed",
+                        "madeForKids": False,
+                    },
+                },
+                {
+                    "id": "yt-2",
+                    "status": {
+                        "privacyStatus": "private",
+                        "uploadStatus": "rejected",
+                        "madeForKids": True,
+                        "rejectionReason": "copyright",
+                    },
+                },
+            ]
+        }
+        health = check_video_health(["yt-1", "yt-2"])
+        self.assertEqual(
+            health["yt-1"],
+            {"privacy": "public", "upload_status": "processed", "made_for_kids": False, "rejection_reason": None},
+        )
+        self.assertEqual(
+            health["yt-2"],
+            {
+                "privacy": "private",
+                "upload_status": "rejected",
+                "made_for_kids": True,
+                "rejection_reason": "copyright",
+            },
+        )
+
+    @mock.patch("pipeline.stats.build")
+    @mock.patch("pipeline.stats._load_credentials")
+    def test_no_ids_skips_the_api(self, mock_creds, mock_build):
+        self.assertEqual(check_video_health([]), {})
+        mock_build.assert_not_called()
 
 
 class SyncAnalyticsRetentionTest(unittest.TestCase):

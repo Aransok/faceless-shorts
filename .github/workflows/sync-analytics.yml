@@ -22,6 +22,14 @@ on:
         description: "Optional: set to 1 to print the whole channel's real day-by-day view totals for the last 14 days (manual diagnostic only)"
         required: false
         default: ""
+      debug_daily_impressions:
+        description: "Optional: set to 1 to print the whole channel's real day-by-day Shorts-feed impressions + CTR for the last 14 days (manual diagnostic only) -- settles whether YouTube is showing the videos at all vs. people seeing and scrolling past"
+        required: false
+        default: ""
+      debug_video_health:
+        description: "Optional: set to 1 to check the last 10 uploads' privacy/upload-status/madeForKids/rejection flags directly against YouTube (manual diagnostic only)"
+        required: false
+        default: ""
       reconcile_uploads:
         description: "Optional: 'list' to show channel videos missing from data/videos.json, 'catalog' for every video with views, or comma-separated IDs (ID or ID:template) to re-register them"
         required: false
@@ -108,6 +116,31 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
         run: python -m pipeline.stats --daily
+
+      # Manual diagnostic only, same pattern as the steps above: real
+      # Shorts-feed impressions + click-through rate by day. Real ask
+      # 2026-09-29: "YouTube either doesn't show our shorts or we suck"
+      # -- low impressions points at the first, normal impressions with
+      # low CTR/views points at the second.
+      - name: Debug daily impressions (optional)
+        if: github.event.inputs.debug_daily_impressions == '1'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python -m pipeline.stats --impressions
+
+      # Manual diagnostic only: checks the last 10 uploads' real
+      # privacy/upload-status/madeForKids/rejection flags directly
+      # against the Data API -- a way distribution can silently collapse
+      # that has nothing to do with script/render quality.
+      - name: Debug video health (optional)
+        if: github.event.inputs.debug_video_health == '1'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python -m pipeline.stats --health
 
       # Manual repair only: scripts/reconcile_uploads.py diffs the channel's
       # real uploads against data/videos.json (real incident 2026-09-22:
