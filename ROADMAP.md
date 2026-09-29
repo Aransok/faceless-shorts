@@ -3456,6 +3456,36 @@ at 60-90 views at 2-3 days. The revert was the owner's call either way.
   third, clear of the captions. If the line is missing or too long, the
   video renders exactly as before.
 
+## Diagnostics for "we can't get past 100 views"; on-screen hook turned off (2026-09-29)
+
+Owner: "YouTube either doesn't show our shorts or we suck" and "this
+week has been so bad we can't get past 100 views". Investigated with
+real data before changing anything:
+
+- **Video health check** (new, `pipeline.stats.check_video_health` /
+  `--health`): the last 10 uploads are all public, processed, not
+  madeForKids, no rejections. Distribution isn't blocked at the account
+  level.
+- **Impressions/CTR** (new, `fetch_channel_daily_impressions` /
+  `--impressions`): the Analytics API rejects `metrics=impressions` for
+  this kind of access ("Unknown identifier") -- a real API limitation,
+  not fixable from here. Only visible by hand in YouTube Studio.
+- **Real per-video numbers, pulled via the catalog mode**: the 9/27-9/29
+  batch (old ~45s format + the on-screen hook added 2026-09-27) sits at
+  3-284 views (11 videos), weaker than the 9/26 short-format batch it
+  replaced (424-993, 4 videos) and weaker than this channel's own
+  pre-9/23 baseline. Not proof the hook caused it -- 11 videos, and
+  three format changes landed in five days with no clean signal either
+  way -- but it's the newest variable and the weakest batch.
+- Owner's call: keep the ~45s format, turn the hook overlay off.
+  `assemble.py`'s `ENABLE_SCREEN_HOOK_OVERLAY` now defaults to "0" --
+  `plan()` still writes `SCREEN_HOOK` into state.db (cheap, keeps the
+  data for a real A/B test later), assemble.py just doesn't burn it
+  into the video. Set `ENABLE_SCREEN_HOOK_OVERLAY=1` to turn it back on.
+- Takeaway carried into future changes: stop flipping the format every
+  1-2 days. Every change costs the one thing needed to actually learn
+  anything -- a clean week of one unchanged setup.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
