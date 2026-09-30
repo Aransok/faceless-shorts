@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Skip the intro, here's the point:",
-    "Straight to it:",
-    "This one's short and it's a lot:",
-    "Quick one:",
-    "Fast fact:",
-    "You have ten seconds, here's the fact:",
     "Quick hit:",
     "Fast one, but a good one:",
     "This'll take ten seconds and it's worth it:",
@@ -14,15 +8,15 @@
     "One fact, zero fluff:",
     "Here's something you'll repeat to someone today:",
     "No intro, just the fact:",
-    "Here's your fact for the day:"
+    "Here's your fact for the day:",
+    "Here's the fact, no buildup:",
+    "Three seconds, one wild fact:",
+    "Straight to it:",
+    "This one's short and it's a lot:",
+    "Quick one:",
+    "Skip the intro, here's the point:"
   ],
   "script_structures": [
-    "Treat every sentence like it has to earn its place.",
-    "One sentence of setup max, then the payoff.",
-    "Zero throat-clearing \u2014 first word is already the content.",
-    "One fact, one twist, done.",
-    "Rapid-fire delivery, minimal setup, straight to the point.",
-    "Compress the whole idea into two beats: claim, then proof.",
     "Lead with the number or stat, then explain it in one breath.",
     "Say the wildest part first, everything else is just support.",
     "Keep it to three short beats max.",
@@ -31,15 +25,15 @@
     "State it, then immediately back it up with the 'why'.",
     "Deliver it as a single escalating thought, no pauses.",
     "One idea, delivered fast, no tangents.",
-    "Structure it as claim, quick evidence, quick close."
+    "Structure it as claim, quick evidence, quick close.",
+    "Front-load the payoff, spend the rest of the time justifying it.",
+    "No warmup \u2014 open directly on the strangest detail.",
+    "One sentence of setup max, then the payoff.",
+    "Treat every sentence like it has to earn its place.",
+    "Zero throat-clearing \u2014 first word is already the content.",
+    "Rapid-fire delivery, minimal setup, straight to the point."
   ],
   "phrasing_styles": [
-    "Talk like you're genuinely in a hurry to tell someone.",
-    "Confident and quick, like you already know this lands.",
-    "Staccato rhythm \u2014 short bursts, clear breaks.",
-    "Energetic without being shouty.",
-    "Short, punchy sentences. No wasted words.",
-    "Bright and quick, almost a little breathless.",
     "Snappy, with a little grin in the delivery.",
     "Clipped and efficient \u2014 every word working.",
     "Quick with a wink \u2014 this is fun, not frantic.",
@@ -48,7 +42,13 @@
     "Fast-talking but still totally clear, never rushed to the point of mumbling.",
     "Matter-of-fact but fast, like reading a highlight reel.",
     "Each sentence lands like its own mic drop.",
-    "High energy, like you're genuinely excited to share this."
+    "High energy, like you're genuinely excited to share this.",
+    "Rapid cadence, but land the final word hard.",
+    "Talk like you're genuinely in a hurry to tell someone.",
+    "Confident and quick, like you already know this lands.",
+    "Staccato rhythm \u2014 short bursts, clear breaks.",
+    "Urgent but controlled \u2014 fast doesn't mean sloppy.",
+    "Energetic without being shouty."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "center_punch_mid"
+    "corner_badge_late"
   ],
   "code_theme": [
-    "nord",
-    "monokai"
+    "monokai",
+    "solarized-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -115,7 +115,13 @@
     "Cardinal sauce",
     "Agrodolce",
     "Kasundi",
-    "Mumbo sauce"
+    "Mumbo sauce",
+    "Meuni\u00e8re sauce",
+    "Corn sauce",
+    "Valois sauce",
+    "Mignonette sauce",
+    "Pink sauce",
+    "Toum"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -153,7 +159,13 @@
     "Smothering",
     "Simmering",
     "Fond",
-    "High-altitude cooking"
+    "High-altitude cooking",
+    "Boil-in-bag",
+    "Parcooking",
+    "Blackening",
+    "Frying",
+    "Culinary triangle",
+    "Brining"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -209,6 +221,18 @@
     "175 families helped to plant bamboo in Wang Wang and Fu Ni's enclosure at Adelaide Zoo",
     "the structuralist pods of the Callam Offices are suspended above a floodplain",
     "the cross-bracing trusses and geometric windows of the Chapel of the Apostles have been said to evoke a \"multifaceted diamond\"",
-    "the focus on suffering in the Letter of Peter to Philip suggests that the author, the intended readers, or both may have been familiar with persecution"
+    "the focus on suffering in the Letter of Peter to Philip suggests that the author, the intended readers, or both may have been familiar with persecution",
+    "the title of Clipse's song \"The Birds Don't Sing\" was inspired by Maya Angelou's 1969 autobiography I Know Why the Caged Bird Sings",
+    "a building in Boston was named after slain US president John F. Kennedy, after which one writer stated: \"the building mocks the martyred president. It does not memorialize him\"",
+    "Kotaro Tatsumi once volunteered to support leprosy patients in Bangladesh",
+    "the last known survivor of the Operational Group Command initially trained as a medic but joined the OSS because he did not want to be a \"bedpan jockey\"",
+    "the flag of Uganda features a crested crane, a symbol of fortune, longevity and wealth among the indigenous Baganda people",
+    "a two-year-old boy with black eyes was used as a model in Norman Rockwell's painting The Young Lady with the Shiner",
+    "Mitsue Yamazaki named an anime television series she co-created after a term that \"makes people in the industry shudder\"",
+    "MV Jernas became a coastal tourist attraction after Cyclone Mekunu blew the cargo ship from its anchorage off the coast of Oman",
+    "during Operation Spring High, American aircraft attacked a fake target made of bamboo that lured them into a trap",
+    "professional golfer Tommy Morrison was 6 ft 8 in (2.03 m) by the age of 14",
+    "one company has tried to dissolve AFRINIC, which is part of Africa's Internet infrastructure",
+    "Leo Lomski lost a boxing world championship by one second"
   ]
 }
