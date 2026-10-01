@@ -1597,5 +1597,38 @@
     "template": "food",
     "approach": "fast_cuts",
     "scheduled_publish_at": "2026-09-30T23:03:48.905972+00:00"
+  },
+  {
+    "video_id": "e8a40b4f-b73b-452a-a7e4-c684fef52af1",
+    "youtube_video_id": "XSXVf7jPlas",
+    "uploaded_at": "2026-10-01T19:34:00.074134+00:00",
+    "template": "facts",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-10-01T20:45:38.142953+00:00"
+  },
+  {
+    "video_id": "d3d2a5cc-2d14-4c83-9102-5cabcb3f6a1c",
+    "youtube_video_id": "LzS6Hm-2kTg",
+    "uploaded_at": "2026-10-01T19:42:49.097911+00:00",
+    "template": "sauce_recipe",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-10-01T21:53:59.309863+00:00"
+  },
+  {
+    "video_id": "d7514166-8f53-49e1-969e-b2e8d15bfe2e",
+    "youtube_video_id": "F1ttKOSRyfk",
+    "uploaded_at": "2026-10-01T19:50:58.268863+00:00",
+    "template": "weird",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-10-01T23:07:39.985957+00:00"
+  },
+  {
+    "video_id": "7cd69bbe-4d81-46a7-af3f-90fd29cbb9fa",
+    "youtube_video_id": "jC9WIIhcgDA",
+    "uploaded_at": "2026-10-01T19:56:25.324516+00:00",
+    "template": "programming",
+    "approach": "fast_cuts",
+    "scheduled_publish_at": "2026-10-02T12:49:08.775372+00:00",
+    "publish_arm": "morning"
   }
 ]
