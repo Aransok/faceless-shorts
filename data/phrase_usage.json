@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Here's something you'll repeat to someone today:",
-    "No intro, just the fact:",
-    "Here's your fact for the day:",
-    "Here's the fact, no buildup:",
-    "Three seconds, one wild fact:",
-    "Straight to it:",
     "This one's short and it's a lot:",
     "Quick one:",
     "Skip the intro, here's the point:",
@@ -14,15 +8,15 @@
     "You have ten seconds, here's the fact:",
     "This'll take ten seconds and it's worth it:",
     "Ten seconds, one genuinely wild fact:",
-    "Here's a fact that'll ruin your day, in a good way:"
+    "Here's a fact that'll ruin your day, in a good way:",
+    "One thing before you scroll:",
+    "Fast one, but a good one:",
+    "Here's something you'll repeat to someone today:",
+    "Here's your fact for the day:",
+    "One fact, zero fluff:",
+    "Three seconds, one wild fact:"
   ],
   "script_structures": [
-    "Deliver it as a single escalating thought, no pauses.",
-    "One idea, delivered fast, no tangents.",
-    "Structure it as claim, quick evidence, quick close.",
-    "Front-load the payoff, spend the rest of the time justifying it.",
-    "No warmup \u2014 open directly on the strangest detail.",
-    "One sentence of setup max, then the payoff.",
     "Treat every sentence like it has to earn its place.",
     "Zero throat-clearing \u2014 first word is already the content.",
     "Rapid-fire delivery, minimal setup, straight to the point.",
@@ -31,15 +25,15 @@
     "Compress the whole idea into two beats: claim, then proof.",
     "Keep it to three short beats max.",
     "Say the wildest part first, everything else is just support.",
-    "State the surprising claim first, then the one-line reason why."
+    "State the surprising claim first, then the one-line reason why.",
+    "State the surprising part first, explain second, exit third.",
+    "Skip context entirely unless it's needed to land the punchline.",
+    "State it, then immediately back it up with the 'why'.",
+    "One idea, delivered fast, no tangents.",
+    "Structure it as claim, quick evidence, quick close.",
+    "Front-load the payoff, spend the rest of the time justifying it."
   ],
   "phrasing_styles": [
-    "Matter-of-fact but fast, like reading a highlight reel.",
-    "Each sentence lands like its own mic drop.",
-    "High energy, like you're genuinely excited to share this.",
-    "Rapid cadence, but land the final word hard.",
-    "Talk like you're genuinely in a hurry to tell someone.",
-    "Confident and quick, like you already know this lands.",
     "Staccato rhythm \u2014 short bursts, clear breaks.",
     "Urgent but controlled \u2014 fast doesn't mean sloppy.",
     "Energetic without being shouty.",
@@ -48,7 +42,13 @@
     "Clipped and efficient \u2014 every word working.",
     "Quick with a wink \u2014 this is fun, not frantic.",
     "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
-    "Bright and quick, almost a little breathless."
+    "Bright and quick, almost a little breathless.",
+    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
+    "Matter-of-fact but fast, like reading a highlight reel.",
+    "Snappy, with a little grin in the delivery.",
+    "Each sentence lands like its own mic drop.",
+    "High energy, like you're genuinely excited to share this.",
+    "Talk like you're genuinely in a hurry to tell someone."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "save_for_later_early"
+    "late_banner_cadence"
   ],
   "code_theme": [
-    "solarized-dark",
-    "dracula"
+    "dracula",
+    "monokai"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -127,7 +127,13 @@
     "Picada",
     "Balich\u00e3o",
     "Fritessaus",
-    "Cranberry sauce"
+    "Cranberry sauce",
+    "Choron sauce",
+    "Sumiso",
+    "Kiri hodi",
+    "Avocado sauce",
+    "Red-eye gravy",
+    "Beurre fondue"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -177,7 +183,13 @@
     "Sausage water",
     "Earth oven",
     "Carryover cooking",
-    "Indirect grilling"
+    "Indirect grilling",
+    "Stew",
+    "Deglazing",
+    "Meatloaf",
+    "Straight dough",
+    "Washing meat",
+    "Spherification"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -253,6 +265,15 @@
     "Romanian literary historian Alexandru George once gifted a cooking pot and a saucepan to a poet whom he was courting",
     "Shayok Misha Chowdhury staged his own mother's death in a play they wrote and performed together at The Bushwick Starr",
     "an asteroid collision in the Nysa\u2013Polana complex might have caused an impact shower on the Moon 800 million years ago",
-    "future Macau international footballer Alberto Carvalhal was involved in repatriating the remains of Pedro I to Brazil"
+    "future Macau international footballer Alberto Carvalhal was involved in repatriating the remains of Pedro I to Brazil",
+    "an imperfect take of the song \"Hadashi no Kisetsu\" was used for the final release, as its producer thought that it would endear Seiko Matsuda's voice to listeners",
+    "John Huston's 45-year directing career comprised 37 feature films, including film noirs, war dramas, and Westerns",
+    "the Popular Democratic Union was the oldest communist party in Yemen and the Arabian Peninsula",
+    "around half of the collection at Casa da Saudade, a library in Massachusetts, is in either Portuguese or Cape Verdean Creole",
+    "carpet weavers on strike in Yonkers demanded that their bosses stop docking their pay for talking, laughing, or looking out the window",
+    "actress Barbra Streisand bought a New York City townhouse after being rejected from housing cooperatives due to her occupation",
+    "the Idaho Statesman reported that Joe Pellegrini was still playing for the New York Jets when he was actually working for a local bank",
+    "Mom\u010dilo Gruban was convicted of crimes against humanity for his actions as a guard at the Omarska concentration camp during the Bosnian War",
+    "Bai Yun was artificially inseminated with Shi Shi's sperm because the two pandas could not get along"
   ]
 }
