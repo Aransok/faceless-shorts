@@ -55,16 +55,27 @@ from pipeline.voice import voice
 # rather than betting the whole rotation on an unverified number. Order
 # still deliberately avoids two same-template slots back to back.
 #
-# Reworked to 6 slots (2026-09-24, owner decision after the growth
-# review in ROADMAP.md): 2 facts, 2 food (sauce_recipe + the new
-# non-sauce `food`), 1 programming, 1 new `weird` ("Things You Didn't
-# Know"). Real views: sauce_recipe and facts ran 2.5-3x programming, so
-# programming drops to one slot, kept as a hedge on its much higher
-# RPM estimate. Similar formats (facts/weird, sauce_recipe/food) are
-# never adjacent. 6/day stays under the ~8/day channel upload cap hit
-# for real on 2026-09-22 -- but a manual trigger on top of a normal
+# Reworked again (2026-10-03, owner decision during the "still bad"
+# view-decline session in ROADMAP.md): `weird` dropped from the daily
+# rotation and sauce_recipe bumped 1->2. pipeline.winner_analyzer's real
+# per-template numbers at the time, with real sample sizes behind them:
+# sauce_recipe avg 714 views (n=31), facts avg 617 (n=51), programming
+# avg 413 (n=55) -- sauce_recipe/facts both clearly ahead of programming
+# on raw views, and `weird` (avg 187, but only n=2 -- too new/thin to
+# fully trust, still the worst of the five either way) was the one the
+# owner explicitly asked to move away from. `food` (avg 584, also only
+# n=2) kept at 1 slot rather than also dropped -- thin data, but it
+# scored far closer to the real winners than `weird` did, and dropping
+# it too would leave only 3 templates, more repetitive than the content-
+# diversity reasoning this rotation has followed since 2026-09-13/24.
+# programming kept at 1 slot, same RPM-estimate hedge as before. Similar
+# formats (sauce_recipe/food) still never adjacent -- `weird`'s removal
+# makes the facts/weird adjacency rule moot for now, not deleted from
+# the test in case `weird` (or another `facts`-like template) comes back
+# into rotation later. 6/day stays under the ~8/day channel upload cap
+# hit for real on 2026-09-22 -- but a manual trigger on top of a normal
 # daily run can still exceed it.
-TEMPLATES = ("facts", "sauce_recipe", "weird", "programming", "food", "facts")
+TEMPLATES = ("facts", "sauce_recipe", "programming", "food", "facts", "sauce_recipe")
 
 # Daily upload cap (2026-09-24). Real incident 2026-09-22: a manual
 # trigger plus the (4h-late) scheduled run each uploaded a full batch the

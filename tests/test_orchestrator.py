@@ -110,12 +110,14 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.mock_plan.assert_not_called()
 
     def test_daily_rotation_is_the_owner_chosen_mix(self):
-        # Owner decision (2026-09-24): 2 facts, 2 food (sauce_recipe +
-        # food), 1 programming, 1 weird.
+        # Owner decision (2026-10-03, real per-template view data): 2
+        # facts, 2 sauce_recipe, 1 programming, 1 food -- `weird` dropped
+        # from the daily rotation (it had the weakest real views of the
+        # five, see orchestrator.py's TEMPLATES comment).
         from collections import Counter
         self.assertEqual(
             Counter(orchestrator.TEMPLATES),
-            Counter({"facts": 2, "sauce_recipe": 1, "food": 1, "programming": 1, "weird": 1}),
+            Counter({"facts": 2, "sauce_recipe": 2, "food": 1, "programming": 1}),
         )
 
     def test_similar_formats_are_never_back_to_back(self):
