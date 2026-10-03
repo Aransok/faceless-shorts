@@ -3486,6 +3486,49 @@ real data before changing anything:
   1-2 days. Every change costs the one thing needed to actually learn
   anything -- a clean week of one unchanged setup.
 
+## "still bad" follow-up: approach rotation was stuck on the losing variant (2026-10-03)
+
+Owner, after the hook-removal check still showed no recovery: "can we fix
+it somehow ... i want us to do smth and get more views". Investigated
+rather than guessing:
+
+- **Retention curve** (`debug_retention_curve_video_id`) on the best
+  recent video (f-9YArPIUtM, sauce_recipe, 1001 views): healthy shape —
+  the one real drop is early (~20-33% through the video), then a long,
+  stable tail all the way to 100%. Tried it on two weak videos (17 and
+  93 views) and YouTube had no retention data for either — too few
+  views for the report to populate at all. Conclusion: when the
+  algorithm actually hands a video an audience, the content holds that
+  audience fine. The bottleneck is upstream of content quality — it's
+  how many people get shown the video in the first place, not whether
+  they bail once they see it.
+- **Found a real, fixable bug while looking for a lever**: this pipeline
+  already has a weekly feedback loop (`scripts/rotate_approach.py` /
+  `pipeline/approaches.py`'s `choose_next_approach()`) that is supposed
+  to pick the real best-performing `current_approach` (`storytelling_hook`
+  / `fast_cuts` / `deadpan_facts` — which pool of hook/structure/phrasing
+  variants new scripts draw from) once `pipeline.winner_analyzer` has
+  enough eligible samples for at least two of them. It ran once for real
+  on 2026-09-27 and kept `fast_cuts` — correct at the time, there wasn't
+  enough eligible data yet. Nothing re-ran it since (next scheduled run
+  wasn't until 2026-10-04). Re-running it today against current data
+  (`pipeline.winner_analyzer.approach_performance`): `storytelling_hook`
+  avg_ratio 0.95 over 62 eligible videos vs `fast_cuts` 0.77 over 27 —
+  both comfortably past `MIN_APPROACH_SAMPLE`, a real and fairly wide
+  gap, not noise. `config.yaml`'s `current_approach` had been sitting on
+  the losing variant (`fast_cuts`) for the entire post-9/23 decline
+  window.
+- Ran `rotate-approach.yml` manually (a day early, same script the
+  Sunday cron runs unsupervised every week — not a new experiment) —
+  `current_approach` is now `storytelling_hook`. Takes effect on the
+  next daily run automatically, no code change.
+- This doesn't touch anything the owner ruled out (no human review, no
+  cadence change, no voice change) and isn't another format flip — it's
+  the pipeline's own existing, already-approved feedback loop finally
+  running with enough data to do its job. Whether it actually moves
+  views needs a few days of fresh `storytelling_hook` uploads to judge
+  — report back once that batch has aged enough to compare.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
