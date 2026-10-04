@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "This'll take ten seconds and it's worth it:",
-    "Ten seconds, one genuinely wild fact:",
-    "Here's a fact that'll ruin your day, in a good way:",
-    "One thing before you scroll:",
-    "Fast one, but a good one:",
-    "Here's something you'll repeat to someone today:",
     "Here's your fact for the day:",
     "One fact, zero fluff:",
     "Three seconds, one wild fact:",
@@ -14,15 +8,15 @@
     "The full explanation for this rarely makes the cut:",
     "Here's the reasoning behind this that usually gets cut:",
     "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
-    "This is real, and the reason is more specific than most people assume:"
+    "This is real, and the reason is more specific than most people assume:",
+    "Here's the part of this story most explanations skip:",
+    "Nobody explains why this is actually true, so here goes:",
+    "What usually gets skipped here is the actual why:",
+    "This one holds up, and the reason why is the actual point:",
+    "The reason this happens rarely makes it into the retelling:",
+    "The explanation for this usually gets left out entirely:"
   ],
   "script_structures": [
-    "Keep it to three short beats max.",
-    "Say the wildest part first, everything else is just support.",
-    "State the surprising claim first, then the one-line reason why.",
-    "State the surprising part first, explain second, exit third.",
-    "Skip context entirely unless it's needed to land the punchline.",
-    "State it, then immediately back it up with the 'why'.",
     "One idea, delivered fast, no tangents.",
     "Structure it as claim, quick evidence, quick close.",
     "Front-load the payoff, spend the rest of the time justifying it.",
@@ -31,15 +25,15 @@
     "Set up the ordinary situation, then reveal the twist, then land the payoff.",
     "Open on a small detail, then zoom out to the bigger picture.",
     "Cold open on the surprising moment, then unpack how we got there.",
-    "Open with the outcome, then walk backward through the cause."
+    "Open with the outcome, then walk backward through the cause.",
+    "Build toward an 'and that's when it got weird' turn.",
+    "Lead with a question the story answers by the end.",
+    "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
+    "Structure it as three escalating moments, biggest last.",
+    "Start with the punchline, then explain why it's true.",
+    "Start in the middle of the action, then rewind to explain."
   ],
   "phrasing_styles": [
-    "Quick with a wink \u2014 this is fun, not frantic.",
-    "Efficient enthusiasm \u2014 excited, but not wasting time on it.",
-    "Bright and quick, almost a little breathless.",
-    "Fast-talking but still totally clear, never rushed to the point of mumbling.",
-    "Matter-of-fact but fast, like reading a highlight reel.",
-    "Snappy, with a little grin in the delivery.",
     "Each sentence lands like its own mic drop.",
     "High energy, like you're genuinely excited to share this.",
     "Talk like you're genuinely in a hurry to tell someone.",
@@ -48,7 +42,13 @@
     "Earnest, like you genuinely want the listener to feel what you felt.",
     "Building excitement that peaks right at the reveal.",
     "Conversational, like explaining it to a friend over coffee.",
-    "A little wry, noticing the absurdity without overplaying it."
+    "A little wry, noticing the absurdity without overplaying it.",
+    "Slightly conspiratorial, like you're letting them in on something.",
+    "A little breathless, like you can't wait to get to the good part.",
+    "Warm humor threaded through, without undercutting the actual point.",
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
+    "Reflective, like you're still a little surprised by it yourself.",
+    "Casual but precise \u2014 no filler, but still sounds like a real conversation."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -63,8 +63,8 @@
     "corner_badge_late"
   ],
   "code_theme": [
-    "monokai",
-    "nord"
+    "nord",
+    "one-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -145,7 +145,19 @@
     "Wine sauce",
     "Drawn butter",
     "Tkemali",
-    "Ajilim\u00f3jili"
+    "Ajilim\u00f3jili",
+    "Tfaya",
+    "Chicken Tonight",
+    "Mint sauce",
+    "Wow-Wow sauce",
+    "Special sauce",
+    "Skyronnes",
+    "Mushroom gravy",
+    "Coffee sauce",
+    "Dipping sauce",
+    "Clarified butter",
+    "Kyopolou",
+    "Blueberry sauce"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -207,7 +219,13 @@
     "Dredging",
     "Sous vide",
     "Basting",
-    "Amylolytic process"
+    "Amylolytic process",
+    "Pan frying",
+    "Shrivelling",
+    "Epis",
+    "Pickling",
+    "Buccan",
+    "Kinpira"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -300,6 +318,15 @@
     "Alex Sanders led a successful campaign against the construction of a chemical plant near Hilton Head Island",
     "Otto Djaya described his scholarship studies as part of an espionage mission",
     "the founder of Boston Korea at first wrote, edited, designed, and delivered the newspaper himself, on routes running from Boston to New Hampshire",
-    "minorities in Turkey recognized under the Treaty of Lausanne were not required to change their surnames, as stipulated by the Surname Law"
+    "minorities in Turkey recognized under the Treaty of Lausanne were not required to change their surnames, as stipulated by the Surname Law",
+    "Hanneline R\u00f8geberg often depicts women's bodies in \"fantastically contorted positions that defy gravity or nature\"",
+    "Jomana Alrashid, the CEO of the Saudi Research and Media Group, stated that her appointment was part of a vision that \"trickled down from the highest levels of government\"",
+    "differences over the 1968 Soviet intervention in Czechoslovakia led to a rupture between the Communist Party of Austria and its youth wing",
+    "a trademark dispute over breakfast cereal went to the Supreme Court of the United States",
+    "pizzaiolo was designated an Italian intangible cultural heritage of humanity in 2017",
+    "Clodomira Acosta escaped arrest by setting a fire and jumping through a window",
+    "Johnny Hudgins has been described as the \"black Charlie Chaplin\"",
+    "Arthur Hiscoe designed Harrogate's covered market, which burned down in 1937",
+    "Jordan is building the Middle East's largest Christian pilgrimage center ahead of the 2,000th anniversary of the baptism of Jesus in 2030"
   ]
 }
