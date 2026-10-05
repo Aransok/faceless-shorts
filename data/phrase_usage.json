@@ -1,8 +1,5 @@
 {
   "hook_openers": [
-    "Here's the reasoning behind this that usually gets cut:",
-    "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
-    "This is real, and the reason is more specific than most people assume:",
     "Here's the part of this story most explanations skip:",
     "Nobody explains why this is actually true, so here goes:",
     "What usually gets skipped here is the actual why:",
@@ -14,12 +11,12 @@
     "Most retellings of this leave out the actual reason it happens:",
     "This isn't the explanation most people settle for:",
     "There's a real reason this is true, and it's not what you'd guess:",
-    "Most people get the story behind this completely wrong:"
+    "Most people get the story behind this completely wrong:",
+    "The real cause here gets simplified out of most versions of the story:",
+    "This is accurate, and the actual mechanism is worth knowing:",
+    "This fact is real \u2014 the mechanism behind it almost never gets mentioned:"
   ],
   "script_structures": [
-    "Open on a small detail, then zoom out to the bigger picture.",
-    "Cold open on the surprising moment, then unpack how we got there.",
-    "Open with the outcome, then walk backward through the cause.",
     "Build toward an 'and that's when it got weird' turn.",
     "Lead with a question the story answers by the end.",
     "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
@@ -31,12 +28,12 @@
     "Contrast what you'd expect against what actually happened.",
     "Set expectations early, then flip them in the back half.",
     "Open with a confession, then explain what led to it.",
-    "Use a slow build with one big reveal near the very end."
+    "Use a slow build with one big reveal near the very end.",
+    "Walk through it in real time, like you're narrating it as it unfolds.",
+    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
+    "Open on a small detail, then zoom out to the bigger picture."
   ],
   "phrasing_styles": [
-    "Building excitement that peaks right at the reveal.",
-    "Conversational, like explaining it to a friend over coffee.",
-    "A little wry, noticing the absurdity without overplaying it.",
     "Slightly conspiratorial, like you're letting them in on something.",
     "A little breathless, like you can't wait to get to the good part.",
     "Warm humor threaded through, without undercutting the actual point.",
@@ -48,7 +45,10 @@
     "Unhurried \u2014 let the details breathe before moving on.",
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
     "Slightly dramatic \u2014 build a little tension before the reveal.",
-    "Warm and a little self-deprecating."
+    "Warm and a little self-deprecating.",
+    "Intimate, like sharing something you don't tell everyone.",
+    "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
+    "Earnest, like you genuinely want the listener to feel what you felt."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "save_for_later_early"
+    "corner_badge_late"
   ],
   "code_theme": [
-    "nord",
-    "one-dark"
+    "one-dark",
+    "solarized-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -169,7 +169,13 @@
     "Persillade",
     "M\u1eafm n\u00eam",
     "Nam chim",
-    "Ponzu"
+    "Ponzu",
+    "Chawdron",
+    "Satsebeli",
+    "Cameline sauce",
+    "Nardenk",
+    "N\u01b0\u1edbc ch\u1ea5m",
+    "Khrenovina sauce"
   ],
   "research_used_food": [
     "Shirred eggs",
