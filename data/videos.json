@@ -1753,5 +1753,29 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-10-05T00:14:31.617001+00:00"
+  },
+  {
+    "video_id": "2aaa8293-4bb4-4b98-9831-86679ddd95c7",
+    "youtube_video_id": "751Ve6JTbhY",
+    "uploaded_at": "2026-10-05T19:48:00.539503+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-05T21:11:22.889396+00:00"
+  },
+  {
+    "video_id": "bb768d87-327f-47d2-b67f-efb4b358ddc2",
+    "youtube_video_id": "4x1mqsHLt0M",
+    "uploaded_at": "2026-10-05T19:56:12.938528+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-05T22:30:26.293045+00:00"
+  },
+  {
+    "video_id": "b3b7524c-9a6f-42a9-9fa9-c216631ecbab",
+    "youtube_video_id": "ImI3wVS7au8",
+    "uploaded_at": "2026-10-05T20:06:34.504811+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-05T23:42:02.332529+00:00"
   }
 ]

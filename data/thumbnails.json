@@ -789,5 +789,23 @@
     "method": "card",
     "template": "facts",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/b99e8c5f-cf46-4aab-a505-b526a2905557_thumbnail.jpg"
+  },
+  {
+    "video_id": "2aaa8293-4bb4-4b98-9831-86679ddd95c7",
+    "method": "card",
+    "template": "food",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/2aaa8293-4bb4-4b98-9831-86679ddd95c7_thumbnail.jpg"
+  },
+  {
+    "video_id": "bb768d87-327f-47d2-b67f-efb4b358ddc2",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/bb768d87-327f-47d2-b67f-efb4b358ddc2_thumbnail.jpg"
+  },
+  {
+    "video_id": "b3b7524c-9a6f-42a9-9fa9-c216631ecbab",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/b3b7524c-9a6f-42a9-9fa9-c216631ecbab_thumbnail.jpg"
   }
 ]

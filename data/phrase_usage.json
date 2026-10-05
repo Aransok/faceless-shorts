@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Here's your fact for the day:",
-    "One fact, zero fluff:",
-    "Three seconds, one wild fact:",
-    "There's a real reason this is true, and it's not what you'd guess:",
-    "The real cause here gets simplified out of most versions of the story:",
-    "The full explanation for this rarely makes the cut:",
     "Here's the reasoning behind this that usually gets cut:",
     "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
     "This is real, and the reason is more specific than most people assume:",
@@ -14,15 +8,15 @@
     "What usually gets skipped here is the actual why:",
     "This one holds up, and the reason why is the actual point:",
     "The reason this happens rarely makes it into the retelling:",
-    "The explanation for this usually gets left out entirely:"
+    "The explanation for this usually gets left out entirely:",
+    "Most versions of this story skip the actual cause:",
+    "This is true for a specific, checkable reason, not just 'because':",
+    "Most retellings of this leave out the actual reason it happens:",
+    "This isn't the explanation most people settle for:",
+    "There's a real reason this is true, and it's not what you'd guess:",
+    "Most people get the story behind this completely wrong:"
   ],
   "script_structures": [
-    "One idea, delivered fast, no tangents.",
-    "Structure it as claim, quick evidence, quick close.",
-    "Front-load the payoff, spend the rest of the time justifying it.",
-    "Use a slow build with one big reveal near the very end.",
-    "Introduce the normal expectation, then subvert it hard.",
-    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
     "Open on a small detail, then zoom out to the bigger picture.",
     "Cold open on the surprising moment, then unpack how we got there.",
     "Open with the outcome, then walk backward through the cause.",
@@ -31,15 +25,15 @@
     "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
     "Structure it as three escalating moments, biggest last.",
     "Start with the punchline, then explain why it's true.",
-    "Start in the middle of the action, then rewind to explain."
+    "Start in the middle of the action, then rewind to explain.",
+    "Build tension gradually across three beats, then release it in the last line.",
+    "Frame it as a mystery, then solve it by the end.",
+    "Contrast what you'd expect against what actually happened.",
+    "Set expectations early, then flip them in the back half.",
+    "Open with a confession, then explain what led to it.",
+    "Use a slow build with one big reveal near the very end."
   ],
   "phrasing_styles": [
-    "Each sentence lands like its own mic drop.",
-    "High energy, like you're genuinely excited to share this.",
-    "Talk like you're genuinely in a hurry to tell someone.",
-    "Warm and a little self-deprecating.",
-    "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
-    "Earnest, like you genuinely want the listener to feel what you felt.",
     "Building excitement that peaks right at the reveal.",
     "Conversational, like explaining it to a friend over coffee.",
     "A little wry, noticing the absurdity without overplaying it.",
@@ -48,7 +42,13 @@
     "Warm humor threaded through, without undercutting the actual point.",
     "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
     "Reflective, like you're still a little surprised by it yourself.",
-    "Casual but precise \u2014 no filler, but still sounds like a real conversation."
+    "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
+    "Curious and searching, like you're figuring it out as you go.",
+    "Plainspoken but with real conviction underneath it.",
+    "Unhurried \u2014 let the details breathe before moving on.",
+    "Direct eye-contact energy \u2014 like you're talking straight to one person.",
+    "Slightly dramatic \u2014 build a little tension before the reveal.",
+    "Warm and a little self-deprecating."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,7 +60,7 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "corner_badge_late"
+    "save_for_later_early"
   ],
   "code_theme": [
     "nord",
@@ -157,7 +157,19 @@
     "Dipping sauce",
     "Clarified butter",
     "Kyopolou",
-    "Blueberry sauce"
+    "Blueberry sauce",
+    "Salsa macha",
+    "Tucupi",
+    "Old sour",
+    "Sauce bercy",
+    "Paloise sauce",
+    "Salsa criolla",
+    "\u00c0 la zingara",
+    "Salsa de pago",
+    "Persillade",
+    "M\u1eafm n\u00eam",
+    "Nam chim",
+    "Ponzu"
   ],
   "research_used_food": [
     "Shirred eggs",
@@ -225,7 +237,13 @@
     "Epis",
     "Pickling",
     "Buccan",
-    "Kinpira"
+    "Kinpira",
+    "Tataki",
+    "Caramelization",
+    "Steaming",
+    "Slow cooker",
+    "Sweating",
+    "Cooking with alcohol"
   ],
   "research_used_facts": [
     "Liew Mun Leong started his career by developing military camps before becoming the chief project manager for Changi Airport Terminal 2",
@@ -327,6 +345,15 @@
     "Clodomira Acosta escaped arrest by setting a fire and jumping through a window",
     "Johnny Hudgins has been described as the \"black Charlie Chaplin\"",
     "Arthur Hiscoe designed Harrogate's covered market, which burned down in 1937",
-    "Jordan is building the Middle East's largest Christian pilgrimage center ahead of the 2,000th anniversary of the baptism of Jesus in 2030"
+    "Jordan is building the Middle East's largest Christian pilgrimage center ahead of the 2,000th anniversary of the baptism of Jesus in 2030",
+    "John James Audubon gave his wife ownership of his Manhattan estate to prevent debt collectors from seizing it",
+    "the melodies of Alarms in the Heart were likened to Gregorian chants",
+    "drag queen Marcus Hunter-Neill once donated \u00a320,000 worth of clothes to charity",
+    "from 1959 all Guinean people aged 7 to 35 years old statutorily belonged to the Youth of the African Democratic Revolution",
+    "Grady Prestage was the first African American elected to the Fort Bend County commissioners' court since Reconstruction",
+    "Australian model Cindy Rostron also had a career as an Indigenous ranger",
+    "a man born in Austria became one of the first colonels of the People's Army of Vietnam",
+    "the anthropomorphic skunk Sabrina has been called \"one of the most famous furry comics stars\"",
+    "Philoxenos Yuhanon Dolabani defied church policy against Assyrian nationalism through anonymous poetry"
   ]
 }
