@@ -1,6 +1,5 @@
 {
   "hook_openers": [
-    "Most versions of this story skip the actual cause:",
     "This is true for a specific, checkable reason, not just 'because':",
     "Most retellings of this leave out the actual reason it happens:",
     "This isn't the explanation most people settle for:",
@@ -14,10 +13,10 @@
     "Here's the part of this story most explanations skip:",
     "Nobody explains why this is actually true, so here goes:",
     "Here's the reasoning behind this that usually gets cut:",
-    "This one holds up, and the reason why is the actual point:"
+    "This one holds up, and the reason why is the actual point:",
+    "The explanation for this usually gets left out entirely:"
   ],
   "script_structures": [
-    "Build tension gradually across three beats, then release it in the last line.",
     "Frame it as a mystery, then solve it by the end.",
     "Contrast what you'd expect against what actually happened.",
     "Set expectations early, then flip them in the back half.",
@@ -31,10 +30,10 @@
     "Lead with a question the story answers by the end.",
     "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
     "Build toward an 'and that's when it got weird' turn.",
-    "Structure it as three escalating moments, biggest last."
+    "Structure it as three escalating moments, biggest last.",
+    "Start with the punchline, then explain why it's true."
   ],
   "phrasing_styles": [
-    "Curious and searching, like you're figuring it out as you go.",
     "Plainspoken but with real conviction underneath it.",
     "Unhurried \u2014 let the details breathe before moving on.",
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
@@ -48,7 +47,8 @@
     "Slightly conspiratorial, like you're letting them in on something.",
     "Warm humor threaded through, without undercutting the actual point.",
     "Conversational, like explaining it to a friend over coffee.",
-    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling."
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
+    "Casual but precise \u2014 no filler, but still sounds like a real conversation."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,7 +60,7 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "save_for_later_early"
   ],
   "code_theme": [
     "solarized-dark",

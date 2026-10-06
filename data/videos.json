@@ -1843,5 +1843,13 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-10-07T01:56:01.762986+00:00"
+  },
+  {
+    "video_id": "691dab17-7484-4232-bfb7-bef5fa3ad152",
+    "youtube_video_id": "PdDxlNLw0aE",
+    "uploaded_at": "2026-10-06T20:20:09.848801+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-07T03:19:12.292467+00:00"
   }
 ]
