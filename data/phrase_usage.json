@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Here's the reasoning behind this that usually gets cut:",
-    "This one holds up, and the reason why is the actual point:",
-    "The explanation for this usually gets left out entirely:",
-    "What usually gets skipped here is the actual why:",
-    "This is true for a specific, checkable reason, not just 'because':",
-    "The reason this happens rarely makes it into the retelling:",
     "This isn't the explanation most people settle for:",
     "Most versions of this story skip the actual cause:",
     "Most retellings of this leave out the actual reason it happens:",
@@ -14,15 +8,15 @@
     "The real cause here gets simplified out of most versions of the story:",
     "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
     "This is real, and the reason is more specific than most people assume:",
-    "This is accurate, and the actual mechanism is worth knowing:"
+    "This is accurate, and the actual mechanism is worth knowing:",
+    "Nobody explains why this is actually true, so here goes:",
+    "Here's the reasoning behind this that usually gets cut:",
+    "This one holds up, and the reason why is the actual point:",
+    "The explanation for this usually gets left out entirely:",
+    "Here's the part of this story most explanations skip:",
+    "This is true for a specific, checkable reason, not just 'because':"
   ],
   "script_structures": [
-    "Build toward an 'and that's when it got weird' turn.",
-    "Structure it as three escalating moments, biggest last.",
-    "Start with the punchline, then explain why it's true.",
-    "Open with the outcome, then walk backward through the cause.",
-    "Start in the middle of the action, then rewind to explain.",
-    "Build tension gradually across three beats, then release it in the last line.",
     "Frame it as a mystery, then solve it by the end.",
     "Set expectations early, then flip them in the back half.",
     "Contrast what you'd expect against what actually happened.",
@@ -31,15 +25,15 @@
     "Open with a confession, then explain what led to it.",
     "Open on a small detail, then zoom out to the bigger picture.",
     "Introduce the normal expectation, then subvert it hard.",
-    "Set up the ordinary situation, then reveal the twist, then land the payoff."
+    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
+    "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
+    "Cold open on the surprising moment, then unpack how we got there.",
+    "Build toward an 'and that's when it got weird' turn.",
+    "Lead with a question the story answers by the end.",
+    "Open with the outcome, then walk backward through the cause.",
+    "Start with the punchline, then explain why it's true."
   ],
   "phrasing_styles": [
-    "Conversational, like explaining it to a friend over coffee.",
-    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
-    "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
-    "A little breathless, like you can't wait to get to the good part.",
-    "Plainspoken but with real conviction underneath it.",
-    "Unhurried \u2014 let the details breathe before moving on.",
     "Curious and searching, like you're figuring it out as you go.",
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
     "Warm and a little self-deprecating.",
@@ -48,7 +42,13 @@
     "Intimate, like sharing something you don't tell everyone.",
     "A little wry, noticing the absurdity without overplaying it.",
     "Building excitement that peaks right at the reveal.",
-    "Slightly conspiratorial, like you're letting them in on something."
+    "Slightly conspiratorial, like you're letting them in on something.",
+    "Earnest, like you genuinely want the listener to feel what you felt.",
+    "Conversational, like explaining it to a friend over coffee.",
+    "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
+    "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
+    "A little breathless, like you can't wait to get to the good part.",
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "corner_badge_late"
+    "late_banner_cadence"
   ],
   "code_theme": [
-    "nord",
-    "monokai"
+    "monokai",
+    "solarized-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -402,7 +402,13 @@
     "Fat Papi became the first Kurd on the Billboard Hot 100 because of a woman with a bob",
     "Stephanie Williams wrote a fan comic about Monica Rambeau before writing for the character officially",
     "in 1967 the Cambodian Civil War began with a rebel assault on a Royal Khmer Socialist Youth co-operative farm",
-    "the 2026 Leagues Cup final featured a yellow card just eight seconds into the match"
+    "the 2026 Leagues Cup final featured a yellow card just eight seconds into the match",
+    "\"Down the Mine\" was released to the public more than 40 years after production began",
+    "housing activist Madge Fagan successfully protested the demolition of her own house",
+    "New York state demolished a historic hunting clubhouse after acquiring it for the state's forest preserve",
+    "The New Yorker listed a book about the One Direction fandom as one of the best books of 2022",
+    "groups of unemployed young men who drink tea play a role in crime prevention in Niger",
+    "voice actress Hikari Senga chose anime over musical theatre due to its sustained presence during COVID-19"
   ],
   "research_used_trending": [
     "Carrie (miniseries)",
