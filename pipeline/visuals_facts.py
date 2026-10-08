@@ -349,7 +349,13 @@ def _build_clip_pool(
     slack_target = min_count * 2  # room for diversity to actually reject near-duplicates
     for tier, queries in tiers:
         for query in queries:
-            all_scored.extend(_search_tier(query, tier, subject, api_key, seen_ids))
+            # One rejected query (real 2026-10-08: a single 403 on
+            # "jack-o'-lantern mushroom") must not kill the whole video
+            # while the other queries can still fill the beat.
+            try:
+                all_scored.extend(_search_tier(query, tier, subject, api_key, seen_ids))
+            except requests.RequestException as exc:
+                print(f"warning: Pexels search failed for {query!r} ({exc}) -- trying the other queries")
         good_enough = [c for c in all_scored if c["score"] >= MIN_ACCEPTABLE_SCORE]
         if len(good_enough) >= slack_target:
             break

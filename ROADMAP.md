@@ -3568,6 +3568,18 @@ viral, after that comes Christmas etc."
   shown the day's trending list too, told to build around one only if
   it genuinely ties into the holiday. The trending list is fetched once
   per day per run (cached) instead of once per video.
+- First real runs (2026-10-08): the 19:48 run failed instantly (Claude
+  CLI usage limit, reset at 19:50; the Groq fallback rejected the prompt
+  as too large -- open issue). Its offered trending titles had been
+  persisted as "used", so the 19:50 re-run had no trending left. Fixed:
+  trending offers are now only spread within a run, never persisted;
+  the covered check ignores a title's parenthetical; risers with no
+  short description are dropped; people/news patterns widened (a
+  "2026 ... house investigation" and two people had slipped through).
+  Same run: one Pexels 403 on a single query failed the whole Halloween
+  facts video -- `visuals_facts._build_clip_pool` now skips a failed
+  query and uses the rest. First seasonal upload: the Halloween food
+  video ("Halloween Pumpkin Seeds Soggy? ...", tdSBSqLXgZg).
 - `metadata.py`: seasonal videos get the holiday in the title and its
   hashtag (#Halloween etc.) in the description/tags.
 - `videos.seasonal_event` records which videos were seasonal, so

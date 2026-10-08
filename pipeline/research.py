@@ -69,7 +69,6 @@ _USED_HISTORY_LIMIT = 3000
 PAGEVIEWS_TOP_URL = (
     "https://wikimedia.org/api/rest_v1/metrics/pageviews/top/en.wikipedia/all-access/{day:%Y/%m/%d}"
 )
-_TRENDING_SLOT = "research_used_trending"
 # Rank cutoff in yesterday's list; the baseline is the full top 1000 a
 # week earlier, so "rising" means it wasn't anywhere near the top then.
 TRENDING_TOP_N = 200
@@ -94,13 +93,16 @@ _PERSON_DESCRIPTION = re.compile(
     r"|coach|wrestler|boxer|comedian|businessman|businesswoman|entrepreneur"
     r"|journalist|presenter|personality|influencer|writer|author|novelist|director|producer"
     r"|televangelist|evangelist|scientist|physicist|chemist|biologist|neuroscientist|engineer"
-    r"|economist|lawyer|judge|criminal|murderer|activist|advocate|dancer|artist|youtuber)s?\b",
+    r"|economist|lawyer|judge|criminal|murderer|activist|advocate|dancer|artist|youtuber"
+    r"|astrophysicist|astronomer|mathematician|historian|philosopher|poet|painter|composer"
+    r"|architect|inventor|explorer|mountaineer|adventurer|chef|designer|official|diplomat)s?\b",
     re.IGNORECASE,
 )
 _NEWS_EVENT = re.compile(
     r"\b(?:shooting|attack|bombing|murder|killing|massacre|allegations?|scandal|trial|election"
     r"|referendum|crash|disaster|earthquake|hurricane|war|riot|protests?|assassination"
-    r"|kidnapping|rape|abuse|stabbing|death of|disambiguation|same term)\b",
+    r"|kidnapping|rape|abuse|stabbing|death of|disambiguation|same term|investigation"
+    r"|indictment|arrest|lawsuit|controversy|incident|hostage|missing)\b",
     re.IGNORECASE,
 )
 
@@ -270,13 +272,28 @@ def _fetch_trending_uncached(today: date) -> list[tuple[str, str]]:
         return []
     descriptions = fetch_descriptions(risers)
     pairs = [(t, descriptions.get(t, "")) for t in risers]
-    return [(t, d) for t, d in pairs if not is_newsy(t, d)]
+    # No short description means the article can't be vetted at all.
+    return [(t, d) for t, d in pairs if d and not is_newsy(t, d)]
+
+
+# Titles already offered by THIS process, so the day's videos get
+# different candidates. Deliberately not persisted (unlike the other
+# sources' used-lists): real 2026-10-08, a run that failed at the LLM
+# step burned the day's whole trending list before a single video was
+# made. Re-offering tomorrow is fine -- anything actually turned into a
+# video is excluded by the covered-text check below.
+_offered_this_run: set[str] = set()
+
+
+def _base_title(title: str) -> str:
+    return re.sub(r"\s*\([^)]*\)$", "", title).strip().lower()
 
 
 def trending_candidates(template: str) -> list[str]:
-    """Up to CANDIDATES_PER_SEED fresh trending titles suited to
-    `template` (rank order -- the top risers are the strongest signal),
-    marked used; [] when there are none or anything fails."""
+    """Up to CANDIDATES_PER_SEED trending titles suited to `template`
+    (rank order -- the top risers are the strongest signal) that this
+    channel hasn't covered and this run hasn't offered yet; [] when
+    there are none or anything fails."""
     if template not in TRENDING_TEMPLATES or os.environ.get("ENABLE_TRENDING_TOPICS", "1") == "0":
         return []
     try:
@@ -284,10 +301,10 @@ def trending_candidates(template: str) -> list[str]:
         if template != "facts":
             risers = [(t, d) for t, d in risers if _FOOD_DESCRIPTION.search(d)]
         covered = all_script_text(template)
-        used = set(used_values(_TRENDING_SLOT))
-        picks = [t for t, _ in risers if t not in used and t.lower() not in covered][:CANDIDATES_PER_SEED]
-        if picks:
-            mark_used(_TRENDING_SLOT, picks, _USED_HISTORY_LIMIT)
+        picks = [
+            t for t, _ in risers if t not in _offered_this_run and _base_title(t) not in covered
+        ][:CANDIDATES_PER_SEED]
+        _offered_this_run.update(picks)
         print(f"[research] trending for {template}: {picks or 'nothing fresh'} (pool={len(risers)})")
         return picks
     except Exception as exc:

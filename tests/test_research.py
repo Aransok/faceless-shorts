@@ -127,6 +127,21 @@ class IsNewsyTest(unittest.TestCase):
             self.assertFalse(research.is_newsy(title, desc), title)
 
 
+class FetchTrendingUncachedTest(unittest.TestCase):
+    def test_drops_newsy_and_undescribed_risers(self):
+        from datetime import date
+        recent = ["Pneumonic_plague", "Mystery_page", "2026_Olney_house_investigation", "YouTube"]
+        descriptions = {
+            "Pneumonic plague": "Lung infection",
+            "Mystery page": "",
+            "2026 Olney house investigation": "Police investigation in Maryland",
+        }
+        with mock.patch.object(research, "fetch_top_articles", side_effect=[recent, ["YouTube"]]), \
+             mock.patch.object(research, "fetch_descriptions", return_value=descriptions):
+            got = research._fetch_trending_uncached(date(2026, 10, 8))
+        self.assertEqual(got, [("Pneumonic plague", "Lung infection")])
+
+
 class FetchDescriptionsTest(unittest.TestCase):
     def test_maps_normalized_and_redirected_titles_back(self):
         response = {"query": {
@@ -164,16 +179,35 @@ class SuggestResearchSeedTest(unittest.TestCase):
         self.trending_patcher = mock.patch.object(research, "fetch_trending_topics", return_value=[])
         self.mock_trending = self.trending_patcher.start()
         self.addCleanup(self.trending_patcher.stop)
+        offered = mock.patch.object(research, "_offered_this_run", set())
+        offered.start()
+        self.addCleanup(offered.stop)
 
     def test_facts_prefer_trending_topics_in_rank_order(self):
         self.mock_trending.return_value = [(f"Rising topic {i}", "Some subject") for i in range(10)]
         seed = research.suggest_research_seed("facts")
         self.assertIn("suddenly started looking up", seed)
-        self.assertEqual(rotation.used_values("research_used_trending"),
-                         [f"Rising topic {i}" for i in range(research.CANDIDATES_PER_SEED)])
-        # The next facts video that day gets the next risers, not repeats.
+        for i in range(research.CANDIDATES_PER_SEED):
+            self.assertIn(f"Rising topic {i}\n", seed + "\n")
+        # The next facts video in the same run gets the next risers.
+        second = research.suggest_research_seed("facts")
+        self.assertIn("Rising topic 9", second)
+        self.assertNotIn("Rising topic 0\n", second + "\n")
+
+    def test_trending_offers_are_not_persisted_across_runs(self):
+        # Real 2026-10-08: a run that failed at the LLM step burned the
+        # whole trending list, leaving the re-run with nothing.
+        self.mock_trending.return_value = [("Rising topic", "Some subject")]
         research.suggest_research_seed("facts")
-        self.assertIn("Rising topic 9", rotation.used_values("research_used_trending"))
+        research._offered_this_run.clear()  # a new process / run
+        self.assertIn("Rising topic", research.suggest_research_seed("facts"))
+
+    @mock.patch.object(research, "fetch_dyk_hooks", return_value=[])
+    def test_covered_check_ignores_the_parenthetical(self, _dyk):
+        self.mock_trending.return_value = [("Carrie (miniseries)", "2002 television film"), ("Bioluminescence", "Light")]
+        with mock.patch.object(research, "all_script_text", return_value="carrie was stephen king's first novel"):
+            seed = research.suggest_research_seed("facts")
+        self.assertNotIn("Carrie", seed)
 
     @mock.patch.object(research, "fetch_dyk_hooks")
     def test_trending_failure_falls_back_to_did_you_know(self, mock_dyk):

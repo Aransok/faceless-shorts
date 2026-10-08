@@ -132,6 +132,21 @@ class TestTierProgressionAndRanking(unittest.TestCase):
         self.assertEqual(len(pool), 2)
         self.assertTrue(all(entry["match_type"] == "exact_subject" for entry in log))
 
+    def test_one_rejected_query_does_not_kill_the_beat(self):
+        # Real 2026-10-08: a single 403 on one query failed a whole video.
+        import requests
+        plan = {"subject": "Jack-o'-lantern mushroom", "exact": ["jack-o'-lantern mushroom"],
+                "representation": ["orange glowing mushroom"], "concept": []}
+
+        def fake_search(query, api_key, per_page=5):
+            if "jack" in query:
+                raise requests.HTTPError("403 Client Error: Forbidden")
+            return [_fake_video(1, "orange glowing mushroom forest"), _fake_video(2, "glowing mushroom night")]
+
+        with patch.object(vf, "_search_pexels_videos", side_effect=fake_search):
+            pool, _ = vf._build_clip_pool(plan, api_key="fake", min_count=2)
+        self.assertEqual(len(pool), 2)
+
     def test_continues_past_exact_tier_when_no_real_slack(self):
         """The old flat behavior (stop as soon as min_count is merely
         met) gave diversity selection zero alternatives to work with --
