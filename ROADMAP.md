@@ -3536,15 +3536,31 @@ viral, after that comes Christmas etc."
 
 - New `pipeline/seasonal.py`: a fixed holiday calendar (Halloween,
   US Thanksgiving, Christmas, New Year's, Valentine's Day), each with a
-  lead-in window and the templates it applies to. The window ends the
-  day BEFORE the holiday -- uploads publish 20:00-04:00 UTC after each
-  run, so that last batch is live through the holiday itself.
+  31-day lead-in window (owner: "like 1 month before") and the
+  templates it applies to. Overlapping windows: the nearest holiday
+  wins. The window ends the day BEFORE the holiday -- uploads publish
+  20:00-04:00 UTC after each run, so that last batch is live through
+  the holiday itself.
 - `run_daily()`: while a window is active, the FIRST video of each
   eligible template that day gets a seasonal theme block (in place of
-  the unrelated Wikipedia research menu); everything else stays normal.
-  With today's rotation that's 2 of 6 videos/day for Halloween (facts +
-  food -- no sauce_recipe, there's no honest Halloween sauce angle). A
-  manual `topic_hints` entry still always wins.
+  the unrelated research menu); in the final 10 days (`PEAK_DAYS`,
+  when search interest actually spikes) EVERY eligible-template video
+  does. For Halloween that's 2 of 6 videos/day, then 3 of 6 from Oct 21
+  (facts + food -- no sauce_recipe, there's no honest Halloween sauce
+  angle). A manual `topic_hints` entry still always wins.
+- Trend catching (same day, owner: "catch the viral trends"):
+  `research.py`'s facts research now tries "what people suddenly
+  started looking up" first -- English Wikipedia articles in yesterday's
+  top-200 most-read that weren't in the top 1000 a week earlier
+  (Wikimedia's official, keyless pageviews API), minus people and news
+  events using each article's Wikipedia short description. The first
+  real pull showed why that filter is needed: the raw risers were
+  mostly celebrities, recent deaths, shootings and an election. Falls
+  back to "Did you know" on any failure or when nothing fresh is left.
+  Kill switch: `ENABLE_TRENDING_TOPICS=0`; preview with
+  `python -m pipeline.research trending`. The description lookup
+  couldn't be checked live from the dev sandbox (Wikipedia 429s its
+  shared IP) -- confirm on the first CI run's `[research] trending:` line.
 - `metadata.py`: seasonal videos get the holiday in the title and its
   hashtag (#Halloween etc.) in the description/tags.
 - `videos.seasonal_event` records which videos were seasonal, so

@@ -54,6 +54,9 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.active_event_patcher = patch.object(orchestrator, "active_event", return_value=None)
         self.mock_active_event = self.active_event_patcher.start()
         self.addCleanup(self.active_event_patcher.stop)
+        self.in_peak_patcher = patch.object(orchestrator, "in_peak", return_value=False)
+        self.mock_in_peak = self.in_peak_patcher.start()
+        self.addCleanup(self.in_peak_patcher.stop)
         self.mock_plan = self.plan_patcher.start()
         self.mock_plan_game_night = self.plan_game_night_patcher.start()
         self.mock_plan_family_game_night = self.plan_family_game_night_patcher.start()
@@ -197,6 +200,19 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         # Second facts slot of the day stays a normal video.
         facts_seasons = [s for t, s, _ in calls if t == "facts"]
         self.assertEqual(facts_seasons, ["halloween", None])
+
+    def test_peak_makes_every_eligible_video_seasonal(self):
+        from pipeline.seasonal import get_event
+        self.mock_active_event.return_value = get_event("halloween")
+        self.mock_in_peak.return_value = True
+        orchestrator.run_daily(count=6)
+        by_template = {}
+        for c in self.mock_plan.call_args_list:
+            by_template.setdefault(c.args[0], []).append(c.kwargs.get("seasonal_event"))
+        self.assertEqual(by_template["facts"], ["halloween", "halloween"])
+        self.assertEqual(by_template["food"], ["halloween"])
+        self.assertEqual(set(by_template["sauce_recipe"]), {None})
+        self.assertEqual(by_template["programming"], [None])
 
     def test_manual_hint_beats_seasonal_theme(self):
         from pipeline.seasonal import get_event

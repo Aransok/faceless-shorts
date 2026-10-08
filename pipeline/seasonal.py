@@ -1,10 +1,14 @@
 """Seasonal topic steering (2026-10-08, owner: "Halloween is on its way ...
 make the facts around it ... after that comes Christmas etc").
 
-A fixed calendar of holidays, each with a lead-in window. While one is
-active, run_daily() plans a subset of the day's videos around it (see
-SeasonalEvent.templates) -- the rest of the day stays on normal topics so
-the channel doesn't turn into a single-theme feed for three weeks.
+A fixed calendar of holidays, each with a ~month-long lead-in window
+(owner: "like 1 month before the celebration"). While one is active,
+run_daily() plans the first video of each eligible template around it;
+in the final PEAK_DAYS, when search interest actually spikes, every
+eligible-template video goes seasonal. The rest of the day stays on
+normal topics so the channel doesn't turn into a single-theme feed.
+Windows may overlap (e.g. Christmas and New Year's); the nearest
+holiday wins.
 
 Calendar-based on purpose rather than scraping live "trending" data:
 every free trends source is unofficial/unstable, and the big seasonal
@@ -23,6 +27,10 @@ import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Callable
+
+
+LEAD_DAYS = 31
+PEAK_DAYS = 10
 
 
 def _fixed(month: int, day: int) -> Callable[[int], date]:
@@ -45,9 +53,16 @@ class SeasonalEvent:
     angles: dict[str, str]
     hashtags: tuple[str, ...]
 
-    def window(self, year: int) -> tuple[date, date]:
-        day = self.date_for_year(year)
-        return day - timedelta(days=self.lead_days), day - timedelta(days=1)
+    def next_date(self, today: date) -> date:
+        """The holiday's next occurrence strictly after `today`."""
+        for year in (today.year, today.year + 1):
+            day = self.date_for_year(year)
+            if day > today:
+                return day
+        raise AssertionError("unreachable: every event occurs once a year")
+
+    def days_until(self, today: date) -> int:
+        return (self.next_date(today) - today).days
 
 
 EVENTS: tuple[SeasonalEvent, ...] = (
@@ -55,7 +70,7 @@ EVENTS: tuple[SeasonalEvent, ...] = (
         key="halloween",
         name="Halloween",
         date_for_year=_fixed(10, 31),
-        lead_days=24,
+        lead_days=LEAD_DAYS,
         # No sauce_recipe: there's no honest Halloween angle on sauces
         # that isn't a costume on an ordinary recipe.
         templates=frozenset({"facts", "food"}),
@@ -78,7 +93,7 @@ EVENTS: tuple[SeasonalEvent, ...] = (
         key="thanksgiving",
         name="Thanksgiving",
         date_for_year=_us_thanksgiving,
-        lead_days=14,
+        lead_days=LEAD_DAYS,
         templates=frozenset({"food", "sauce_recipe"}),
         angles={
             "food": (
@@ -97,7 +112,7 @@ EVENTS: tuple[SeasonalEvent, ...] = (
         key="christmas",
         name="Christmas",
         date_for_year=_fixed(12, 25),
-        lead_days=24,
+        lead_days=LEAD_DAYS,
         templates=frozenset({"facts", "food", "sauce_recipe"}),
         angles={
             "facts": (
@@ -118,7 +133,7 @@ EVENTS: tuple[SeasonalEvent, ...] = (
         key="new_year",
         name="New Year's",
         date_for_year=_fixed(1, 1),
-        lead_days=5,
+        lead_days=LEAD_DAYS,
         templates=frozenset({"facts"}),
         angles={
             "facts": (
@@ -132,7 +147,7 @@ EVENTS: tuple[SeasonalEvent, ...] = (
         key="valentines",
         name="Valentine's Day",
         date_for_year=_fixed(2, 14),
-        lead_days=10,
+        lead_days=LEAD_DAYS,
         templates=frozenset({"facts", "food"}),
         angles={
             "facts": (
@@ -155,22 +170,23 @@ def get_event(key: str) -> SeasonalEvent:
     return _BY_KEY[key]
 
 
+def _today() -> date:
+    return datetime.now(timezone.utc).date()
+
+
 def active_event(today: date | None = None) -> SeasonalEvent | None:
-    """The event whose window contains `today` (UTC), or None. If windows
-    ever overlap, the nearest holiday wins."""
+    """The nearest holiday whose window contains `today` (UTC), or None.
+    The window runs from lead_days before the holiday through the day
+    before it."""
     if os.environ.get("ENABLE_SEASONAL_TOPICS", "1") == "0":
         return None
-    today = today or datetime.now(timezone.utc).date()
-    candidates = []
-    # Next year too, so late-December dates find January holidays.
-    for event in EVENTS:
-        for year in (today.year, today.year + 1):
-            start, end = event.window(year)
-            if start <= today <= end:
-                candidates.append((event.date_for_year(year), event))
-    if not candidates:
-        return None
-    return min(candidates, key=lambda c: c[0])[1]
+    today = today or _today()
+    in_window = [e for e in EVENTS if e.days_until(today) <= e.lead_days]
+    return min(in_window, key=lambda e: e.days_until(today), default=None)
+
+
+def in_peak(event: SeasonalEvent, today: date | None = None) -> bool:
+    return event.days_until(today or _today()) <= PEAK_DAYS
 
 
 def seasonal_block(event: SeasonalEvent, template: str) -> str:
@@ -206,6 +222,8 @@ if __name__ == "__main__":
     event = active_event(day)
     print(f"active event for {day or 'today (UTC)'}: {event.name if event else None}")
     if event:
+        when = day or _today()
+        print(f"{event.days_until(when)} day(s) to go, peak={in_peak(event, when)}")
         for template in sorted(event.templates):
             print(f"--- {template} ---{seasonal_block(event, template)}")
         print(f"--- metadata ---{metadata_block(event)}")

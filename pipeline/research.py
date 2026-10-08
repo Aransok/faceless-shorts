@@ -9,6 +9,11 @@ backed it up -- programming re-uploaded five textbook gotchas within
 sauces. See ROADMAP.md.
 
 Sources are free, keyless, public APIs (CLAUDE.md's "no paid APIs" rule):
+- facts, first choice (2026-10-08, owner: "catch the viral trends"):
+  what people suddenly started looking up -- English Wikipedia articles
+  in yesterday's most-read list that weren't in the most-read list a
+  week earlier, from Wikimedia's official pageviews API. Falls back to
+  "Did you know" below when there's nothing fresh or the call fails.
 - facts: Wikipedia's "Did you know" hooks (Wikipedia:Recent additions) --
   editor-verified surprising facts about brand-new articles, dozens of
   new ones every week, i.e. things nobody has already made 50 Shorts
@@ -31,6 +36,7 @@ import os
 import random
 import re
 import sys
+from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
 
 import requests
@@ -57,6 +63,41 @@ _USED_SLOT = {
 # Effectively "remember forever" -- DYK hooks and sauce names are never
 # worth re-offering, and each entry is one short line.
 _USED_HISTORY_LIMIT = 3000
+
+PAGEVIEWS_TOP_URL = (
+    "https://wikimedia.org/api/rest_v1/metrics/pageviews/top/en.wikipedia/all-access/{day:%Y/%m/%d}"
+)
+_TRENDING_SLOT = "research_used_trending"
+# Rank cutoff in yesterday's list; the baseline is the full top 1000 a
+# week earlier, so "rising" means it wasn't anywhere near the top then.
+TRENDING_TOP_N = 200
+TRENDING_BASELINE_DAYS = 7
+_NON_TOPIC_PREFIXES = ("List of ", "Deaths in ", "Main Page")
+_YEAR_PAGE = re.compile(r"^\d{3,4}( in .+)?$")
+# Most of what spikes on Wikipedia is the news cycle -- the first real
+# run's top risers were celebrities, people who had just died, shootings
+# and an election. Wikipedia's short descriptions mark people with life
+# years ("American actress (born 1924)", "(1950-2026)") or an occupation.
+_PERSON_DESCRIPTION = re.compile(
+    r"\((?:born |died |c\. )?\d{3,4}(?:\s*[–-]\s*\d{3,4})?\)"
+    r"|\b(?:actor|actress|singer|rapper|musician|songwriter|politician|footballer|player|athlete"
+    r"|coach|wrestler|boxer|comedian|businessman|businesswoman|entrepreneur"
+    r"|journalist|presenter|personality|influencer|writer|author|novelist|director|producer"
+    r"|televangelist|evangelist|scientist|physicist|chemist|biologist|neuroscientist|engineer"
+    r"|economist|lawyer|judge|criminal|murderer|activist|advocate|dancer|artist|youtuber)s?\b",
+    re.IGNORECASE,
+)
+_NEWS_EVENT = re.compile(
+    r"\b(?:shooting|attack|bombing|murder|killing|massacre|allegations?|scandal|trial|election"
+    r"|referendum|crash|disaster|earthquake|hurricane|war|riot|protests?|assassination"
+    r"|kidnapping|rape|abuse|stabbing|death of|disambiguation|same term)\b",
+    re.IGNORECASE,
+)
+
+
+def is_newsy(title: str, description: str) -> bool:
+    """True for people and news events -- not this channel's material."""
+    return bool(_PERSON_DESCRIPTION.search(description) or _NEWS_EVENT.search(f"{title} {description}"))
 
 # "... that", "…that" (Unicode ellipsis) or ". . . that" -- the first real
 # run (2026-09-24) parsed 0 hooks from the live page, so accept every
@@ -157,6 +198,87 @@ def fetch_category_names(category: str) -> list[str]:
     return clean_category_titles([m["title"] for m in data["query"]["categorymembers"]])
 
 
+def rising_titles(recent: list[str], baseline: list[str], top_n: int = TRENDING_TOP_N) -> list[str]:
+    """Articles in `recent`'s top_n (raw API titles, rank order) that
+    aren't in `baseline` at all, minus non-article pages and lists."""
+    before = set(baseline)
+    titles = []
+    for raw in recent[:top_n]:
+        if raw in before or ":" in raw:
+            continue
+        title = raw.replace("_", " ").strip()
+        if len(title) < 2 or title.startswith(_NON_TOPIC_PREFIXES) or _YEAR_PAGE.match(title):
+            continue
+        titles.append(title)
+    return titles
+
+
+def fetch_top_articles(day: date) -> list[str]:
+    response = requests.get(PAGEVIEWS_TOP_URL.format(day=day), headers={"User-Agent": USER_AGENT}, timeout=20)
+    response.raise_for_status()
+    return [a["article"] for a in response.json()["items"][0]["articles"]]
+
+
+def fetch_descriptions(titles: list[str]) -> dict[str, str]:
+    """Wikipedia short description per title (max 50 per API call), ""
+    when an article has none."""
+    data = _wikipedia_get(
+        {"action": "query", "prop": "description", "titles": "|".join(titles), "redirects": 1}
+    )["query"]
+    final = {t: t for t in titles}
+    for step in ("normalized", "redirects"):
+        moved = {m["from"]: m["to"] for m in data.get(step, [])}
+        final = {t: moved.get(f, f) for t, f in final.items()}
+    by_title = {p["title"]: p.get("description", "") for p in data.get("pages", [])}
+    return {t: by_title.get(f, "") for t, f in final.items()}
+
+
+def fetch_trending_topics(today: date | None = None) -> list[str]:
+    today = today or datetime.now(timezone.utc).date()
+    # Yesterday's list isn't published until a few hours into the UTC day.
+    try:
+        recent_day = today - timedelta(days=1)
+        recent = fetch_top_articles(recent_day)
+    except requests.HTTPError:
+        recent_day = today - timedelta(days=2)
+        recent = fetch_top_articles(recent_day)
+    baseline = fetch_top_articles(recent_day - timedelta(days=TRENDING_BASELINE_DAYS))
+    risers = rising_titles(recent, baseline)[:50]
+    if not risers:
+        return []
+    descriptions = fetch_descriptions(risers)
+    return [t for t in risers if not is_newsy(t, descriptions.get(t, ""))]
+
+
+def _trending_seed() -> str | None:
+    if os.environ.get("ENABLE_TRENDING_TOPICS", "1") == "0":
+        return None
+    try:
+        covered = all_script_text("facts")
+        pool = [t for t in fetch_trending_topics() if t.lower() not in covered]
+        used = set(used_values(_TRENDING_SLOT))
+        # Rank order, not random: the top risers are the strongest signal.
+        picks = [t for t in pool if t not in used][:CANDIDATES_PER_SEED]
+        if not picks:
+            print(f"[research] trending: nothing fresh (pool={len(pool)}) -- using Did you know")
+            return None
+        mark_used(_TRENDING_SLOT, picks, _USED_HISTORY_LIMIT)
+        print(f"[research] trending: offering {picks}")
+    except Exception as exc:
+        print(f"[research] trending failed ({type(exc).__name__}: {exc}) -- using Did you know")
+        return None
+    lines = "\n".join(f"- {p}" for p in picks)
+    return (
+        "Subjects people suddenly started looking up this week (Wikipedia "
+        "articles whose readership just jumped -- a real signal of what "
+        "people are curious about right now). Build the video around "
+        "whichever has the most genuinely surprising, durable facts behind "
+        "it, and let the connecting theme grow from it. Skip anyone who just "
+        "died, disasters, crimes, elections/politics and ongoing news -- this "
+        f"channel does surprising facts, not news:\n{lines}"
+    )
+
+
 def _format_seed(template: str, picks: list[str]) -> str:
     lines = "\n".join(f"- {p}" for p in picks)
     if template == "facts":
@@ -191,6 +313,10 @@ def suggest_research_seed(template: str) -> str | None:
         return None
     if os.environ.get("ENABLE_RESEARCH_TOPICS", "1") == "0":
         return None
+    if template == "facts":
+        trending = _trending_seed()
+        if trending:
+            return trending
     try:
         if template == "facts":
             pool = fetch_dyk_hooks()
@@ -213,7 +339,9 @@ def suggest_research_seed(template: str) -> str | None:
 
 if __name__ == "__main__":
     template_arg = sys.argv[1] if len(sys.argv) > 1 else "facts"
-    if template_arg == "facts":
+    if template_arg == "trending":
+        found = fetch_trending_topics()
+    elif template_arg == "facts":
         found = fetch_dyk_hooks()
     else:
         found = fetch_category_names(CATEGORY_SOURCE[template_arg])

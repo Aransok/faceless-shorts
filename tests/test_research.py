@@ -89,6 +89,64 @@ class CleanSauceTitlesTest(unittest.TestCase):
         self.assertEqual(research.clean_category_titles(["Mole (sauce)", "Mole (Mexican sauce)"]), ["Mole"])
 
 
+class RisingTitlesTest(unittest.TestCase):
+    def test_keeps_only_new_real_articles(self):
+        recent = ["Main_Page", "Special:Search", "YouTube", "Oxford_Electric_Bell",
+                  "Deaths_in_2026", "List_of_horror_films", "2026", "-", "Mary_Shelley"]
+        baseline = ["YouTube", "Main_Page"]
+        self.assertEqual(research.rising_titles(recent, baseline), ["Oxford Electric Bell", "Mary Shelley"])
+
+    def test_respects_rank_cutoff(self):
+        recent = [f"Article_{i}" for i in range(10)]
+        self.assertEqual(research.rising_titles(recent, [], top_n=2), ["Article 0", "Article 1"])
+
+
+class IsNewsyTest(unittest.TestCase):
+    # Titles from the first real run (2026-10-08) with their style of
+    # Wikipedia short description.
+    def test_drops_people_and_news_events(self):
+        for title, desc in [
+            ("Eva Marie Saint", "American actress (born 1924)"),
+            ("John Steinbeck", "American writer (1902–1968)"),
+            ("Jim Bakker", "American televangelist"),
+            ("2009 Fort Hood shooting", "Mass shooting in Texas, United States"),
+            ("2026 Quebec general election", "Provincial election in Canada"),
+            ("2024 Cornell University rape allegations", ""),
+            ("Mercury", "Topics referred to by the same term"),
+        ]:
+            self.assertTrue(research.is_newsy(title, desc), title)
+
+    def test_keeps_durable_subjects(self):
+        for title, desc in [
+            ("Pneumonic plague", "Lung infection caused by Yersinia pestis"),
+            ("Carrie (miniseries)", "2002 American television film"),
+            ("Pentobarbital", "Barbiturate medication"),
+            ("Large language model", "Type of machine learning model"),
+            ("Cathy Ames", "Fictional character in East of Eden"),
+        ]:
+            self.assertFalse(research.is_newsy(title, desc), title)
+
+
+class FetchDescriptionsTest(unittest.TestCase):
+    def test_maps_normalized_and_redirected_titles_back(self):
+        response = {"query": {
+            "normalized": [{"from": "pneumonic plague", "to": "Pneumonic plague"}],
+            "redirects": [{"from": "Carrie (2002 film)", "to": "Carrie (miniseries)"}],
+            "pages": [
+                {"title": "Pneumonic plague", "description": "Lung infection"},
+                {"title": "Carrie (miniseries)", "description": "2002 American television film"},
+                {"title": "Pentobarbital"},
+            ],
+        }}
+        with mock.patch.object(research, "_wikipedia_get", return_value=response):
+            got = research.fetch_descriptions(["pneumonic plague", "Carrie (2002 film)", "Pentobarbital"])
+        self.assertEqual(got, {
+            "pneumonic plague": "Lung infection",
+            "Carrie (2002 film)": "2002 American television film",
+            "Pentobarbital": "",
+        })
+
+
 class SuggestResearchSeedTest(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
@@ -98,10 +156,39 @@ class SuggestResearchSeedTest(unittest.TestCase):
         self.addCleanup(self.log_path.unlink, missing_ok=True)
         for patcher in (
             mock.patch.object(rotation, "ROTATION_LOG_PATH", self.log_path),
-            mock.patch.dict(os.environ, {"ENABLE_RESEARCH_TOPICS": "1"}),
+            mock.patch.dict(os.environ, {"ENABLE_RESEARCH_TOPICS": "1", "ENABLE_TRENDING_TOPICS": "1"}),
+            mock.patch.object(research, "all_script_text", return_value=""),
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
+        self.trending_patcher = mock.patch.object(research, "fetch_trending_topics", return_value=[])
+        self.mock_trending = self.trending_patcher.start()
+        self.addCleanup(self.trending_patcher.stop)
+
+    def test_facts_prefer_trending_topics_in_rank_order(self):
+        self.mock_trending.return_value = [f"Rising topic {i}" for i in range(10)]
+        seed = research.suggest_research_seed("facts")
+        self.assertIn("suddenly started looking up", seed)
+        self.assertEqual(rotation.used_values("research_used_trending"),
+                         [f"Rising topic {i}" for i in range(research.CANDIDATES_PER_SEED)])
+        # The next facts video that day gets the next risers, not repeats.
+        research.suggest_research_seed("facts")
+        self.assertIn("Rising topic 9", rotation.used_values("research_used_trending"))
+
+    @mock.patch.object(research, "fetch_dyk_hooks")
+    def test_trending_failure_falls_back_to_did_you_know(self, mock_dyk):
+        self.mock_trending.side_effect = RuntimeError("connect rejected")
+        mock_dyk.return_value = [f"fact number {i} is surprising enough to matter" for i in range(10)]
+        self.assertIn("Did you know", research.suggest_research_seed("facts"))
+
+    @mock.patch.object(research, "fetch_dyk_hooks")
+    def test_trending_already_covered_on_channel_is_skipped(self, mock_dyk):
+        mock_dyk.return_value = []
+        self.mock_trending.return_value = ["Jack-o'-lantern", "Bioluminescence"]
+        with mock.patch.object(research, "all_script_text", return_value="the jack-o'-lantern started as a turnip"):
+            seed = research.suggest_research_seed("facts")
+        self.assertIn("Bioluminescence", seed)
+        self.assertNotIn("Jack-o'-lantern", seed)
 
     def test_programming_gets_no_seed(self):
         self.assertIsNone(research.suggest_research_seed("programming"))

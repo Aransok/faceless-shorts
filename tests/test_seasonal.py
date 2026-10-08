@@ -19,34 +19,34 @@ def _key(day: date) -> str | None:
 
 
 class ActiveEventTest(unittest.TestCase):
-    def test_halloween_window_ends_the_day_before(self):
-        self.assertIsNone(_key(date(2026, 10, 6)))
-        self.assertEqual(_key(date(2026, 10, 7)), "halloween")
+    def test_halloween_starts_a_month_out_and_ends_the_day_before(self):
+        self.assertIsNone(_key(date(2026, 9, 29)))
+        self.assertEqual(_key(date(2026, 9, 30)), "halloween")
         self.assertEqual(_key(date(2026, 10, 30)), "halloween")
-        self.assertIsNone(_key(date(2026, 10, 31)))
+        # Halloween day itself: Thanksgiving's window is open, nearest wins.
+        self.assertEqual(_key(date(2026, 10, 31)), "thanksgiving")
+
+    def test_overlapping_windows_pick_the_nearest_holiday(self):
+        self.assertEqual(_key(date(2026, 10, 28)), "halloween")
+        self.assertEqual(_key(date(2026, 11, 25)), "thanksgiving")
+        self.assertEqual(_key(date(2026, 11, 26)), "christmas")
+        self.assertEqual(_key(date(2026, 12, 24)), "christmas")
+        self.assertEqual(_key(date(2026, 12, 25)), "new_year")
+        self.assertEqual(_key(date(2026, 12, 31)), "new_year")
+        self.assertIsNone(_key(date(2027, 1, 1)))
+        self.assertEqual(_key(date(2027, 1, 14)), "valentines")
+        self.assertIsNone(_key(date(2027, 2, 14)))
 
     def test_thanksgiving_is_fourth_thursday(self):
         self.assertEqual(seasonal._us_thanksgiving(2026), date(2026, 11, 26))
         self.assertEqual(seasonal._us_thanksgiving(2027), date(2027, 11, 25))
         self.assertEqual(seasonal._us_thanksgiving(2024), date(2024, 11, 28))
-        self.assertEqual(_key(date(2026, 11, 25)), "thanksgiving")
-        self.assertIsNone(_key(date(2026, 11, 26)))
 
-    def test_late_december_finds_next_years_new_year(self):
-        self.assertEqual(_key(date(2026, 12, 24)), "christmas")
-        self.assertIsNone(_key(date(2026, 12, 25)))
-        self.assertEqual(_key(date(2026, 12, 30)), "new_year")
-
-    def test_windows_never_overlap(self):
-        day = date(2026, 1, 1)
-        while day < date(2028, 1, 1):
-            active = [
-                e.key for e in seasonal.EVENTS
-                for y in (day.year, day.year + 1)
-                if e.window(y)[0] <= day <= e.window(y)[1]
-            ]
-            self.assertLessEqual(len(active), 1, f"{day}: {active}")
-            day = date.fromordinal(day.toordinal() + 1)
+    def test_peak_is_the_final_ten_days(self):
+        halloween = seasonal.get_event("halloween")
+        self.assertFalse(seasonal.in_peak(halloween, date(2026, 10, 20)))
+        self.assertTrue(seasonal.in_peak(halloween, date(2026, 10, 21)))
+        self.assertTrue(seasonal.in_peak(halloween, date(2026, 10, 30)))
 
     @mock.patch.dict("os.environ", {"ENABLE_SEASONAL_TOPICS": "0"})
     def test_kill_switch(self):
