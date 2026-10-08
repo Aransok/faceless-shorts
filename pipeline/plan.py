@@ -619,6 +619,7 @@ def plan(
     topic_hint: str | None = None,
     research_seed: str | None = None,
     seasonal_event: str | None = None,
+    seasonal_trending: list[str] | None = None,
 ) -> str:
     if template not in TEMPLATES:
         raise ValueError(f"unknown template: {template!r} (expected {sorted(TEMPLATES)})")
@@ -648,7 +649,7 @@ def plan(
     elif research_seed:
         prompt += _research_seed_block(research_seed)
     if seasonal_event:
-        prompt += seasonal_block(get_event(seasonal_event), template)
+        prompt += seasonal_block(get_event(seasonal_event), template, seasonal_trending)
 
     style = pick_style()
     prompt += style_guidance_block(style)

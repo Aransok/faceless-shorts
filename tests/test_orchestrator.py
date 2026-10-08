@@ -57,6 +57,9 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.in_peak_patcher = patch.object(orchestrator, "in_peak", return_value=False)
         self.mock_in_peak = self.in_peak_patcher.start()
         self.addCleanup(self.in_peak_patcher.stop)
+        self.trending_patcher = patch.object(orchestrator, "trending_candidates", return_value=[])
+        self.mock_trending = self.trending_patcher.start()
+        self.addCleanup(self.trending_patcher.stop)
         self.mock_plan = self.plan_patcher.start()
         self.mock_plan_game_night = self.plan_game_night_patcher.start()
         self.mock_plan_family_game_night = self.plan_family_game_night_patcher.start()
@@ -213,6 +216,17 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.assertEqual(by_template["food"], ["halloween"])
         self.assertEqual(set(by_template["sauce_recipe"]), {None})
         self.assertEqual(by_template["programming"], [None])
+
+    def test_seasonal_videos_also_see_trending_candidates(self):
+        from pipeline.seasonal import get_event
+        self.mock_active_event.return_value = get_event("halloween")
+        self.mock_trending.side_effect = lambda template: [f"trending {template}"]
+        orchestrator.run_daily(count=6)
+        for c in self.mock_plan.call_args_list:
+            if c.kwargs.get("seasonal_event"):
+                self.assertEqual(c.kwargs.get("seasonal_trending"), [f"trending {c.args[0]}"])
+            else:
+                self.assertIsNone(c.kwargs.get("seasonal_trending"))
 
     def test_manual_hint_beats_seasonal_theme(self):
         from pipeline.seasonal import get_event

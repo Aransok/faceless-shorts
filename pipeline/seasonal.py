@@ -189,10 +189,21 @@ def in_peak(event: SeasonalEvent, today: date | None = None) -> bool:
     return event.days_until(today or _today()) <= PEAK_DAYS
 
 
-def seasonal_block(event: SeasonalEvent, template: str) -> str:
+def seasonal_block(event: SeasonalEvent, template: str, trending: list[str] | None = None) -> str:
     """Appended to plan()'s prompt. A theme and direction, never a
     required subject or text to copy -- the same lesson as plan.py's
-    topic-hint/research blocks."""
+    topic-hint/research blocks. `trending` (research.trending_candidates)
+    is offered only where it genuinely ties into the holiday."""
+    trending_part = ""
+    if trending:
+        lines = "\n".join(f"- {t}" for t in trending)
+        trending_part = (
+            "Trending right now (subjects people suddenly started looking up "
+            f"this week):\n{lines}\nIf one of these genuinely ties into "
+            f"{event.name}, build the video around that connection -- a "
+            "holiday angle on something people are already searching is the "
+            "strongest video you can make. If none really fit, ignore them.\n"
+        )
     return (
         f"\n\nSEASONAL THEME FOR THIS VIDEO: {event.name}. Build this video "
         f"around {event.name}: {event.angles[template]}.\n"
@@ -202,6 +213,7 @@ def seasonal_block(event: SeasonalEvent, template: str) -> str:
         "an excuse for made-up or exaggerated claims. Don't say 'tonight', "
         "'tomorrow', or 'this week' -- the video stays up through and after "
         "the holiday.\n"
+        f"{trending_part}"
     )
 
 

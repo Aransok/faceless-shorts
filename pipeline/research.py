@@ -14,6 +14,8 @@ Sources are free, keyless, public APIs (CLAUDE.md's "no paid APIs" rule):
   in yesterday's most-read list that weren't in the most-read list a
   week earlier, from Wikimedia's official pageviews API. Falls back to
   "Did you know" below when there's nothing fresh or the call fails.
+  food/sauce_recipe also try trending first, limited to risers whose
+  description is about food, before their category lists.
 - facts: Wikipedia's "Did you know" hooks (Wikipedia:Recent additions) --
   editor-verified surprising facts about brand-new articles, dozens of
   new ones every week, i.e. things nobody has already made 50 Shorts
@@ -72,6 +74,14 @@ _TRENDING_SLOT = "research_used_trending"
 # week earlier, so "rising" means it wasn't anywhere near the top then.
 TRENDING_TOP_N = 200
 TRENDING_BASELINE_DAYS = 7
+TRENDING_TEMPLATES = ("facts", "food", "sauce_recipe")
+# food/sauce_recipe only take risers that are actually about food.
+_FOOD_DESCRIPTION = re.compile(
+    r"\b(?:dish|food|cuisine|sauce|condiment|dip|dressing|gravy|salsa|dessert|pastry|bread|cake"
+    r"|pie|soup|stew|beverage|drink|cocktail|spice|herb|fruit|vegetable|squash|cheese|meat"
+    r"|recipe|confectionery|candy|snack|cooking|baking|culinary|ingredient)s?\b",
+    re.IGNORECASE,
+)
 _NON_TOPIC_PREFIXES = ("List of ", "Deaths in ", "Main Page")
 _YEAR_PAGE = re.compile(r"^\d{3,4}( in .+)?$")
 # Most of what spikes on Wikipedia is the news cycle -- the first real
@@ -233,8 +243,20 @@ def fetch_descriptions(titles: list[str]) -> dict[str, str]:
     return {t: by_title.get(f, "") for t, f in final.items()}
 
 
-def fetch_trending_topics(today: date | None = None) -> list[str]:
+_trending_cache: dict[date, list[tuple[str, str]]] = {}
+
+
+def fetch_trending_topics(today: date | None = None) -> list[tuple[str, str]]:
+    """(title, short description) for today's non-newsy risers, rank
+    order. Cached per day: a daily run asks once per video, and
+    Wikipedia rate-limits bursts."""
     today = today or datetime.now(timezone.utc).date()
+    if today not in _trending_cache:
+        _trending_cache[today] = _fetch_trending_uncached(today)
+    return _trending_cache[today]
+
+
+def _fetch_trending_uncached(today: date) -> list[tuple[str, str]]:
     # Yesterday's list isn't published until a few hours into the UTC day.
     try:
         recent_day = today - timedelta(days=1)
@@ -247,36 +269,58 @@ def fetch_trending_topics(today: date | None = None) -> list[str]:
     if not risers:
         return []
     descriptions = fetch_descriptions(risers)
-    return [t for t in risers if not is_newsy(t, descriptions.get(t, ""))]
+    pairs = [(t, descriptions.get(t, "")) for t in risers]
+    return [(t, d) for t, d in pairs if not is_newsy(t, d)]
 
 
-def _trending_seed() -> str | None:
-    if os.environ.get("ENABLE_TRENDING_TOPICS", "1") == "0":
-        return None
+def trending_candidates(template: str) -> list[str]:
+    """Up to CANDIDATES_PER_SEED fresh trending titles suited to
+    `template` (rank order -- the top risers are the strongest signal),
+    marked used; [] when there are none or anything fails."""
+    if template not in TRENDING_TEMPLATES or os.environ.get("ENABLE_TRENDING_TOPICS", "1") == "0":
+        return []
     try:
-        covered = all_script_text("facts")
-        pool = [t for t in fetch_trending_topics() if t.lower() not in covered]
+        risers = fetch_trending_topics()
+        if template != "facts":
+            risers = [(t, d) for t, d in risers if _FOOD_DESCRIPTION.search(d)]
+        covered = all_script_text(template)
         used = set(used_values(_TRENDING_SLOT))
-        # Rank order, not random: the top risers are the strongest signal.
-        picks = [t for t in pool if t not in used][:CANDIDATES_PER_SEED]
-        if not picks:
-            print(f"[research] trending: nothing fresh (pool={len(pool)}) -- using Did you know")
-            return None
-        mark_used(_TRENDING_SLOT, picks, _USED_HISTORY_LIMIT)
-        print(f"[research] trending: offering {picks}")
+        picks = [t for t, _ in risers if t not in used and t.lower() not in covered][:CANDIDATES_PER_SEED]
+        if picks:
+            mark_used(_TRENDING_SLOT, picks, _USED_HISTORY_LIMIT)
+        print(f"[research] trending for {template}: {picks or 'nothing fresh'} (pool={len(risers)})")
+        return picks
     except Exception as exc:
-        print(f"[research] trending failed ({type(exc).__name__}: {exc}) -- using Did you know")
-        return None
+        print(f"[research] trending failed for {template} ({type(exc).__name__}: {exc})")
+        return []
+
+
+def _format_trending_seed(template: str, picks: list[str]) -> str:
     lines = "\n".join(f"- {p}" for p in picks)
-    return (
+    lead = (
         "Subjects people suddenly started looking up this week (Wikipedia "
         "articles whose readership just jumped -- a real signal of what "
-        "people are curious about right now). Build the video around "
-        "whichever has the most genuinely surprising, durable facts behind "
-        "it, and let the connecting theme grow from it. Skip anyone who just "
-        "died, disasters, crimes, elections/politics and ongoing news -- this "
-        f"channel does surprising facts, not news:\n{lines}"
+        "people are curious about right now). "
     )
+    if template == "facts":
+        ask = (
+            "Build the video around whichever has the most genuinely "
+            "surprising, durable facts behind it, and let the connecting "
+            "theme grow from it. Skip anyone who just died, disasters, "
+            "crimes, elections/politics and ongoing news -- this channel does "
+            "surprising facts, not news"
+        )
+    elif template == "food":
+        ask = (
+            "Build at least one of today's three items around one of these "
+            "-- a real technique for it, with the real why"
+        )
+    else:
+        ask = (
+            "Build at least one of today's three sauces around one of these "
+            "-- a real sauce from it or that genuinely belongs with it"
+        )
+    return f"{lead}{ask}:\n{lines}"
 
 
 def _format_seed(template: str, picks: list[str]) -> str:
@@ -313,10 +357,9 @@ def suggest_research_seed(template: str) -> str | None:
         return None
     if os.environ.get("ENABLE_RESEARCH_TOPICS", "1") == "0":
         return None
-    if template == "facts":
-        trending = _trending_seed()
-        if trending:
-            return trending
+    trending = trending_candidates(template)
+    if trending:
+        return _format_trending_seed(template, trending)
     try:
         if template == "facts":
             pool = fetch_dyk_hooks()
@@ -340,7 +383,7 @@ def suggest_research_seed(template: str) -> str | None:
 if __name__ == "__main__":
     template_arg = sys.argv[1] if len(sys.argv) > 1 else "facts"
     if template_arg == "trending":
-        found = fetch_trending_topics()
+        found = [f"{t} -- {d}" for t, d in fetch_trending_topics()]
     elif template_arg == "facts":
         found = fetch_dyk_hooks()
     else:

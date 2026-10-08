@@ -3560,7 +3560,14 @@ viral, after that comes Christmas etc."
   Kill switch: `ENABLE_TRENDING_TOPICS=0`; preview with
   `python -m pipeline.research trending`. The description lookup
   couldn't be checked live from the dev sandbox (Wikipedia 429s its
-  shared IP) -- confirm on the first CI run's `[research] trending:` line.
+  shared IP) -- confirm on the first CI run's `[research] trending` lines.
+- Trending widened (same day, owner: "use usually the trending for
+  videos we want viral"): food/sauce_recipe research also tries
+  trending first (only risers whose description is about food --
+  falls back to the Wikipedia category lists), and holiday videos are
+  shown the day's trending list too, told to build around one only if
+  it genuinely ties into the holiday. The trending list is fetched once
+  per day per run (cached) instead of once per video.
 - `metadata.py`: seasonal videos get the holiday in the title and its
   hashtag (#Halloween etc.) in the description/tags.
 - `videos.seasonal_event` records which videos were seasonal, so

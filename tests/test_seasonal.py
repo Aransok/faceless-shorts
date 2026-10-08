@@ -61,6 +61,14 @@ class BlocksTest(unittest.TestCase):
             for template in event.templates:
                 self.assertIn(event.name, seasonal.seasonal_block(event, template))
 
+    def test_trending_is_offered_only_if_it_fits_the_holiday(self):
+        halloween = seasonal.get_event("halloween")
+        self.assertNotIn("Trending right now", seasonal.seasonal_block(halloween, "facts"))
+        block = seasonal.seasonal_block(halloween, "facts", ["Carrie (miniseries)"])
+        self.assertIn("Carrie (miniseries)", block)
+        self.assertIn("genuinely ties into Halloween", block)
+        self.assertIn("ignore them", block)
+
     def test_metadata_block_names_the_hashtags(self):
         block = seasonal.metadata_block(seasonal.get_event("halloween"))
         self.assertIn("#Halloween", block)

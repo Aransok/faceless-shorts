@@ -24,7 +24,7 @@ from pipeline.plan_quiz import plan_quiz
 from pipeline.plan_veylorn import plan_veylorn_story
 from pipeline.render_family_game import render_family_game_night
 from pipeline.render_veylorn import render_veylorn_story
-from pipeline.research import suggest_research_seed
+from pipeline.research import suggest_research_seed, trending_candidates
 from pipeline.seasonal import active_event, in_peak
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
@@ -307,8 +307,13 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
                     seasonal_key = event.key
                     seasonal_done.add(template)
                 research_seed = None if topic_hint or seasonal_key else suggest_research_seed(template)
+                seasonal_trending = trending_candidates(template) if seasonal_key else None
                 video_id = plan(
-                    template, topic_hint=topic_hint, research_seed=research_seed, seasonal_event=seasonal_key
+                    template,
+                    topic_hint=topic_hint,
+                    research_seed=research_seed,
+                    seasonal_event=seasonal_key,
+                    seasonal_trending=seasonal_trending,
                 )
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"

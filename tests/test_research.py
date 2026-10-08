@@ -166,7 +166,7 @@ class SuggestResearchSeedTest(unittest.TestCase):
         self.addCleanup(self.trending_patcher.stop)
 
     def test_facts_prefer_trending_topics_in_rank_order(self):
-        self.mock_trending.return_value = [f"Rising topic {i}" for i in range(10)]
+        self.mock_trending.return_value = [(f"Rising topic {i}", "Some subject") for i in range(10)]
         seed = research.suggest_research_seed("facts")
         self.assertIn("suddenly started looking up", seed)
         self.assertEqual(rotation.used_values("research_used_trending"),
@@ -184,11 +184,40 @@ class SuggestResearchSeedTest(unittest.TestCase):
     @mock.patch.object(research, "fetch_dyk_hooks")
     def test_trending_already_covered_on_channel_is_skipped(self, mock_dyk):
         mock_dyk.return_value = []
-        self.mock_trending.return_value = ["Jack-o'-lantern", "Bioluminescence"]
+        self.mock_trending.return_value = [("Jack-o'-lantern", "Carved lantern"), ("Bioluminescence", "Light from organisms")]
         with mock.patch.object(research, "all_script_text", return_value="the jack-o'-lantern started as a turnip"):
             seed = research.suggest_research_seed("facts")
         self.assertIn("Bioluminescence", seed)
         self.assertNotIn("Jack-o'-lantern", seed)
+
+    @mock.patch.object(research, "fetch_category_names", return_value=["Brining"])
+    def test_food_gets_only_food_risers(self, _categories):
+        self.mock_trending.return_value = [
+            ("Squash (sport)", "Racket-and-ball sport"),
+            ("Birria", "Mexican dish"),
+            ("Pumpkin", "Cultivar of squash"),
+        ]
+        seed = research.suggest_research_seed("food")
+        self.assertIn("Birria", seed)
+        self.assertIn("Pumpkin", seed)
+        self.assertNotIn("Squash (sport)", seed)
+
+    @mock.patch.object(research, "fetch_category_names", return_value=["Mole"])
+    def test_food_falls_back_to_categories_when_nothing_food_is_trending(self, _categories):
+        self.mock_trending.return_value = [("Olympic Games", "International multi-sport event")]
+        seed = research.suggest_research_seed("sauce_recipe")
+        self.assertIn("Mole", seed)
+        self.assertNotIn("Olympic", seed)
+
+    def test_trending_list_is_fetched_once_per_day(self):
+        self.trending_patcher.stop()
+        with mock.patch.object(research, "_fetch_trending_uncached", return_value=[("A", "")]) as fetch, \
+             mock.patch.dict(research._trending_cache, clear=True):
+            from datetime import date
+            research.fetch_trending_topics(date(2026, 10, 8))
+            research.fetch_trending_topics(date(2026, 10, 8))
+            self.assertEqual(fetch.call_count, 1)
+        self.trending_patcher.start()
 
     def test_programming_gets_no_seed(self):
         self.assertIsNone(research.suggest_research_seed("programming"))
