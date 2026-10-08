@@ -18,6 +18,7 @@ from pipeline.cta import cta_guidance_block, pick_cta_angle
 from pipeline.milestones import format_milestone_line, get_pending_announcement, mark_milestone_announced
 from pipeline.persona import persona_guidance_block
 from pipeline.review_script import review_script
+from pipeline.seasonal import get_event, seasonal_block
 from pipeline.state import (
     create_video,
     create_video_steps,
@@ -613,7 +614,12 @@ def _research_seed_block(research_seed: str) -> str:
     )
 
 
-def plan(template: str, topic_hint: str | None = None, research_seed: str | None = None) -> str:
+def plan(
+    template: str,
+    topic_hint: str | None = None,
+    research_seed: str | None = None,
+    seasonal_event: str | None = None,
+) -> str:
     if template not in TEMPLATES:
         raise ValueError(f"unknown template: {template!r} (expected {sorted(TEMPLATES)})")
 
@@ -641,6 +647,8 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
         prompt += _topic_hint_block(topic_hint)
     elif research_seed:
         prompt += _research_seed_block(research_seed)
+    if seasonal_event:
+        prompt += seasonal_block(get_event(seasonal_event), template)
 
     style = pick_style()
     prompt += style_guidance_block(style)
@@ -669,6 +677,7 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
             approach=style["approach"],
             cta_angle=cta_angle["name"],
             hook_opener_used=style["hook_opener"],
+            seasonal_event=seasonal_event,
         )
         create_video_steps(video_id, parsed["steps"])
     else:
@@ -683,6 +692,7 @@ def plan(template: str, topic_hint: str | None = None, research_seed: str | None
             approach=style["approach"],
             cta_angle=cta_angle["name"],
             hook_opener_used=style["hook_opener"],
+            seasonal_event=seasonal_event,
         )
         create_video_steps(video_id, parsed["facts"])
 

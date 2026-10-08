@@ -25,6 +25,7 @@ from pipeline.plan_veylorn import plan_veylorn_story
 from pipeline.render_family_game import render_family_game_night
 from pipeline.render_veylorn import render_veylorn_story
 from pipeline.research import suggest_research_seed
+from pipeline.seasonal import active_event
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
 from pipeline.visuals_code import visuals_code
@@ -259,6 +260,10 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
         print(f"daily upload cap: {cap}/day, {_uploads_today()} already uploaded today, "
               f"{len(resumable_ids)} resumed -- starting {room} of {len(sequence)} new video(s)")
         sequence = sequence[:room]
+    event = active_event()
+    seasonal_done: set[str] = set()
+    if event:
+        print(f"seasonal: {event.name} window active -- first {sorted(event.templates)} video(s) get the theme")
     for i, template in enumerate(sequence):
         print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()
@@ -288,9 +293,20 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
             else:
                 # A manual hint is a deliberate owner choice and always
                 # wins; research only fills in when there isn't one.
+                # Seasonal replaces the research seed rather than stacking
+                # on it -- a random "Did you know" menu would pull the
+                # model away from the theme. Only the first video of each
+                # eligible template per run, so the season is part of the
+                # day, not all of it.
                 topic_hint = topic_hints.get(template)
-                research_seed = None if topic_hint else suggest_research_seed(template)
-                video_id = plan(template, topic_hint=topic_hint, research_seed=research_seed)
+                seasonal_key = None
+                if not topic_hint and event and template in event.templates and template not in seasonal_done:
+                    seasonal_key = event.key
+                    seasonal_done.add(template)
+                research_seed = None if topic_hint or seasonal_key else suggest_research_seed(template)
+                video_id = plan(
+                    template, topic_hint=topic_hint, research_seed=research_seed, seasonal_event=seasonal_key
+                )
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"
             print(f"plan() failed for {template}: {error_message}")

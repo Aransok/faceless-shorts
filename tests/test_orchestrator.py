@@ -49,6 +49,11 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.research_patcher = patch.object(orchestrator, "suggest_research_seed", return_value=None)
         self.mock_research = self.research_patcher.start()
         self.addCleanup(self.research_patcher.stop)
+        # Pinned so these tests don't change behavior inside a real
+        # holiday window; seasonal behavior has its own tests below.
+        self.active_event_patcher = patch.object(orchestrator, "active_event", return_value=None)
+        self.mock_active_event = self.active_event_patcher.start()
+        self.addCleanup(self.active_event_patcher.stop)
         self.mock_plan = self.plan_patcher.start()
         self.mock_plan_game_night = self.plan_game_night_patcher.start()
         self.mock_plan_family_game_night = self.plan_family_game_night_patcher.start()
@@ -173,6 +178,33 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.assertEqual(call.kwargs.get("topic_hint"), "owner's pick")
         self.assertIsNone(call.kwargs.get("research_seed"))
         self.mock_research.assert_not_called()
+
+    def test_seasonal_theme_goes_to_first_eligible_video_of_each_template(self):
+        from pipeline.seasonal import get_event
+        self.mock_active_event.return_value = get_event("halloween")
+        self.mock_research.side_effect = lambda template: f"seed for {template}"
+        orchestrator.run_daily(count=6)
+        calls = [(c.args[0], c.kwargs.get("seasonal_event"), c.kwargs.get("research_seed"))
+                 for c in self.mock_plan.call_args_list]
+        seasonal = [(t, s) for t, s, _ in calls if s]
+        self.assertEqual(sorted(seasonal), [("facts", "halloween"), ("food", "halloween")])
+        # Seasonal slots skip the unrelated research menu; the rest keep it.
+        for template, season, seed in calls:
+            if season:
+                self.assertIsNone(seed)
+            else:
+                self.assertEqual(seed, f"seed for {template}")
+        # Second facts slot of the day stays a normal video.
+        facts_seasons = [s for t, s, _ in calls if t == "facts"]
+        self.assertEqual(facts_seasons, ["halloween", None])
+
+    def test_manual_hint_beats_seasonal_theme(self):
+        from pipeline.seasonal import get_event
+        self.mock_active_event.return_value = get_event("halloween")
+        orchestrator.run_daily(count=1, templates=["facts"], topic_hints={"facts": "owner's pick"})
+        call = self.mock_plan.call_args_list[0]
+        self.assertEqual(call.kwargs.get("topic_hint"), "owner's pick")
+        self.assertIsNone(call.kwargs.get("seasonal_event"))
 
     def test_second_run_same_day_only_makes_up_the_difference(self):
         # Real incident 2026-09-22: manual + scheduled run both uploaded a

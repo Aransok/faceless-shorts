@@ -3529,6 +3529,33 @@ rather than guessing:
   views needs a few days of fresh `storytelling_hook` uploads to judge
   — report back once that batch has aged enough to compare.
 
+## Seasonal topics: Halloween, then Thanksgiving/Christmas/etc. (2026-10-08)
+
+Owner: "Halloween is on its way ... make the facts around it that is
+viral, after that comes Christmas etc."
+
+- New `pipeline/seasonal.py`: a fixed holiday calendar (Halloween,
+  US Thanksgiving, Christmas, New Year's, Valentine's Day), each with a
+  lead-in window and the templates it applies to. The window ends the
+  day BEFORE the holiday -- uploads publish 20:00-04:00 UTC after each
+  run, so that last batch is live through the holiday itself.
+- `run_daily()`: while a window is active, the FIRST video of each
+  eligible template that day gets a seasonal theme block (in place of
+  the unrelated Wikipedia research menu); everything else stays normal.
+  With today's rotation that's 2 of 6 videos/day for Halloween (facts +
+  food -- no sauce_recipe, there's no honest Halloween sauce angle). A
+  manual `topic_hints` entry still always wins.
+- `metadata.py`: seasonal videos get the holiday in the title and its
+  hashtag (#Halloween etc.) in the description/tags.
+- `videos.seasonal_event` records which videos were seasonal, so
+  `winner_analyzer`/catalog data can later answer whether they actually
+  beat the normal ones -- don't scale this up before that's checked.
+- Calendar-based, not live trend scraping, on purpose: free "trending"
+  sources are unofficial and break, and the big seasonal search spikes
+  are known years in advance.
+- Kill switch: `ENABLE_SEASONAL_TOPICS=0`. Preview any date's blocks
+  with `python -m pipeline.seasonal 2026-10-20`.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

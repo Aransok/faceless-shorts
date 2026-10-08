@@ -64,6 +64,7 @@ _COLUMNS = (
     "avg_view_duration_seconds",
     "family_game_segments_json",
     "screen_hook",
+    "seasonal_event",
     "created_at",
     "updated_at",
 )
@@ -175,6 +176,10 @@ def init_db(db_path: Path = DB_PATH) -> None:
         # owner: "do some cool hooks") -- see assemble.render_hook_overlay().
         if "screen_hook" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN screen_hook TEXT")
+        # pipeline/seasonal.py's event key (e.g. "halloween") for videos
+        # planned with a seasonal theme; NULL for normal ones.
+        if "seasonal_event" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN seasonal_event TEXT")
         if "avg_view_percentage" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN avg_view_percentage REAL")
         if "avg_view_duration_seconds" not in existing_cols:

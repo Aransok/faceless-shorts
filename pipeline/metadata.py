@@ -10,6 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from pipeline.plan import call_bulk_llm, call_llm
+from pipeline.seasonal import get_event, metadata_block
 from pipeline.state import get_video, get_video_steps, list_by_status, update_video
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -223,6 +224,8 @@ def generate_metadata(video_id: str) -> dict:
     )
     if is_sauce_recipe:
         prompt = prompt.replace("{sauce_scripts}", _format_sauce_scripts(video_id))
+    if video.get("seasonal_event"):
+        prompt += metadata_block(get_event(video["seasonal_event"]))
 
     parsed = _generate_metadata_fields(prompt)
     title, description, tags = _enforce_limits(
