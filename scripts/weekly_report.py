@@ -96,7 +96,8 @@ def build_report(days: int = 7) -> str:
     # This report is specifically the Shorts approach A/B comparison —
     # the quiz longform track is a separate, lower-frequency content
     # track that never gets an approach tag and shouldn't be mixed in.
-    rows = [r for r in weekly_report_data(days) if r["template"] != "quiz_longform"]
+    # Same for hand-made promo uploads (scripts/upload_promo.py).
+    rows = [r for r in weekly_report_data(days) if r["template"] not in ("quiz_longform", "promo")]
 
     by_approach: dict[str, list[int]] = defaultdict(list)
     for r in rows:

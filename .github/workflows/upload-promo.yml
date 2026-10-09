@@ -1,0 +1,67 @@
+name: Upload Promo
+
+# Manual only: uploads hand-made promo videos listed in a manifest (see
+# scripts/upload_promo.py), e.g. the Project Ember game teaser. Entries
+# already in data/videos.json are skipped, so re-running is safe.
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: "Path to the promo manifest"
+        required: true
+        default: "assets/promo/project-ember/manifest.json"
+
+permissions:
+  contents: write
+
+# Same lock as every other workflow that writes data/videos.json or
+# state.db -- see daily-shorts.yml for the incident behind it.
+concurrency:
+  group: faceless-shorts-state-writer
+
+jobs:
+  upload-promo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Upload promo videos
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          MANIFEST: ${{ github.event.inputs.manifest }}
+        run: python scripts/upload_promo.py "$MANIFEST"
+
+      # always(): an upload that went live must be recorded even if a
+      # later step (another upload, the trailer update) failed.
+      - name: Commit upload log
+        if: always()
+        run: |
+          git config user.name "faceless-shorts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/videos.json
+          if git diff --cached --quiet; then
+            echo "no upload log changes to commit"
+            exit 0
+          fi
+          git commit -m "Log promo uploads [skip ci]"
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            git pull --rebase || git rebase --abort
+          done
+          echo "push failed after 3 attempts"
+          exit 1

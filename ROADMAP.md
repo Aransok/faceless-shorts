@@ -3602,6 +3602,29 @@ viral, after that comes Christmas etc."
 - Kill switch: `ENABLE_SEASONAL_TOPICS=0`. Preview any date's blocks
   with `python -m pipeline.seasonal 2026-10-20`.
 
+## Promo uploads: Project Ember teaser (2026-10-09)
+
+Owner: "add the teaser for our game as a short ... highlight it in the
+channel and as a normal video too." The teaser (12 s, 1080x1340, with
+sound) was rendered into a 1080x1920 Short and a 1920x1080 regular video,
+each filling the empty area with a blurred, darkened copy of itself
+(`assets/promo/project-ember/`). Titles and descriptions are written from
+the game repo's own design doc (Aransok/game), in `manifest.json`.
+
+- `scripts/upload_promo.py` + `.github/workflows/upload-promo.yml`
+  (manual only, shared state-writer lock): uploads each manifest entry
+  public once, logs it in `data/videos.json` as template "promo", and sets
+  the entry marked `channel_trailer` as the trailer for non-subscribers
+  (owner chose doing that from code). channels.update clears any
+  brandingSettings field left out, so the channel's current values are
+  read and sent back with only the trailer changed.
+- Owner chose to count promo uploads inside the day's cap of 6 (the
+  orchestrator's `_uploads_today()` reads the same log), so that day's
+  run makes 4 pipeline videos and the channel stays clear of YouTube's
+  ~8/day upload rejection.
+- Promo rows are excluded from the weekly approach report; winner
+  analysis skips them already (no state.db row).
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
