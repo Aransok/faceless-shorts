@@ -1924,5 +1924,19 @@
     "template": "facts",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-10-09T00:13:48.922378+00:00"
+  },
+  {
+    "video_id": "promo-project-ember-teaser-short",
+    "youtube_video_id": "jBup4rfv_K0",
+    "uploaded_at": "2026-10-09T05:47:38.321127+00:00",
+    "template": "promo",
+    "approach": null
+  },
+  {
+    "video_id": "promo-project-ember-teaser-wide",
+    "youtube_video_id": "y3HZMkqyj1E",
+    "uploaded_at": "2026-10-09T05:47:39.550395+00:00",
+    "template": "promo",
+    "approach": null
   }
 ]
