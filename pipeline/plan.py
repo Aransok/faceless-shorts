@@ -8,6 +8,8 @@ import re
 import shutil
 import subprocess
 import sys
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -158,6 +160,33 @@ _USAGE_LIMIT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# "resets 7:50pm (UTC)" / "resets 7pm (UTC)". A reset with a date in it
+# ("resets Oct 10, 2pm") deliberately doesn't match -- that's days away.
+_RESET_TIME_PATTERN = re.compile(r"resets\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\s*\(UTC\)", re.IGNORECASE)
+# Real 2026-10-08: a run hit the session limit at 19:48 with "resets
+# 7:50pm (UTC)", fell back to Groq (which rejected the prompts), and made
+# zero videos -- two minutes before Claude would have worked again.
+CLAUDE_LIMIT_MAX_WAIT_MINUTES = 45
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def claude_reset_wait_seconds(message: str, now: datetime) -> float | None:
+    """Seconds until a short-term Claude limit resets, or None when the
+    message has no same-day reset time, it's a weekly limit (the bare
+    time may be days away), or it's further off than the max wait."""
+    match = _RESET_TIME_PATTERN.search(message)
+    if not match or "weekly" in message.lower():
+        return None
+    hour = int(match.group(1)) % 12 + (12 if match.group(3).lower() == "pm" else 0)
+    reset = now.replace(hour=hour, minute=int(match.group(2) or 0), second=0, microsecond=0)
+    if reset <= now:
+        reset += timedelta(days=1)
+    wait = (reset - now).total_seconds()
+    return wait if wait <= CLAUDE_LIMIT_MAX_WAIT_MINUTES * 60 else None
+
 
 def _call_claude_code(prompt: str) -> str:
     claude_path = shutil.which("claude")
@@ -219,6 +248,15 @@ def _call_ollama(prompt: str) -> str:
     return response.json()["response"]
 
 
+# Tried in order after GROQ_MODEL when it can't take a prompt. Llama 4
+# Scout's free-tier per-minute token budget is several times
+# gpt-oss-120b's, so full-size script prompts fit. Override with the
+# GROQ_FALLBACK_MODELS env var (comma-separated) if Groq retires it.
+GROQ_FALLBACK_MODELS = "meta-llama/llama-4-scout-17b-16e-instruct"
+GROQ_RATE_LIMIT_RETRIES = 2
+GROQ_MAX_RETRY_WAIT_SECONDS = 65
+
+
 def _call_groq(prompt: str) -> str:
     """Groq's free-tier API (no credit card, rate-limited but genuinely
     free — see CLAUDE.md's "no paid APIs by default" rule) serving open
@@ -237,13 +275,33 @@ def _call_groq(prompt: str) -> str:
     # no warning beyond a 404 in the job log. openai/gpt-oss-120b is
     # Groq's own stated replacement for llama-3.3-70b-versatile's
     # general-purpose "versatile" role.
-    model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
-    response = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {api_key}"},
-        json={"model": model, "messages": [{"role": "user", "content": prompt}]},
-        timeout=120,
-    )
+    #
+    # Real 2026-10-08: every fallback call failed -- 413 (a ~9k-token
+    # script prompt is over gpt-oss-120b's free-tier tokens-per-minute
+    # cap) or 429 (the per-minute budget used up by the previous call).
+    # So: honor Retry-After on 429, and on 413 (too big for this model)
+    # or 404 (model retired) move on to the next model in GROQ_MODELS.
+    primary = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+    extra = [m.strip() for m in os.environ.get("GROQ_FALLBACK_MODELS", GROQ_FALLBACK_MODELS).split(",") if m.strip()]
+    models = [primary] + [m for m in extra if m != primary]
+    response = None
+    for model in models:
+        for attempt in range(GROQ_RATE_LIMIT_RETRIES + 1):
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={"model": model, "messages": [{"role": "user", "content": prompt}]},
+                timeout=120,
+            )
+            if response.status_code != 429 or attempt == GROQ_RATE_LIMIT_RETRIES:
+                break
+            wait = min(float(response.headers.get("retry-after") or 20), GROQ_MAX_RETRY_WAIT_SECONDS)
+            print(f"warning: Groq {model} rate-limited, retrying in {wait:.0f}s")
+            time.sleep(wait)
+        if response.status_code in (404, 413):
+            print(f"warning: Groq {model} returned {response.status_code} -- trying the next model")
+            continue
+        break
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
 
@@ -272,6 +330,15 @@ def call_llm(prompt: str) -> str:
     try:
         return _dispatch_llm(backend, prompt)
     except ClaudeUsageLimitError as exc:
+        wait = claude_reset_wait_seconds(str(exc), _utcnow())
+        if wait is not None:
+            # A 60s margin: the reset time is only shown to the minute.
+            print(f"warning: {exc} -- resets in {wait / 60:.0f} min, waiting for it instead of falling back")
+            time.sleep(wait + 60)
+            try:
+                return _dispatch_llm(backend, prompt)
+            except ClaudeUsageLimitError as retry_exc:
+                exc = retry_exc
         fallback = os.environ.get("LLM_FALLBACK_BACKEND", "").strip()
         if not fallback or fallback == backend:
             raise

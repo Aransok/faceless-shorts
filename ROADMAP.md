@@ -3580,6 +3580,17 @@ viral, after that comes Christmas etc."
   facts video -- `visuals_facts._build_clip_pool` now skips a failed
   query and uses the rest. First seasonal upload: the Halloween food
   video ("Halloween Pumpkin Seeds Soggy? ...", tdSBSqLXgZg).
+- LLM fallback fixed (2026-10-09): measured real script prompts at
+  ~6.4k-9.3k tokens (persona block ~3.5k, avoid lists ~3k) -- over
+  gpt-oss-120b's free-tier per-minute token cap, hence the 413s, then
+  429s from the per-minute budget. `call_llm()` now waits out a Claude
+  session limit that resets within 45 minutes (parsed from "resets
+  7:50pm (UTC)"; never for weekly limits) and retries Claude before
+  falling back at all. `_call_groq()` honors Retry-After on 429 and on
+  413/404 moves to the next model in `GROQ_FALLBACK_MODELS` (default:
+  Llama 4 Scout, chosen for its larger free per-minute budget -- not
+  verifiable from the dev sandbox without the key; a "404 -- trying the
+  next model" log line means Groq retired it, override the env var).
 - `metadata.py`: seasonal videos get the holiday in the title and its
   hashtag (#Halloween etc.) in the description/tags.
 - `videos.seasonal_event` records which videos were seasonal, so

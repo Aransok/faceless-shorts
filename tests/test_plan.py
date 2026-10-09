@@ -100,6 +100,31 @@ class CallLlmFallbackTest(unittest.TestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
+        # Pinned far from every reset time used below, so these tests
+        # exercise the fallback path and never actually wait.
+        from datetime import datetime, timezone
+        for p in (
+            mock.patch("pipeline.plan._utcnow", return_value=datetime(2026, 10, 8, 10, 0, tzinfo=timezone.utc)),
+            mock.patch("pipeline.plan.time.sleep"),
+        ):
+            self.mock_sleep = p.start()
+            self.addCleanup(p.stop)
+
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
+    @mock.patch("pipeline.plan.subprocess.run")
+    def test_waits_for_a_reset_minutes_away_instead_of_falling_back(self, mock_run, mock_which, mock_post):
+        # Real 2026-10-08: limit hit at 19:48, "resets 7:50pm (UTC)" --
+        # falling back to Groq made zero videos.
+        from datetime import datetime, timezone
+        limited = mock.Mock(returncode=1, stdout="", stderr="You've hit your session limit · resets 7:50pm (UTC)")
+        ok = mock.Mock(returncode=0, stdout="a real script", stderr="")
+        mock_run.side_effect = [limited, ok]
+        with mock.patch("pipeline.plan._utcnow", return_value=datetime(2026, 10, 8, 19, 48, tzinfo=timezone.utc)), \
+             mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
+            self.assertEqual(call_llm("prompt"), "a real script")
+        self.mock_sleep.assert_called_once_with(180.0)
+        mock_post.assert_not_called()
 
     @mock.patch("pipeline.plan.shutil.which", return_value="/usr/bin/claude")
     @mock.patch("pipeline.plan.subprocess.run")
@@ -488,6 +513,62 @@ class GenerateReviewedTest(unittest.TestCase):
         self.assertEqual(len(llm_calls), 2, "one generation call + one rewrite call")
         self.assertEqual(len(review_calls), 1, "the reviewer must not be called on the round with a caught duplicate")
         self.assertEqual(parsed["facts"][1]["script_text"], "Whisk two egg yolks with a tablespoon of lemon juice over low heat until it thickens.")
+
+
+class ClaudeResetWaitTest(unittest.TestCase):
+    def _at(self, hour, minute):
+        from datetime import datetime, timezone
+        return datetime(2026, 10, 8, hour, minute, tzinfo=timezone.utc)
+
+    def test_soon_reset_returns_the_wait(self):
+        from pipeline.plan import claude_reset_wait_seconds as wait
+        self.assertEqual(wait("session limit · resets 7:50pm (UTC)", self._at(19, 48)), 120)
+        self.assertEqual(wait("session limit · resets 12:10am (UTC)", self._at(23, 55)), 900)
+
+    def test_far_weekly_or_dated_resets_return_none(self):
+        from pipeline.plan import claude_reset_wait_seconds as wait
+        self.assertIsNone(wait("session limit · resets 4:40pm (UTC)", self._at(10, 0)))
+        self.assertIsNone(wait("weekly limit · resets 7pm (UTC)", self._at(18, 50)))
+        self.assertIsNone(wait("weekly limit · resets Oct 10, 2pm (UTC)", self._at(13, 50)))
+        self.assertIsNone(wait("organization has disabled Claude subscription access", self._at(10, 0)))
+
+
+class CallGroqTest(unittest.TestCase):
+    def setUp(self):
+        for p in (
+            mock.patch.dict("os.environ", {"GROQ_API_KEY": "fake", "GROQ_MODEL": "big-model",
+                                           "GROQ_FALLBACK_MODELS": "roomy-model"}),
+            mock.patch("pipeline.plan.time.sleep"),
+        ):
+            self.sleep = p.start()
+            self.addCleanup(p.stop)
+
+    def _resp(self, status, content="ok", headers=None):
+        r = mock.Mock(status_code=status, headers=headers or {})
+        r.json = lambda: {"choices": [{"message": {"content": content}}]}
+        r.raise_for_status = mock.Mock(side_effect=None if status < 400 else RuntimeError(f"HTTP {status}"))
+        return r
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_too_large_prompt_moves_to_the_next_model(self, mock_post):
+        from pipeline.plan import _call_groq
+        mock_post.side_effect = [self._resp(413), self._resp(200, "script")]
+        self.assertEqual(_call_groq("prompt"), "script")
+        self.assertEqual([c.kwargs["json"]["model"] for c in mock_post.call_args_list], ["big-model", "roomy-model"])
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_rate_limit_waits_and_retries_the_same_model(self, mock_post):
+        from pipeline.plan import _call_groq
+        mock_post.side_effect = [self._resp(429, headers={"retry-after": "7"}), self._resp(200, "script")]
+        self.assertEqual(_call_groq("prompt"), "script")
+        self.sleep.assert_called_once_with(7.0)
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_every_model_failing_still_raises(self, mock_post):
+        from pipeline.plan import _call_groq
+        mock_post.side_effect = [self._resp(413), self._resp(404)]
+        with self.assertRaises(RuntimeError):
+            _call_groq("prompt")
 
 
 if __name__ == "__main__":
