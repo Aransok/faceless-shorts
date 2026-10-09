@@ -1938,5 +1938,38 @@
     "uploaded_at": "2026-10-09T05:47:39.550395+00:00",
     "template": "promo",
     "approach": null
+  },
+  {
+    "video_id": "2df653cb-269a-49a7-a8b5-eef631b05fa7",
+    "youtube_video_id": "1HyroN-zZb8",
+    "uploaded_at": "2026-10-09T19:36:16.749246+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-09T20:54:57.529919+00:00"
+  },
+  {
+    "video_id": "e451d4e9-f452-4bb6-8fb7-4b84fce0a13e",
+    "youtube_video_id": "fkDcw2j63Qo",
+    "uploaded_at": "2026-10-09T19:44:29.273985+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-09T22:02:51.883948+00:00"
+  },
+  {
+    "video_id": "14ab665b-2b21-477f-bbef-8508c2f2d784",
+    "youtube_video_id": "FZzpQhwoD5c",
+    "uploaded_at": "2026-10-09T19:48:47.919985+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-09T23:19:49.154181+00:00",
+    "publish_arm": "evening"
+  },
+  {
+    "video_id": "d85fd920-a549-4d63-860f-3665f9e4bc55",
+    "youtube_video_id": "1a0HDhohnpg",
+    "uploaded_at": "2026-10-09T19:57:27.271653+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-10T00:28:51.048638+00:00"
   }
 ]
