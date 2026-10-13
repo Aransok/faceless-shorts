@@ -2012,5 +2012,14 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-10-10T23:38:53.097495+00:00"
+  },
+  {
+    "video_id": "739c092a-93f3-418d-99df-1d77aca338ba",
+    "youtube_video_id": "l8GDRMvocVI",
+    "uploaded_at": "2026-10-13T20:14:15.894925+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-13T21:24:24.482993+00:00",
+    "publish_arm": "evening"
   }
 ]
