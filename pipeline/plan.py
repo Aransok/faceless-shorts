@@ -252,7 +252,9 @@ def _call_ollama(prompt: str) -> str:
 # Scout's free-tier per-minute token budget is several times
 # gpt-oss-120b's, so full-size script prompts fit. Override with the
 # GROQ_FALLBACK_MODELS env var (comma-separated) if Groq retires it.
-GROQ_FALLBACK_MODELS = "meta-llama/llama-4-scout-17b-16e-instruct"
+GROQ_FALLBACK_MODELS = "groq/compound,groq/compound-mini,moonshotai/kimi-k2-instruct-0905,openai/gpt-oss-20b,qwen/qwen3-32b"
+# Model ids that aren't chat-completion text models (speech, moderation).
+_GROQ_NON_CHAT = re.compile(r"whisper|tts|guard|orpheus|playai|distil", re.IGNORECASE)
 GROQ_RATE_LIMIT_RETRIES = 2
 GROQ_MAX_RETRY_WAIT_SECONDS = 65
 
@@ -281,16 +283,32 @@ def _call_groq(prompt: str) -> str:
     # cap) or 429 (the per-minute budget used up by the previous call).
     # So: honor Retry-After on 429, and on 413 (too big for this model)
     # or 404 (model retired) move on to the next model in GROQ_MODELS.
+    #
+    # Real 2026-10-14: zero videos for days -- llama-4-scout was retired
+    # (404) and gpt-oss-120b's output came back cut off mid-script (its
+    # reasoning ate the completion budget left under the per-minute cap).
+    # So: gpt-oss gets reasoning_effort "low", a cut-off reply
+    # (finish_reason "length") counts as "too big, next model", and once
+    # the configured list is exhausted, whatever chat models Groq
+    # currently lists are tried too, so another retirement can't silently
+    # zero out the fallback again.
     primary = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
     extra = [m.strip() for m in os.environ.get("GROQ_FALLBACK_MODELS", GROQ_FALLBACK_MODELS).split(",") if m.strip()]
     models = [primary] + [m for m in extra if m != primary]
     response = None
-    for model in models:
+    discovered = False
+    i = 0
+    while i < len(models):
+        model = models[i]
+        i += 1
+        body: dict = {"model": model, "messages": [{"role": "user", "content": prompt}]}
+        if model.startswith("openai/gpt-oss"):
+            body["reasoning_effort"] = "low"
         for attempt in range(GROQ_RATE_LIMIT_RETRIES + 1):
             response = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}"},
-                json={"model": model, "messages": [{"role": "user", "content": prompt}]},
+                json=body,
                 timeout=120,
             )
             if response.status_code != 429 or attempt == GROQ_RATE_LIMIT_RETRIES:
@@ -298,12 +316,36 @@ def _call_groq(prompt: str) -> str:
             wait = min(float(response.headers.get("retry-after") or 20), GROQ_MAX_RETRY_WAIT_SECONDS)
             print(f"warning: Groq {model} rate-limited, retrying in {wait:.0f}s")
             time.sleep(wait)
-        if response.status_code in (404, 413):
+        if response.status_code == 200:
+            choice = response.json()["choices"][0]
+            if choice.get("finish_reason") != "length":
+                return choice["message"]["content"]
+            print(f"warning: Groq {model} reply was cut off -- trying the next model")
+        elif response.status_code in (400, 404, 413):
             print(f"warning: Groq {model} returned {response.status_code} -- trying the next model")
-            continue
-        break
+        else:
+            break
+        if i == len(models) and not discovered:
+            discovered = True
+            models += [m for m in _groq_available_models(api_key) if m not in models]
     response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
+    raise RuntimeError("every Groq model was too small for this prompt or cut its reply off")
+
+
+def _groq_available_models(api_key: str) -> list[str]:
+    """Chat models Groq lists right now; [] if the listing itself fails."""
+    try:
+        response = requests.get(
+            "https://api.groq.com/openai/v1/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=30,
+        )
+        response.raise_for_status()
+        ids = [m["id"] for m in response.json().get("data", []) if m.get("active", True)]
+    except (requests.RequestException, ValueError, KeyError) as exc:
+        print(f"warning: couldn't list Groq models: {exc}")
+        return []
+    return [m for m in ids if not _GROQ_NON_CHAT.search(m)]
 
 
 def _dispatch_llm(backend: str, prompt: str) -> str:

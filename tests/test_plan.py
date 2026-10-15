@@ -146,6 +146,7 @@ class CallLlmFallbackTest(unittest.TestCase):
         )
         mock_post.return_value = mock.Mock()
         mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.status_code = 200
         mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
         with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
             result = call_llm("prompt")
@@ -165,6 +166,7 @@ class CallLlmFallbackTest(unittest.TestCase):
         )
         mock_post.return_value = mock.Mock()
         mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.status_code = 200
         mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
         with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
             result = call_llm("prompt")
@@ -185,6 +187,7 @@ class CallLlmFallbackTest(unittest.TestCase):
         )
         mock_post.return_value = mock.Mock()
         mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.status_code = 200
         mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
         with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
             result = call_llm("prompt")
@@ -204,6 +207,7 @@ class CallLlmFallbackTest(unittest.TestCase):
         )
         mock_post.return_value = mock.Mock()
         mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.status_code = 200
         mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
         with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
             result = call_llm("prompt")
@@ -227,6 +231,7 @@ class CallLlmFallbackTest(unittest.TestCase):
         )
         mock_post.return_value = mock.Mock()
         mock_post.return_value.raise_for_status = lambda: None
+        mock_post.return_value.status_code = 200
         mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "fallback script"}}]}
         with mock.patch.dict("os.environ", {"LLM_FALLBACK_BACKEND": "groq", "GROQ_API_KEY": "fake-key"}):
             result = call_llm("prompt")
@@ -293,6 +298,7 @@ class CallBulkLlmTest(unittest.TestCase):
             with mock.patch("pipeline.plan.requests.post") as mock_post:
                 mock_post.return_value = mock.Mock()
                 mock_post.return_value.raise_for_status = lambda: None
+                mock_post.return_value.status_code = 200
                 mock_post.return_value.json = lambda: {"choices": [{"message": {"content": "hi"}}]}
                 with mock.patch.dict("os.environ", {"GROQ_API_KEY": "fake-key"}):
                     result = call_bulk_llm("prompt")
@@ -538,14 +544,15 @@ class CallGroqTest(unittest.TestCase):
         for p in (
             mock.patch.dict("os.environ", {"GROQ_API_KEY": "fake", "GROQ_MODEL": "big-model",
                                            "GROQ_FALLBACK_MODELS": "roomy-model"}),
+            mock.patch("pipeline.plan._groq_available_models", return_value=[]),
             mock.patch("pipeline.plan.time.sleep"),
         ):
             self.sleep = p.start()
             self.addCleanup(p.stop)
 
-    def _resp(self, status, content="ok", headers=None):
+    def _resp(self, status, content="ok", headers=None, finish="stop"):
         r = mock.Mock(status_code=status, headers=headers or {})
-        r.json = lambda: {"choices": [{"message": {"content": content}}]}
+        r.json = lambda: {"choices": [{"message": {"content": content}, "finish_reason": finish}]}
         r.raise_for_status = mock.Mock(side_effect=None if status < 400 else RuntimeError(f"HTTP {status}"))
         return r
 
@@ -569,6 +576,37 @@ class CallGroqTest(unittest.TestCase):
         mock_post.side_effect = [self._resp(413), self._resp(404)]
         with self.assertRaises(RuntimeError):
             _call_groq("prompt")
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_cut_off_reply_moves_to_the_next_model(self, mock_post):
+        from pipeline.plan import _call_groq
+        mock_post.side_effect = [self._resp(200, "half a scri", finish="length"), self._resp(200, "script")]
+        self.assertEqual(_call_groq("prompt"), "script")
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_retired_models_fall_through_to_what_groq_lists(self, mock_post):
+        from pipeline.plan import _call_groq
+        mock_post.side_effect = [self._resp(404), self._resp(404), self._resp(200, "script")]
+        with mock.patch("pipeline.plan._groq_available_models", return_value=["roomy-model", "new-model"]):
+            self.assertEqual(_call_groq("prompt"), "script")
+        self.assertEqual(mock_post.call_args_list[-1].kwargs["json"]["model"], "new-model")
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_gpt_oss_asks_for_low_reasoning(self, mock_post):
+        from pipeline.plan import _call_groq
+        mock_post.return_value = self._resp(200, "script")
+        with mock.patch.dict("os.environ", {"GROQ_MODEL": "openai/gpt-oss-120b"}):
+            _call_groq("prompt")
+        self.assertEqual(mock_post.call_args.kwargs["json"]["reasoning_effort"], "low")
+
+
+class GroqAvailableModelsTest(unittest.TestCase):
+    @mock.patch("pipeline.plan.requests.get")
+    def test_listing_drops_non_chat_models(self, mock_get):
+        from pipeline.plan import _groq_available_models
+        mock_get.return_value.json.return_value = {"data": [
+            {"id": "whisper-large-v3"}, {"id": "openai/gpt-oss-20b"}, {"id": "meta-llama/llama-guard-4-12b"}]}
+        self.assertEqual(_groq_available_models("k"), ["openai/gpt-oss-20b"])
 
 
 if __name__ == "__main__":
