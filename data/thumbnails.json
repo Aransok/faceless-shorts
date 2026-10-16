@@ -1011,5 +1011,17 @@
     "method": "card",
     "template": "sauce_recipe",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/4033483f-e021-46fe-ae26-5e37274dc309_thumbnail.jpg"
+  },
+  {
+    "video_id": "d0348a77-602b-48ae-9649-65796683b9f2",
+    "method": "card",
+    "template": "programming",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/d0348a77-602b-48ae-9649-65796683b9f2_thumbnail.jpg"
+  },
+  {
+    "video_id": "b733818b-dfe9-44f0-a114-b927cc64890a",
+    "method": "card",
+    "template": "food",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/b733818b-dfe9-44f0-a114-b927cc64890a_thumbnail.jpg"
   }
 ]

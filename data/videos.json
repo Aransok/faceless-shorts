@@ -2070,5 +2070,22 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-10-16T01:13:07.419569+00:00"
+  },
+  {
+    "video_id": "d0348a77-602b-48ae-9649-65796683b9f2",
+    "youtube_video_id": "oDf8zcug8T8",
+    "uploaded_at": "2026-10-16T17:59:19.507007+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-16T20:07:27.797559+00:00",
+    "publish_arm": "evening"
+  },
+  {
+    "video_id": "b733818b-dfe9-44f0-a114-b927cc64890a",
+    "youtube_video_id": "_-j69R75Rrw",
+    "uploaded_at": "2026-10-16T18:05:59.523500+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "scheduled_publish_at": "2026-10-16T21:28:52.756382+00:00"
   }
 ]
