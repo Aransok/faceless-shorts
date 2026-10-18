@@ -3625,6 +3625,29 @@ the game repo's own design doc (Aransok/game), in `manifest.json`.
 - Promo rows are excluded from the weekly approach report; winner
   analysis skips them already (no state.db row).
 
+## AI-tell linter, comment repeat check, doctor pre-flight (2026-10-18)
+
+Owner: scripts and auto-comments should read less like AI, comments kept
+repeating. Ideas borrowed (not installed) from blader/humanizer and the
+`doctor` commands in SenseNova-Skills / Agent Reach / awwwards-mcp.
+
+- `pipeline/ai_tells.py`: free regex linter (not-X-but-Y, stock AI
+  words, staged reveals, dramatic closers, chat leftovers) plus
+  `fix_dashes()`. Measured on the last 200 real scripts: dashes in 170,
+  wording tells in ~13. So dashes are fixed in code (spoken fields only,
+  never code snippets) and only wording tells cost a rewrite.
+- `plan._generate_reviewed()`: order is now repeated-opener check ->
+  ai_tells -> LLM reviewer. If only ai_tells is left after the rewrite
+  budget, it logs and lets the reviewer decide instead of failing.
+- CTA comments: the prompt's literal example questions were removed
+  (same "literal examples get copied" lesson as cta.py), recent comments
+  are shown to the model, and a comment that repeats a recent opener or
+  has a tell gets one rewrite on the bulk backend before the pool
+  fallback. Posted comments log to `data/comments.json` (committed by
+  daily, weekly-quiz and post-pending-comments workflows).
+- `scripts/doctor.py`: pre-flight step in daily-shorts and weekly-quiz;
+  fails in seconds on a missing tool/secret. Writes to the job summary.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures

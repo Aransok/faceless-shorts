@@ -21,6 +21,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
+from pipeline import ai_tells
 from pipeline.plan import call_bulk_llm
 from pipeline.state import get_video, list_by_status, list_uploaded_without_cta_comment, update_video
 from pipeline.thumbnails import upload_thumbnail
@@ -29,6 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 TOKEN_PATH = PROJECT_ROOT / "credentials" / "youtube_token.json"
 DATA_DIR = PROJECT_ROOT / "data"
 VIDEOS_LOG_PATH = DATA_DIR / "videos.json"
+COMMENTS_LOG_PATH = DATA_DIR / "comments.json"
 CTA_COMMENT_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "cta_comment_template.txt"
 
 load_dotenv(PROJECT_ROOT / ".env")
@@ -347,7 +349,7 @@ def upload(video_id: str) -> str:
 # fails for any reason, so a transient LLM error never blocks the comment
 # entirely, just makes this one instance generic instead of specific.
 _CTA_COMMENTS = [
-    "More of these coming — subscribed yet?",
+    "More of these coming. Subscribed yet?",
     "Which one got you? Let me know below.",
     "If this caught you off guard, there's more where it came from.",
     "Subscribe if you want more of these.",
@@ -372,19 +374,57 @@ def _generate_cta_comment(video: dict) -> str:
     pool existed before this change and needed no modification.
     """
     prompt_body = CTA_COMMENT_PROMPT_PATH.read_text(encoding="utf-8")
+    recent = _recent_comments()
     prompt = (
         prompt_body.replace("{topic}", video["topic"] or "")
         .replace("{hook}", video["hook"] or "")
         .replace("{script_text}", video["script_text"] or "")
+        .replace("{recent_comments}", "\n".join(f"- {c}" for c in recent[-10:]) or "(none yet)")
     )
-    raw = call_bulk_llm(prompt)
-    match = _COMMENT_FIELD_PATTERN.search(raw.strip())
-    if not match:
-        raise ValueError(f"LLM output missing COMMENT field:\n{raw}")
-    comment = match.group(1).strip()
-    if not comment:
-        raise ValueError("LLM produced an empty comment")
-    return comment
+    # One free-check retry (2026-10-18, owner: auto-comments kept
+    # repeating). ai_tells catches AI wording and an opener shared with a
+    # recent comment; a hit buys exactly one rewrite on the cheap bulk
+    # backend, then the pool fallback in post_cta_comment() takes over.
+    for attempt in range(2):
+        raw = call_bulk_llm(prompt)
+        match = _COMMENT_FIELD_PATTERN.search(raw.strip())
+        if not match:
+            raise ValueError(f"LLM output missing COMMENT field:\n{raw}")
+        comment = ai_tells.fix_dashes(match.group(1).strip())
+        if not comment:
+            raise ValueError("LLM produced an empty comment")
+        problem = ai_tells.feedback(comment)
+        twin = ai_tells.repeats_recent(comment, recent)
+        if twin:
+            problem = (problem + "\n" if problem else "") + (
+                f'It opens almost exactly like an earlier comment ("{twin}"); start differently.'
+            )
+        if problem is None:
+            return comment
+        prompt += f"\n\nYour last attempt was: {comment}\n{problem}\nWrite a different one."
+    raise ValueError(f"comment still failed checks after a rewrite: {comment!r}")
+
+
+def _recent_comments(limit: int = 30) -> list[str]:
+    """Texts of the last posted CTA comments, oldest first."""
+    if not COMMENTS_LOG_PATH.exists():
+        return []
+    try:
+        return [r["text"] for r in json.loads(COMMENTS_LOG_PATH.read_text(encoding="utf-8"))][-limit:]
+    except (ValueError, KeyError, TypeError):
+        return []
+
+
+def _log_comment(video_id: str, text: str, limit: int = 200) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    records = []
+    if COMMENTS_LOG_PATH.exists():
+        try:
+            records = json.loads(COMMENTS_LOG_PATH.read_text(encoding="utf-8"))
+        except ValueError:
+            records = []
+    records.append({"video_id": video_id, "text": text, "posted_at": datetime.now(timezone.utc).isoformat()})
+    COMMENTS_LOG_PATH.write_text(json.dumps(records[-limit:], indent=2), encoding="utf-8")
 
 
 def post_cta_comment(video: dict, youtube_video_id: str, youtube) -> None:
@@ -401,6 +441,12 @@ def post_cta_comment(video: dict, youtube_video_id: str, youtube) -> None:
         }
     }
     youtube.commentThreads().insert(part="snippet", body=body).execute()
+    try:
+        _log_comment(video.get("id", ""), comment)
+    except OSError as exc:
+        # The comment is already live; a log-write failure only weakens
+        # tomorrow's repeat check, it must not fail this call.
+        print(f"warning: could not log CTA comment: {exc}")
 
 
 def post_pending_cta_comments() -> None:

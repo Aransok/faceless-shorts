@@ -70,6 +70,17 @@ class GenerateCtaCommentTest(unittest.TestCase):
 
 
 class PostCtaCommentTest(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+
+        from pipeline import upload
+
+        self._tmp = tempfile.TemporaryDirectory()
+        patcher = mock.patch.object(upload, "COMMENTS_LOG_PATH", Path(self._tmp.name) / "comments.json")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self._tmp.cleanup)
+
     @mock.patch("pipeline.upload.call_bulk_llm")
     def test_posts_the_generated_comment(self, mock_bulk):
         mock_bulk.return_value = "COMMENT: Real, specific comment."

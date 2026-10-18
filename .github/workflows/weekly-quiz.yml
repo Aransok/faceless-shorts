@@ -62,6 +62,22 @@ jobs:
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
+      # Pre-flight (2026-10-18): fail in seconds on a missing tool or
+      # secret instead of after a long render. See scripts/doctor.py.
+      - name: Doctor
+        env:
+          LLM_BACKEND: claude_code
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          LLM_FALLBACK_BACKEND: groq
+          BULK_LLM_BACKEND: groq
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          FACTS_VISUAL_SOURCE: stock
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python scripts/doctor.py --youtube
+
       - name: Run weekly quiz
         env:
           LLM_BACKEND: claude_code
@@ -91,7 +107,7 @@ jobs:
         run: |
           git config user.name "faceless-shorts-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add state.db data/videos.json data/phrase_usage.json data/thumbnails.json
+          git add state.db data/videos.json data/phrase_usage.json data/thumbnails.json data/comments.json
           if git diff --cached --quiet; then
             echo "no state changes to commit"
             exit 0

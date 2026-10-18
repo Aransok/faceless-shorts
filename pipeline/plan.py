@@ -15,6 +15,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
+from pipeline import ai_tells
 from pipeline.approaches import pick_style, style_guidance_block
 from pipeline.cta import cta_guidance_block, pick_cta_angle
 from pipeline.milestones import format_milestone_line, get_pending_announcement, mark_milestone_announced
@@ -551,6 +552,17 @@ def _parse_response(template: str, raw: str) -> dict:
     return parsed
 
 
+def _clean_narration(template: str, parsed: dict) -> dict:
+    """Dashes to commas in spoken fields only (hook + each beat's
+    script_text), in code, no LLM call -- see ai_tells.fix_dashes().
+    Code snippets, keywords and labels are never touched."""
+    parsed["hook"] = ai_tells.fix_dashes(parsed["hook"])
+    items = parsed["steps"] if template == "programming" else parsed["facts"]
+    for item in items:
+        item["script_text"] = ai_tells.fix_dashes(item["script_text"])
+    return parsed
+
+
 def _extract_narration(template: str, parsed: dict) -> str:
     """Plain spoken-narration text for the review pass -- hook + each
     beat's script_text only, no field labels/code/keywords, since those
@@ -655,10 +667,16 @@ def _generate_reviewed(template: str, prompt: str) -> dict:
     the caller's normal fail-soft handling, same as a malformed-output
     ValueError from the parser."""
     raw = call_llm(prompt)
-    parsed = _parse_response(template, raw)
+    parsed = _clean_narration(template, _parse_response(template, raw))
     attempts = 0
     while True:
         feedback = _duplicate_item_feedback(template, parsed)
+        tells_only = False
+        if feedback is None:
+            # Free regex pass for mechanical AI tells (pipeline/ai_tells.py),
+            # before spending the reviewer call.
+            feedback = ai_tells.feedback(_extract_narration(template, parsed))
+            tells_only = feedback is not None
         if feedback is None:
             review = review_script(_extract_narration(template, parsed), call_llm)
             if review["approved"]:
@@ -666,12 +684,21 @@ def _generate_reviewed(template: str, prompt: str) -> dict:
             feedback = review["feedback"]
         attempts += 1
         if attempts > REVIEW_MAX_REWRITES:
+            if tells_only:
+                # A leftover stock phrase isn't worth failing a whole
+                # video over once the rewrite budget is spent; log it and
+                # let the LLM reviewer make the final call as before.
+                print(f"[plan] {template}: AI tells left after rewrite, sending to reviewer anyway:\n{feedback}")
+                review = review_script(_extract_narration(template, parsed), call_llm)
+                if review["approved"]:
+                    return parsed
+                feedback = review["feedback"]
             raise RuntimeError(
                 f"script for template {template!r} failed authenticity/uniqueness review "
                 f"after {REVIEW_MAX_REWRITES} rewrite attempt(s):\n{feedback}"
             )
         raw = call_llm(_build_rewrite_prompt(prompt, raw, feedback))
-        parsed = _parse_response(template, raw)
+        parsed = _clean_narration(template, _parse_response(template, raw))
 
 
 def _topic_hint_block(topic_hint: str) -> str:

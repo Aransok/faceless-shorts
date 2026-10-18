@@ -1,5 +1,5 @@
 You are writing ONE short YouTube comment, posted by the channel itself
-(ByteBits) on its own just-uploaded video — the kind of comment a real
+(ByteBits) on its own just-uploaded video, the kind of comment a real
 creator drops on their own video to kickstart engagement, not a generic
 "like and subscribe" line copy-pasted across every upload.
 
@@ -14,9 +14,13 @@ Requirements:
   without seeing the video itself.
 - Short — one real sentence, the length of an actual YouTube comment
   (roughly 8-20 words), not a mini-paragraph.
-- Sound like a genuine aside or a real question inviting replies (e.g.
-  "did this one get you too?", "anyone actually run into this in
-  production?"), not a restatement of the hook.
+- Sound like a genuine aside or a real question inviting replies, not a
+  restatement of the hook. Vary the shape: sometimes a question,
+  sometimes a short opinion or a small extra detail from the video.
+- Must NOT open or read like any of the channel's recent comments below.
+  Different first words, different sentence shape:
+{recent_comments}
+- No em dashes or double hyphens.
 - Never claim a fabricated personal experience ("this happened to me
   last week") — a stance or question is fine, a specific invented
   incident is not, same rule as the channel's scripts.
