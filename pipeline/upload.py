@@ -273,6 +273,7 @@ def _log_uploaded_video(
             "uploaded_at": datetime.now(timezone.utc).isoformat(),
             "template": video["template"],
             "approach": video["approach"],
+            "renderer": video["renderer"] or "original",
             "scheduled_publish_at": scheduled_publish_at.isoformat() if scheduled_publish_at else None,
             **({"publish_arm": publish_arm} if publish_arm else {}),
         }

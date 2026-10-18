@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>facts</title>
+<meta name="viewport" content="width=1080, height=1920">
+<link rel="stylesheet" href="./runtime/fonts.css">
+<link rel="stylesheet" href="./fonts/fonts_extra.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#main { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; font-family: Nunito, Inter, sans-serif; font-weight: 800; }
+.scene { position: absolute; inset: 0; }
+.txt { position: absolute; left: 60px; width: 960px; text-align: center; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="main"></div>
+<script src="./runtime/vendor/gsap.min.js"></script>
+<script src="./runtime/motion.js"></script>
+<script src="./spec.js"></script>
+<script src="./lib/util.js"></script>
+<script>
+/* ACCENT meaning: the one word or number the viewer must remember. The film is built from window.SPEC (JSON only).
+   Beats: {t0,t1,kind:'words',text} one phrase landing word by word, or {kind:'stat',prefix,value,suffix,caption} a counted number
+   that lands inside a slow-drifting ring motif, with the caption words landing under it. */
+const S = window.SPEC, U = window.MMU, fps = S.fps || 30;
+const dark = S.theme === 'dark';
+const BG = dark ? '#14161c' : '#f6efe3', INK = dark ? '#f4efe6' : '#241b14', ACC = S.accent || '#e8542e';
+const M = Motion.film({ fps, duration: S.duration, width: 1080, height: 1920, clock: 'smooth' });
+const main = document.getElementById('main');
+main.style.background = BG; main.style.color = INK;
+const total = Math.round(S.duration * fps);
+const beats = S.beats;
+const motifs = [];
+beats.forEach((b, i) => {
+  const a = i === 0 ? 0 : Math.round(b.t0 * fps), e = i === beats.length - 1 ? total : Math.round(b.t1 * fps);
+  b.a = a; b.e = Math.max(a + 12, e);
+  const sc = document.createElement('section'); sc.className = 'scene'; sc.id = 's' + i; main.appendChild(sc);
+  /* motif world: soft rings that drift for the whole beat so the stat sits inside something alive */
+  const ring = document.createElement('div');
+  ring.id = 'ring' + i;
+  const sz = 760 + (i % 3) * 120;
+  ring.style.cssText = 'position:absolute;left:' + (540 - sz / 2) + 'px;top:' + (b.kind === 'stat' ? 250 : 240) + 'px;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;border:' + (24 + (i % 2) * 14) + 'px solid ' + ACC + ';opacity:.3';
+  sc.appendChild(ring);
+  M.kf('#ring' + i, 'scale', [[a, .8], [b.e, 1.2]], { ease: 'linear' });
+  M.kf('#ring' + i, 'y', [[a, 0], [b.e, 70]], { ease: 'linear' });
+  if (b.kind === 'stat') {
+    const n = document.createElement('div'); n.className = 'txt';
+    n.style.cssText += ';top:420px;font-size:300px;line-height:340px;color:' + ACC;
+    n.innerHTML = '<span>' + (b.prefix || '') + '</span><span id="num' + i + '">' + Number(b.value).toLocaleString('en-US') + '</span><span>' + (b.suffix || '') + '</span>';
+    sc.appendChild(n);
+    const c = document.createElement('div'); c.id = 'cap' + i; c.className = 'txt';
+    c.style.cssText += ';top:800px;font-size:84px;line-height:104px;';
+    c.textContent = wrap(b.caption || '', 20);
+    sc.appendChild(c);
+  } else {
+    const t = document.createElement('div'); t.id = 'w' + i; t.className = 'txt';
+    const len = (b.text || '').length, fs = len > 60 ? 100 : len > 36 ? 120 : 148;
+    t.style.cssText += ';top:' + (620 - Math.ceil(len * fs * 0.5 / 900) * fs * 0.6) + 'px;font-size:' + fs + 'px;line-height:' + Math.round(fs * 1.2) + 'px;';
+    t.textContent = wrap(b.text || '', Math.round(900 / (fs * 0.58)));
+    sc.appendChild(t);
+  }
+});
+function wrap(s, n) {
+  const out = []; let line = '';
+  String(s).split(/\s+/).filter(Boolean).forEach(w => { if ((line + ' ' + w).trim().length > n && line) { out.push(line); line = w; } else line = (line + ' ' + w).trim(); });
+  if (line) out.push(line);
+  return out.join('\n');
+}
+beats.forEach((b, i) => {
+  M.show('#s' + i, b.a, b.e);
+  if (b.kind === 'stat') {
+    M.count('#num' + i, { at: b.a + 4, from: 0, to: Number(b.value), frames: Math.min(40, b.e - b.a - 20), round: true, format: 'comma', skip: .12, seed: 2 });
+    M.words('#cap' + i, { at: b.a + 30, mech: 'rise', dist: 60, accent: { color: ACC, word: -1 } });
+    M.kf('#cap' + i, 'y', [[b.a, 0], [b.e, -40]], { ease: 'linear' });
+  } else {
+    M.words('#w' + i, { at: b.a + 3, mech: 'rise', dist: 70, accent: { color: ACC, word: b.accentWord != null ? b.accentWord : -1 } });
+    M.kf('#w' + i, 'scale', [[b.a, 1], [b.e, 1.1]], { ease: 'linear' });
+    M.kf('#w' + i, 'y', [[b.a, 0], [b.e, -50]], { ease: 'linear' });
+  }
+});
+window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
+</script>
+</body>
+</html>

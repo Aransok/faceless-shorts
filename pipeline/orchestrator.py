@@ -28,6 +28,8 @@ from pipeline.research import suggest_research_seed, trending_candidates
 from pipeline.seasonal import active_event, in_peak
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
+from pipeline.mm_render import try_motionmaxxing
+from pipeline.voice import OUTPUT_DIR
 from pipeline.visuals_code import visuals_code
 from pipeline.visuals_facts import visuals_facts
 from pipeline.visuals_game import visuals_game
@@ -153,7 +155,9 @@ def _advance_one_stage(video_id: str) -> str:
         else:
             voice(video_id)
     elif status == "voiced":
-        if template == "programming":
+        if try_motionmaxxing(video_id, OUTPUT_DIR) is not None:
+            pass
+        elif template == "programming":
             visuals_code(video_id)
         elif template == "quiz_longform":
             visuals_quiz(video_id)

@@ -400,3 +400,42 @@ pipeline. **Next real check**: watch the next real `daily-shorts` run
 (or trigger one manually) and confirm the visual log
 (`{video_id}_visual_log.json`) shows real exact/representation matches
 for a real fact, not generic fallback everywhere.
+
+## Motionmaxxing one-week trial
+
+Goal: compare the Motionmaxxing renderer (mm) with the old renderer on
+the facts, programming, sauce_recipe and food niches, then decide per niche.
+
+Window: 2026-10-18 to 2026-10-25. Flag auto-offs on 2026-10-26
+(TRIAL_END in pipeline/mm_render.py; last trial day is 10-25).
+
+Flag: env RENDERER=motionmaxxing, currently commented out in
+.github/workflows/daily-shorts.yml (around line 151). Do NOT uncomment
+until the owner approves the 3 test renders:
+assets/mm_work/trial/chef/*.mp4, assets/mm_work/trial/facts/*.mp4,
+assets/mm_work/trial/code/*.mp4
+
+Scope: facts, programming, sauce_recipe and food (chef series, voice
+CHEF_TTS_VOICE, default en-US-GuyNeural via voice.voice_for_template).
+weird stays on the old renderer.
+
+Files:
+- pipeline/mm_render.py: render, lint G5, look.py gate, try_motionmaxxing fallback
+- pipeline/mm_specs.py: heuristic JSON spec builders (no LLM)
+- mm/templates/{chef,facts,code}.html, mm/lib/*
+- vendor/motionmaxxing: pinned submodule (Apache 2.0)
+- scripts/chrome_wrapper.sh, scripts/chromium_path.cjs: Chrome for Actions
+- scripts/mm_test_renders.py: stills|full
+- tests/test_mm_trial.py
+
+Fallback: on any mm failure the orchestrator falls back to the old
+renderer and logs "[motionmaxxing] fallback".
+
+Tagging: videos.renderer column, shown in data/videos.json and in the
+"Renderer comparison" table of scripts/weekly_report.py (Weekly Stats).
+
+Length: real videos run about 42-58s (not 13-30s) because they follow
+the narration audio.
+
+Next step: after 2026-10-25, read the Renderer comparison table, decide
+per niche, then either remove the flag or extend TRIAL_END.

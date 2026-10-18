@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -92,12 +92,49 @@ def _build_winner_section() -> list[str]:
     return lines
 
 
+def _mean(vals: list[float]) -> float | None:
+    vals = [v for v in vals if v is not None]
+    return sum(vals) / len(vals) if vals else None
+
+
+def renderer_comparison(rows: list[dict], now: datetime | None = None) -> list[str]:
+    """Per-renderer averages (views, avg view duration, % viewed, likes) for
+    the last 7 days vs the 7 days before that. `rows` must span 14 days."""
+    now = now or datetime.now(timezone.utc)
+    buckets: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for r in rows:
+        age = (now - datetime.fromisoformat(r["uploaded_at"])).total_seconds() / 86400
+        if age > 14:
+            continue
+        buckets[(r.get("renderer") or "original", "this week" if age <= 7 else "previous week")].append(r)
+
+    def fmt(v: float | None, spec: str) -> str:
+        return "-" if v is None else format(v, spec)
+
+    lines = ["## Renderer comparison (motionmaxxing trial)", "",
+             "| renderer | week | videos | avg views | avg view duration | % viewed | avg likes |",
+             "|---|---|---|---|---|---|---|"]
+    for renderer in sorted({k[0] for k in buckets}):
+        for week in ("this week", "previous week"):
+            rs = buckets.get((renderer, week), [])
+            lines.append(
+                f"| {renderer} | {week} | {len(rs)} | {fmt(_mean([r['views'] for r in rs]), '.0f')} | "
+                f"{fmt(_mean([r.get('avg_view_duration_seconds') for r in rs]), '.0f')}s | "
+                f"{fmt(_mean([r.get('avg_view_percentage') for r in rs]), '.0f')}% | "
+                f"{fmt(_mean([r['likes'] for r in rs]), '.1f')} |"
+            )
+    lines.append("")
+    return lines
+
+
 def build_report(days: int = 7) -> str:
     # This report is specifically the Shorts approach A/B comparison —
     # the quiz longform track is a separate, lower-frequency content
     # track that never gets an approach tag and shouldn't be mixed in.
     # Same for hand-made promo uploads (scripts/upload_promo.py).
-    rows = [r for r in weekly_report_data(days) if r["template"] not in ("quiz_longform", "promo")]
+    all_rows = [r for r in weekly_report_data(max(days, 14)) if r["template"] not in ("quiz_longform", "promo")]
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    rows = [r for r in all_rows if datetime.fromisoformat(r["uploaded_at"]) >= cutoff]
 
     by_approach: dict[str, list[int]] = defaultdict(list)
     for r in rows:
@@ -115,6 +152,7 @@ def build_report(days: int = 7) -> str:
         avg = sum(views) / len(views) if views else 0
         lines.append(f"| {approach} | {len(views)} | {avg:.0f} | {sum(views)} |")
     lines.append("")
+    lines.extend(renderer_comparison(all_rows))
     lines.append("## Per-video detail")
     lines.append("")
     # avg_view_percentage/avg_view_duration_seconds are None until the

@@ -22,6 +22,17 @@ OUTPUT_DIR = PROJECT_ROOT / "assets" / "output"
 load_dotenv(PROJECT_ROOT / ".env")
 
 EDGE_TTS_VOICE = os.environ.get("EDGE_TTS_VOICE", "en-US-AndrewNeural")
+# Chef series (sauce_recipe + food) gets its own warm voice on every video.
+CHEF_TTS_VOICE = os.environ.get("CHEF_TTS_VOICE", "en-US-GuyNeural")
+_CHEF_TEMPLATES = {"sauce_recipe", "food"}
+_voice_override: str | None = None
+
+
+def voice_for_template(template: str) -> str:
+    """Per-template edge-tts voice: chef voice for food content, default otherwise."""
+    return CHEF_TTS_VOICE if template in _CHEF_TEMPLATES else EDGE_TTS_VOICE
+
+
 # 1.08x -- middle of the requested 1.05-1.1x range. edge_tts's Communicate
 # takes a percentage-string rate, not a multiplier.
 EDGE_TTS_RATE = "+8%"
@@ -112,7 +123,7 @@ async def _synth_one_edge_tts_call(text: str, out_path: Path) -> list[dict]:
     import edge_tts
 
     async def _attempt() -> list[dict]:
-        communicate = edge_tts.Communicate(text, EDGE_TTS_VOICE, rate=EDGE_TTS_RATE, boundary="WordBoundary")
+        communicate = edge_tts.Communicate(text, _voice_override or EDGE_TTS_VOICE, rate=EDGE_TTS_RATE, boundary="WordBoundary")
         words: list[dict] = []
         with open(out_path, "wb") as audio_file:
             async for chunk in communicate.stream():
@@ -294,6 +305,8 @@ def voice(video_id: str, backend: str | None = None) -> str:
 
     backend = backend or os.environ.get("TTS_BACKEND", "edge_tts")
 
+    global _voice_override
+    _voice_override = voice_for_template(video["template"])
     if get_video_steps(video_id):
         out_path = _voice_steps(video_id, backend, video["template"])
     else:

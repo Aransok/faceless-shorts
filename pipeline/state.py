@@ -52,6 +52,7 @@ _COLUMNS = (
     "code_theme",
     "cta_overlay_variant",
     "cta_comment_posted",
+    "renderer",
     "genome_hook_style",
     "genome_concept_type",
     "genome_item_count",
@@ -133,6 +134,11 @@ def init_db(db_path: Path = DB_PATH) -> None:
         # posted once they've actually gone public.
         if "cta_comment_posted" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN cta_comment_posted INTEGER")
+        # Which renderer produced the visuals ("motionmaxxing" during the
+        # one-week trial, NULL = the original renderer) -- weekly stats
+        # compare views/retention/likes per renderer.
+        if "renderer" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN renderer TEXT")
         # "Genome" tags -- a small, deliberately fixed set of categorical
         # descriptors per video, captured now so it exists once there's
         # real volume to look at (~40-50+ videos). No scoring/weighting

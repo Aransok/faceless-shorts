@@ -1,0 +1,10 @@
+{
+  "name": "faceless-shorts-mm",
+  "private": true,
+  "description": "Node deps for the motionmaxxing renderer trial (see mm/ and pipeline/mm_render.py)",
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "5.1.1",
+    "@fontsource/nunito": "5.1.1",
+    "@sparticuz/chromium": "131.0.1"
+  }
+}

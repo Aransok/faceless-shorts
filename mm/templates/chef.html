@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>chef</title>
+<meta name="viewport" content="width=1080, height=1920">
+<link rel="stylesheet" href="./runtime/fonts.css">
+<link rel="stylesheet" href="./fonts/fonts_extra.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#main { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; background: #fdeccf; font-family: Nunito, Inter, sans-serif; }
+.ly { pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="main"></div>
+<script src="./runtime/vendor/gsap.min.js"></script>
+<script src="./runtime/motion.js"></script>
+<script src="./spec.js"></script>
+<script src="./lib/util.js"></script>
+<script src="./lib/chef_art.js"></script>
+<script src="./lib/chef.js"></script>
+<script>
+/* ACCENT meaning: the word being talked about in each step label. The film is built from window.SPEC (JSON only). */
+const M = Motion.film({ fps: SPEC.fps || 30, duration: SPEC.duration, width: 1080, height: 1920, clock: 'smooth' });
+ChefScene.build(M, SPEC);
+window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
+</script>
+</body>
+</html>

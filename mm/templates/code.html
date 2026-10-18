@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>code</title>
+<meta name="viewport" content="width=1080, height=1920">
+<link rel="stylesheet" href="./runtime/fonts.css">
+<link rel="stylesheet" href="./fonts/fonts_extra.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#main { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; background: #12141b; color: #e9e6df; font-family: Nunito, Inter, sans-serif; }
+.scene { position: absolute; inset: 0; }
+.ln { position: absolute; left: 60px; width: 960px; white-space: pre-wrap; word-break: break-all; font-family: "JetBrains Mono", monospace; font-weight: 500; }
+.hd { position: absolute; left: 60px; width: 960px; white-space: pre; font-weight: 800; text-align: center; }
+</style>
+</head>
+<body>
+<div id="main"></div>
+<script src="./runtime/vendor/gsap.min.js"></script>
+<script src="./runtime/motion.js"></script>
+<script src="./spec.js"></script>
+<script src="./lib/util.js"></script>
+<script>
+/* ACCENT meaning: the line that makes the result happen, then the result itself. The film is built from window.SPEC (JSON only).
+   SPEC.parts = [{t0,t1,lines:[{text,html}] (html already syntax-highlighted), output: text|null}], one part per script step. */
+const S = window.SPEC, fps = S.fps || 30, ACC = S.accent || '#ffb454';
+const M = Motion.film({ fps, duration: S.duration, width: 1080, height: 1920, clock: 'smooth' });
+const main = document.getElementById('main');
+const total = Math.round(S.duration * fps);
+const parts = S.parts;
+parts.forEach((P, k) => {
+  const a = k === 0 ? 0 : Math.round(P.t0 * fps), e = k === parts.length - 1 ? total : Math.round(P.t1 * fps);
+  const len = Math.max(30, e - a);
+  const hasOut = !!(P.output && String(P.output).trim());
+  const cutAt = a + (hasOut ? Math.max(24, Math.round(len * 0.58)) : len);
+  const lines = P.lines || [];
+  const maxLen = Math.max(8, ...lines.map(l => (l.text || '').length));
+  const fit = f => { const c = Math.floor(940 / (0.6 * f)); return lines.reduce((x, l) => x + Math.max(1, Math.ceil((l.text || '').length / c)), 0) * Math.round(f * 1.55); };
+  let fs = 52; while (fs > 34 && fit(fs) > 1000) fs -= 2;
+  const lh = Math.round(fs * 1.55);
+  const cols = Math.floor(940 / (0.6 * fs));
+  const rows = lines.map(l => Math.max(1, Math.ceil((l.text || '').length / cols)));
+  const totalRows = rows.reduce((x, y) => x + y, 0);
+  const sA = document.createElement('section'); sA.className = 'scene'; sA.id = 'sA' + k; main.appendChild(sA);
+  const top0 = Math.round(600 - (totalRows * lh) / 2);
+  let acc = 0;
+  lines.forEach((l, i) => {
+    const d = document.createElement('div'); d.className = 'ln'; d.id = 'l' + k + '_' + i;
+    d.style.cssText += ';top:' + (top0 + acc * lh) + 'px;font-size:' + fs + 'px;line-height:' + lh + 'px';
+    d.innerHTML = l.html; sA.appendChild(d); acc += rows[i];
+  });
+  const gap = Math.max(3, Math.min(14, Math.floor((cutAt - a - 20) / Math.max(1, lines.length))));
+  lines.forEach((l, i) => M.enter('#l' + k + '_' + i, { at: a + i * gap, frames: 10, from: { y: 36 } }));
+  M.kf('#sA' + k, 'scale', [[a, 1], [cutAt, 1.1]], { ease: 'linear' });
+  M.kf('#sA' + k, 'y', [[a, 0], [cutAt, -60]], { ease: 'linear' });
+  M.show('#sA' + k, a, cutAt);
+  if (hasOut) {
+    const sB = document.createElement('section'); sB.className = 'scene'; sB.id = 'sB' + k; main.appendChild(sB);
+    const o = document.createElement('div'); o.id = 'out' + k; o.className = 'hd';
+    const outText = String(P.output).split('\n').slice(0, 6).join('\n');
+    const olen = Math.max(...outText.split('\n').map(x => x.length), 4), nl = outText.split('\n').length;
+    const ofs = Math.max(56, Math.min(150, Math.floor(940 / (0.55 * olen))));
+    o.style.cssText += ';top:' + Math.round(600 - nl * ofs * 0.6) + 'px;font-size:' + ofs + 'px;line-height:' + Math.round(ofs * 1.2) + 'px;color:' + ACC;
+    o.textContent = outText; sB.appendChild(o);
+    M.show('#sB' + k, cutAt, e);
+    M.words('#out' + k, { at: cutAt, mech: 'rise', dist: 70 });
+    M.kf('#out' + k, 'scale', [[cutAt, 1], [e, 1.12]], { ease: 'linear' });
+    M.kf('#out' + k, 'y', [[cutAt, 0], [e, -50]], { ease: 'linear' });
+  }
+});
+window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+[submodule "vendor/motionmaxxing"]
+	path = vendor/motionmaxxing
+	url = https://github.com/Tejashmakwana/motionmaxxing

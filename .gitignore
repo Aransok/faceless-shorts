@@ -9,3 +9,11 @@ models/
 preview.html
 .tmp_frames/
 credentials/
+
+# fresh plugin handoff notes (local only)
+.claude/handoff*.md
+
+node_modules/
+assets/mm_work/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

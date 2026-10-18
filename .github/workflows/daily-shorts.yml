@@ -74,10 +74,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          submodules: true
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install node deps (motionmaxxing renderer trial)
+        run: npm ci
+
+      - name: Cache Chromium binary
+        uses: actions/cache@v4
+        with:
+          path: /tmp/chromium
+          key: chromium-${{ hashFiles('package-lock.json') }}
 
       - name: Install ffmpeg
         # `apt-get update` is allowed to fail non-fatally here: a real
@@ -145,6 +161,11 @@ jobs:
           # fallback above; a no-op until that secret exists.
           BULK_LLM_BACKEND: groq
           TTS_BACKEND: edge_tts
+          # Motionmaxxing one-week trial (auto-off 2026-10-26, see pipeline/mm_render.py).
+          # OFF until the owner approves the test renders: to start the trial
+          # uncomment the next line. Failures fall back to the old renderer.
+          RENDERER: motionmaxxing
+          CHROME_PATH: ${{ github.workspace }}/scripts/chrome_wrapper.sh
           FACTS_VISUAL_SOURCE: stock
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           REQUIRE_REVIEW: "false"
