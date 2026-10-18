@@ -157,9 +157,9 @@ def try_motionmaxxing(video_id: str, out_dir: Path) -> Path | None:
         render_film(kind, spec, out, f"{video_id}_{kind}")
         update_video(video_id, status="visuals_ready", video_path=str(out), renderer="motionmaxxing")
         return out
-    except Exception as exc:  # fail soft: caller falls back to the old renderer
-        print(f"[motionmaxxing] fallback for {video_id}: {exc}", file=sys.stderr)
-        return None
+    except Exception as exc:  # trial: no old-renderer fallback, the stage fails so stats stay clean
+        print(f"[motionmaxxing] FAILED for {video_id}: {exc}", file=sys.stderr)
+        raise
 
 
 if __name__ == "__main__":
