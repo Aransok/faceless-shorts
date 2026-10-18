@@ -21,10 +21,11 @@ html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; backgro
 <script src="./lib/util.js"></script>
 <script src="./lib/chef_art.js"></script>
 <script src="./lib/chef.js"></script>
+<script src="./lib/chef_photo.js"></script>
 <script>
 /* ACCENT meaning: the word being talked about in each step label. The film is built from window.SPEC (JSON only). */
 const M = Motion.film({ fps: SPEC.fps || 30, duration: SPEC.duration, width: 1080, height: 1920, clock: 'smooth' });
-ChefScene.build(M, SPEC);
+(SPEC.photo === false ? ChefScene : ChefPhoto).build(M, SPEC);
 window.MMU.endCta(M, document.getElementById('main'), { total: Math.round(SPEC.duration * (SPEC.fps || 30)), fps: SPEC.fps || 30 });
 window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
 </script>
