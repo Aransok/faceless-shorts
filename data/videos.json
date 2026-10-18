@@ -2128,5 +2128,33 @@
     "template": "sauce_recipe",
     "approach": "storytelling_hook",
     "scheduled_publish_at": "2026-10-17T23:50:32.021649+00:00"
+  },
+  {
+    "video_id": "bcc3fbd0-0139-4a1f-b9bb-b65f4e75b7b6",
+    "youtube_video_id": "sLGm_qEd8gw",
+    "uploaded_at": "2026-10-18T07:17:49.016879+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-18T20:20:19.455077+00:00"
+  },
+  {
+    "video_id": "b2620429-d9ee-4aa1-a26b-94b5a189aaff",
+    "youtube_video_id": "3pQPvXcTSNM",
+    "uploaded_at": "2026-10-18T07:25:31.003175+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-18T21:42:29.929748+00:00"
+  },
+  {
+    "video_id": "0fda289f-33d7-42dd-a4db-7bcf3652bb46",
+    "youtube_video_id": "MFcUFV3YVdI",
+    "uploaded_at": "2026-10-18T07:31:13.507945+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-18T23:02:06.911457+00:00",
+    "publish_arm": "evening"
   }
 ]
