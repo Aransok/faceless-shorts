@@ -3647,6 +3647,12 @@ repeating. Ideas borrowed (not installed) from blader/humanizer and the
   daily, weekly-quiz and post-pending-comments workflows).
 - `scripts/doctor.py`: pre-flight step in daily-shorts and weekly-quiz;
   fails in seconds on a missing tool/secret. Writes to the job summary.
+- Research for programming: highly voted "why does..." Stack Overflow
+  questions as gotcha seeds (keyless Stack Exchange API, fail-soft).
+  Chosen over installing Agent Reach: same idea, pure Python, no extra
+  CLIs, fits this repo's rules. Not live-tested from the build sandbox
+  (Stack Exchange blocked there); first real run will show in the log
+  line `[research] programming: offering ...`.
 
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM

@@ -24,9 +24,11 @@ Sources are free, keyless, public APIs (CLAUDE.md's "no paid APIs" rule):
   channel's past scripts already mention.
 - food: Wikipedia's Category:Cooking techniques, same "not already
   covered" filter.
-programming and weird have no source here -- nothing free maps cleanly
-onto "a real gotcha" or "an everyday thing with a hidden reason"; both
-rely on plan.py's full-history topic avoid-list instead.
+- programming (2026-10-18): highly voted "why does..." Stack Overflow
+  questions (keyless Stack Exchange API), i.e. real gotchas.
+weird still has no source here -- nothing free maps cleanly onto "an
+everyday thing with a hidden reason"; it relies on plan.py's
+full-history topic avoid-list instead.
 
 Fail-soft end to end: any network/parse problem returns None and the
 video is planned exactly as before (CLAUDE.md's "fail soft" rule).
@@ -34,6 +36,7 @@ video is planned exactly as before (CLAUDE.md's "fail soft" rule).
 
 from __future__ import annotations
 
+import html
 import os
 import random
 import re
@@ -57,7 +60,17 @@ CATEGORY_SOURCE = {
 }
 
 CANDIDATES_PER_SEED = 6
+
+# programming (2026-10-18): the highest-voted "why does..." questions on
+# Stack Overflow are, by definition, gotchas that surprised a lot of real
+# developers. Keyless Stack Exchange API (300 requests/day per IP, one
+# request per programming video here). Fail-soft like everything else in
+# this module: a throttled or blocked call just means no seed today.
+STACKEXCHANGE_SEARCH_URL = "https://api.stackexchange.com/2.3/search/advanced"
+PROGRAMMING_TAGS = ("python", "javascript", "typescript", "java", "go", "rust", "sql", "bash")
+_MIN_QUESTION_SCORE = 50
 _USED_SLOT = {
+    "programming": "research_used_programming",
     "facts": "research_used_facts",
     "sauce_recipe": "research_used_sauces",
     "food": "research_used_food",
@@ -340,8 +353,46 @@ def _format_trending_seed(template: str, picks: list[str]) -> str:
     return f"{lead}{ask}:\n{lines}"
 
 
+def parse_stackoverflow_titles(payload: dict, min_score: int = _MIN_QUESTION_SCORE) -> list[str]:
+    """'[tag] title' for every well-voted question; titles arrive
+    HTML-escaped (&quot; &#39; &lt;) from the API."""
+    out = []
+    for item in payload.get("items", []):
+        if item.get("score", 0) < min_score or not item.get("title"):
+            continue
+        tag = (item.get("tags") or ["?"])[0]
+        out.append(f"[{tag}] {html.unescape(item['title']).strip()}")
+    return out
+
+
+def fetch_stackoverflow_gotchas(tag: str) -> list[str]:
+    response = requests.get(
+        STACKEXCHANGE_SEARCH_URL,
+        params={
+            "order": "desc",
+            "sort": "votes",
+            "tagged": tag,
+            "title": "why",
+            "site": "stackoverflow",
+            "pagesize": 100,
+        },
+        headers={"User-Agent": USER_AGENT},
+        timeout=20,
+    )
+    response.raise_for_status()
+    return parse_stackoverflow_titles(response.json())
+
+
 def _format_seed(template: str, picks: list[str]) -> str:
     lines = "\n".join(f"- {p}" for p in picks)
+    if template == "programming":
+        return (
+            "Real, highly voted Stack Overflow questions: behaviour that "
+            "genuinely surprised many developers. Pick ONE you can explain "
+            "accurately with a short, runnable snippet, and build today's "
+            "gotcha around it. Write your own example code; never copy code "
+            f"or wording from the question:\n{lines}"
+        )
     if template == "facts":
         return (
             "Real facts from Wikipedia's 'Did you know' section (each is about "
@@ -380,6 +431,10 @@ def suggest_research_seed(template: str) -> str | None:
     try:
         if template == "facts":
             pool = fetch_dyk_hooks()
+        elif template == "programming":
+            covered = all_script_text(template)
+            tag = random.choice(PROGRAMMING_TAGS)
+            pool = [q for q in fetch_stackoverflow_gotchas(tag) if q.lower() not in covered]
         else:
             covered = all_script_text(template)
             pool = [name for name in fetch_category_names(CATEGORY_SOURCE[template]) if name.lower() not in covered]
@@ -403,6 +458,8 @@ if __name__ == "__main__":
         found = [f"{t} -- {d}" for t, d in fetch_trending_topics()]
     elif template_arg == "facts":
         found = fetch_dyk_hooks()
+    elif template_arg == "programming":
+        found = fetch_stackoverflow_gotchas(sys.argv[2] if len(sys.argv) > 2 else "python")
     else:
         found = fetch_category_names(CATEGORY_SOURCE[template_arg])
     print(f"{len(found)} candidates for {template_arg}:")

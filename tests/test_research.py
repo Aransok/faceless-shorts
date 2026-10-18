@@ -329,3 +329,35 @@ class ResearchSeedBlockTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StackOverflowGotchasTest(SuggestResearchSeedTest):
+    """Programming seed from Stack Overflow (2026-10-18). Reuses the seed
+    test setup above; only the new source is exercised here."""
+
+    PAYLOAD = {
+        "items": [
+            {"title": "Why does &quot;is&quot; work for small ints?", "score": 900, "tags": ["python", "int"]},
+            {"title": "Why is [] == ![] true?", "score": 400, "tags": ["javascript"]},
+            {"title": "Why does my code not work", "score": 3, "tags": ["python"]},
+            {"score": 999, "tags": ["python"]},
+        ]
+    }
+
+    def test_parse_unescapes_and_filters_low_score(self):
+        titles = research.parse_stackoverflow_titles(self.PAYLOAD)
+        self.assertEqual(titles, ['[python] Why does "is" work for small ints?', "[javascript] Why is [] == ![] true?"])
+
+    def test_programming_seed_offers_gotchas_once(self):
+        titles = [f"[python] Why does case {i} surprise people?" for i in range(8)]
+        with mock.patch.object(research, "fetch_stackoverflow_gotchas", return_value=titles):
+            seed = research.suggest_research_seed("programming")
+            self.assertIn("Stack Overflow", seed)
+            self.assertIn("never copy code", seed)
+            second = research.suggest_research_seed("programming")
+        offered_twice = [t for t in titles if t in seed and t in (second or "")]
+        self.assertEqual(offered_twice, [])
+
+    def test_programming_seed_fails_soft(self):
+        with mock.patch.object(research, "fetch_stackoverflow_gotchas", side_effect=RuntimeError("throttled")):
+            self.assertIsNone(research.suggest_research_seed("programming"))
