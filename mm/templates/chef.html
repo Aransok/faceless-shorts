@@ -27,7 +27,7 @@ html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; backgro
 const M = Motion.film({ fps: SPEC.fps || 30, duration: SPEC.duration, width: 1080, height: 1920, clock: 'smooth' });
 (SPEC.photo === false ? ChefScene : ChefPhoto).build(M, SPEC);
 window.MMU.endCta(M, document.getElementById('main'), { total: Math.round(SPEC.duration * (SPEC.fps || 30)), fps: SPEC.fps || 30 });
-window.__ready = Promise.all([Motion.loaded(), (window.ChefPhoto && ChefPhoto.ready) || null]).then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
+window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
 </script>
 </body>
 </html>
