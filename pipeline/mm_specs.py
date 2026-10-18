@@ -123,7 +123,8 @@ def chef_spec(steps: list[dict], accent: str | None = None, pause: float = PAUSE
             out.append({"action": ev["action"], "ingredient": ev["ingredient"], "into": "plate" if ev["action"] == "plate" else vessel,
                         "color": ev["color"] or DEFAULT_COLOR, "label": _label(ev), "t0": round(t0, 2), "t1": round(max(t1, t0 + 1.5), 2)})
         cursor += dur
-    return {"duration": round(total, 2), "accent": accent or ACCENTS["chef"], "steps": out}
+    # photo=False: use the vector chef rig (chef.js); the AI-photo chef is parked (see chef_photo.js)
+    return {"duration": round(total, 2), "accent": accent or ACCENTS["chef"], "steps": out, "photo": False}
 
 
 # ---------------------------------------------------------------- facts
