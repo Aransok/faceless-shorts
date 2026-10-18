@@ -6,7 +6,7 @@
   const { clamp, lerp, prog, eOut, eIO, rnd, mix, shade, put, layer } = U;
   const W = 1080, H = 1920, BASE = [540, 1560], CHEF = { x: 176, y: 560, s: 1.4 };
   const REST_R = [700, 1420], REST_L = [380, 1420], SHELF = [980, 1290];
-  const WALLS = ['#fdeccf', '#e3f1e7', '#e6ecfa', '#fbe3e0', '#f1e7fb', '#e1f3f4'];
+  const WALLS = ['#f7dcb4', '#f5d3a8', '#f8dfc0', '#f1cb9e', '#f6d6b2', '#f3d0a6'];
   const INK = '#2b2118';
   const LEAD = 10, TAIL = 34, MIN_SLOT = 45;
 
@@ -63,16 +63,29 @@
     main.appendChild(wall);
     layer(main, { w: W, h: H, svg: `
       <g opacity=".5" stroke="#000" stroke-opacity=".07" stroke-width="3">${Array.from({ length: 10 }, (_, i) => `<path d="M0 ${i * 90 + 440} H${W}"/>`).join('')}${Array.from({ length: 13 }, (_, i) => `<path d="M${i * 90} 440 V1200"/>`).join('')}</g>
-      <rect x="790" y="470" width="210" height="240" rx="26" fill="#fff" opacity=".5"/>
-      <rect x="808" y="488" width="174" height="204" rx="18" fill="none" stroke="#fff" stroke-width="10" opacity=".8"/>
-      <path d="M895 488 V692 M808 590 H982" stroke="#fff" stroke-width="8" opacity=".8"/>` });
+      <defs>
+        <radialGradient id="kGlow" cx="895" cy="590" r="520" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff3c8" stop-opacity=".95"/><stop offset=".35" stop-color="#ffd48a" stop-opacity=".45"/><stop offset="1" stop-color="#ffb060" stop-opacity="0"/></radialGradient>
+        <radialGradient id="kVig" cx="540" cy="900" r="1150" gradientUnits="userSpaceOnUse"><stop offset=".55" stop-color="#3a1c08" stop-opacity="0"/><stop offset="1" stop-color="#3a1c08" stop-opacity=".5"/></radialGradient>
+        <linearGradient id="kWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8dc"/><stop offset="1" stop-color="#ffd890"/></linearGradient>
+        <filter id="kBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+        <filter id="kBlur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+      </defs>
+      <rect x="0" y="0" width="${W}" height="1500" fill="url(#kGlow)"/>
+      <rect x="790" y="470" width="210" height="240" rx="26" fill="url(#kWin)"/>
+      <rect x="808" y="488" width="174" height="204" rx="18" fill="none" stroke="#fff" stroke-width="10" opacity=".9"/>
+      <path d="M895 488 V692 M808 590 H982" stroke="#fff" stroke-width="8" opacity=".9"/>
+      <g filter="url(#kBlur)">${[[120, 760, 46, '#ffd27a'], [250, 880, 34, '#ffb35c'], [60, 1010, 40, '#ffc98a'], [610, 700, 30, '#ffe7a8'], [700, 960, 52, '#ffb86b'], [420, 780, 26, '#fff0b8'], [960, 920, 44, '#ffcf86'], [820, 1130, 36, '#ffbd70']].map(b => `<circle cx="${b[0]}" cy="${b[1]}" r="${b[2]}" fill="${b[3]}" opacity=".55"/>`).join('')}</g>
+      <rect x="0" y="1380" width="${W}" height="130" fill="#7a4a22" opacity=".25" filter="url(#kBlur2)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="url(#kVig)"/>` });
     const stage = document.createElement('div'); stage.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px'; main.appendChild(stage);
 
     /* ---------- chef (body+head), counter, vessels, props, arms ---------- */
     const rig = A.buildChef(stage, { x: CHEF.x, y: CHEF.y, scale: CHEF.s });
     layer(stage, { w: W, h: 460, left: 0, top: 1490, svg: `
-      <rect x="0" y="0" width="${W}" height="460" fill="#b98456"/><rect x="0" y="0" width="${W}" height="34" fill="#d6a572"/>
-      <rect x="0" y="34" width="${W}" height="10" fill="#000" opacity=".12"/>
+      <defs><linearGradient id="cWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8935f"/><stop offset="1" stop-color="#8f5f36"/></linearGradient><linearGradient id="cTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0c590"/><stop offset="1" stop-color="#cf9a64"/></linearGradient><filter id="cB"><feGaussianBlur stdDeviation="8"/></filter></defs>
+      <rect x="0" y="0" width="${W}" height="460" fill="url(#cWood)"/><rect x="0" y="0" width="${W}" height="34" fill="url(#cTop)"/>
+      <rect x="0" y="4" width="${W}" height="6" fill="#fff" opacity=".4"/>
+      <rect x="0" y="34" width="${W}" height="26" fill="#000" opacity=".22" filter="url(#cB)"/>
       ${Array.from({ length: 6 }, (_, i) => `<rect x="${i * 190 + 12}" y="90" width="166" height="330" rx="16" fill="#a8744a" stroke="#8f5f3a" stroke-width="5"/>`).join('')}` });
 
     const vessels = {};
@@ -143,13 +156,14 @@
       wall.style.background = WALLS[st.i % WALLS.length];
       /* labels */
       steps.forEach(s => { const o = f >= s.a && f < s.b ? 1 - prog(f, s.b - 8, s.b) : 0; s.lab.style.visibility = o > 0.01 ? '' : 'hidden'; s.lab.style.opacity = o.toFixed(3); });
-      /* chef idle */
-      const bob = Math.sin(f * 0.14) * 4, tilt = Math.sin(f * 0.07) * 2.2;
-      put(rig.body, { y: bob * .5 });
-      put(rig.head, { y: bob, r: tilt });
-      const blink = (f + Math.floor(rnd(7) * 30)) % 96 < 4;
-      put(rig.eyes, { sy: blink ? .12 : 1 });
+      /* chef idle: breathing, lagged head (follow-through), smooth blink, eye darts, talk nods */
       const speaking = f > 4 && f < total - TAIL + 10, open = speaking && rnd(Math.floor(f / 3) + 11) > .42;
+      const breath = Math.sin(f * 0.09), bob = Math.sin(f * 0.14) * 3.2, tilt = Math.sin(f * 0.07 - .5) * 1.8;
+      const work = prog(u, .3, .5) * (1 - prog(u, .8, .95)), nod = speaking ? Math.sin(f * .42) * 1.1 + (open ? 1.2 : 0) : 0;
+      put(rig.body, { y: bob * .5, sy: 1 + breath * .012, sx: 1 - breath * .006 });
+      put(rig.head, { y: bob * .6 + breath * -2.2 + nod + work * 4, r: tilt + work * -3.2, sy: 1 + (open ? .012 : 0) });
+      const bp = (f + Math.floor(rnd(7) * 30)) % 96, bl = bp < 7 ? Math.sin(bp / 7 * Math.PI) : 0;
+      const dk = Math.floor(f / 38), dn = prog(f % 38, 0, 5), ex = lerp((rnd(dk + 3) - .5) * 14, (rnd(dk + 4) - .5) * 14, eIO(dn)), ey = lerp((rnd(dk + 9) - .5) * 6, (rnd(dk + 10) - .5) * 6, eIO(dn));
       put(rig.mouthClosed, { o: open ? 0 : 1 }); put(rig.mouthOpen, { o: open ? 1 : 0 });
 
       /* vessels: slide between steps */
@@ -228,6 +242,12 @@
         hold = u > .14 && u < .93;
         gL = [rx - v.V.rx - 40 + (working ? Math.sin(ang) * 6 : 0), rimY + 40];
       }
+      /* settle: damped overshoot after each arrival so hand moves feel weighted */
+      const arr = st.action === 'plate' ? [.3, .6] : [.14, .34, .5, .93];
+      let sett = 0; arr.forEach(t0 => { const d = (u - t0) * st.n; if (d > 0 && d < 30) sett += Math.exp(-d / 6) * Math.sin(d * .8) * 9; });
+      gR = [gR[0], gR[1] + sett];
+      const lk = clamp((gR[0] - 540) / 540, -1, 1) * 8 * work;
+      put(rig.eyes, { x: ex + lk, y: ey + work * 2, sy: 1 - bl * .93 });
       A.poseArm(rig, 'R', gR);
       A.poseArm(rig, 'L', gL);
       if (hold && P) { P.el.style.visibility = ''; put(P.el, { x: gR[0], y: gR[1], r: rR }); }

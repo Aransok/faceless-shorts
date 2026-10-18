@@ -84,11 +84,13 @@
     <path d="M166 234 Q190 214 218 224" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".85"/>
     <path d="M286 234 Q310 214 338 224" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".85"/>`;
 
-  const eyesSvg = () => `
-    <defs>${RG('chIris', 204, 260, 22, 200, 256, [[0, '#7a4b2d'], [.55, '#3a2418'], [1, '#150b06']])}${RG('chIris2', 316, 260, 22, 312, 256, [[0, '#7a4b2d'], [.55, '#3a2418'], [1, '#150b06']])}</defs>
-    <ellipse cx="204" cy="268" rx="15" ry="20" fill="url(#chIris)"/><ellipse cx="316" cy="268" rx="15" ry="20" fill="url(#chIris2)"/>
-    <circle cx="210" cy="260" r="6.5" fill="#fff"/><circle cx="322" cy="260" r="6.5" fill="#fff"/>
-    <circle cx="198" cy="276" r="3" fill="#fff" opacity=".75"/><circle cx="310" cy="276" r="3" fill="#fff" opacity=".75"/>`;
+  const eyeG = (cx, id) => RG('chIr' + id, cx, 262, 30, cx - 5, 256, [[0, '#d9a066'], [.35, '#8a5a34'], [.8, '#3a2216'], [1, '#150b06']]) + RG('chGl' + id, cx, 288, 22, cx, 292, [[0, '#ffd9a0', .85], [1, '#ffd9a0', 0]]);
+  const eyeAt = (cx, id) => `<ellipse cx="${cx}" cy="266" rx="30" ry="34" fill="#fffaf3"/><ellipse cx="${cx}" cy="266" rx="30" ry="34" fill="#c9a68c" opacity=".18"/>
+    <ellipse cx="${cx + 2}" cy="268" rx="23" ry="27" fill="url(#chIr${id})"/><ellipse cx="${cx + 2}" cy="268" rx="23" ry="27" fill="url(#chGl${id})"/>
+    <ellipse cx="${cx + 2}" cy="266" rx="10" ry="12" fill="#0b0605"/>
+    <path d="M${cx - 30} 262 Q${cx} 226 ${cx + 30} 262" stroke="#2a1a12" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
+    <ellipse cx="${cx + 11}" cy="256" rx="9" ry="10" fill="#fff"/><circle cx="${cx - 9}" cy="282" r="4.5" fill="#fff" opacity=".85"/><circle cx="${cx + 15}" cy="276" r="2" fill="#fff" opacity=".7"/>`;
+  const eyesSvg = () => `<defs>${eyeG(200, 'a')}${eyeG(320, 'b')}</defs>${eyeAt(200, 'a')}${eyeAt(320, 'b')}`;
   const mouthClosedSvg = () => `<path d="M214 338 Q260 372 306 338" stroke="#4a2a22" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M226 352 Q260 380 294 352" stroke="#fff" stroke-width="4" fill="none" opacity=".25" stroke-linecap="round"/>`;
   const mouthOpenSvg = () => `<defs>${LG('chMo', 0, 332, 0, 394, [[0, '#4d1620'], [1, '#8e2e3c']])}</defs><path d="M212 332 Q260 346 308 332 Q300 392 260 394 Q220 392 212 332Z" fill="url(#chMo)"/><path d="M232 372 Q260 358 288 372 Q276 392 260 392 Q244 392 232 372Z" fill="#ff8f8f"/><path d="M222 334 Q260 346 298 334" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".95"/>`;
 
