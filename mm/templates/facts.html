@@ -80,6 +80,7 @@ beats.forEach((b, i) => {
     M.kf('#w' + i, 'y', [[b.a, 0], [b.e, -50]], { ease: 'linear' });
   }
 });
+window.MMU.endCta(M, main, { total, fps });
 window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
 </script>
 </body>

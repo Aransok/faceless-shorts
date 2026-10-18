@@ -9,45 +9,102 @@
   const SH = { L: [105, 430], R: [415, 430] };   // shoulder pivots (local)
   const L1 = 150, L2 = 150;                       // upper arm / forearm length (local)
 
+  /* pseudo-3D shading: every form gets an off-centre radial/linear gradient (key light top-left), a core shadow, a rim light and soft cast shadows */
+  const stops = a => a.map(s => `<stop offset="${s[0]}" stop-color="${s[1]}"${s[2] != null ? ` stop-opacity="${s[2]}"` : ''}/>`).join('');
+  const RG = (id, cx, cy, r, fx, fy, st) => `<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${r}" fx="${fx}" fy="${fy}">${stops(st)}</radialGradient>`;
+  const LG = (id, x1, y1, x2, y2, st) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops(st)}</linearGradient>`;
+  const SKIN = [[0, '#fff0e0'], [.45, C.skin], [.85, '#f2b890'], [1, '#d98f69']];
+
   const bodySvg = () => `
-    <ellipse cx="260" cy="735" rx="150" ry="22" fill="#000" opacity=".12"/>
-    <ellipse cx="260" cy="520" rx="205" ry="220" fill="${C.shirt}"/>
-    <ellipse cx="260" cy="520" rx="205" ry="220" fill="none" stroke="${C.shirtD}" stroke-width="6"/>
-    <path d="M150 395 Q260 372 370 395 L405 640 Q260 705 115 640 Z" fill="${C.apron}" stroke="${C.apronD}" stroke-width="6" stroke-linejoin="round"/>
+    <defs>
+      ${RG('chShirt', 200, 400, 300, 170, 360, [[0, '#6cc9c2'], [.5, C.shirt], [1, '#256863']])}
+      ${LG('chApron', 150, 380, 380, 680, [[0, '#ffffff'], [.55, '#fff8ee'], [1, '#eedfc6']])}
+      ${RG('chBell', 260, 600, 160, 260, 560, [[0, '#000', 0], [1, '#6b4a2a', .07]])}
+      <filter id="chBlur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
+      <filter id="chBlur2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>
+    <ellipse cx="260" cy="735" rx="190" ry="26" fill="#000" opacity=".28" filter="url(#chBlur)"/>
+    <ellipse cx="260" cy="520" rx="205" ry="220" fill="url(#chShirt)"/>
+    <path d="M70 470 Q60 600 120 690" stroke="#9fe6df" stroke-width="10" fill="none" opacity=".35" stroke-linecap="round" filter="url(#chBlur2)"/>
+    <path d="M450 470 Q462 600 400 690" stroke="#000" stroke-width="22" fill="none" opacity=".22" stroke-linecap="round" filter="url(#chBlur2)"/>
+    <path d="M150 395 Q260 372 370 395 L405 640 Q260 705 115 640 Z" fill="url(#chApron)" stroke="${C.apronD}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M150 395 Q260 372 370 395 L405 640 Q260 705 115 640 Z" fill="url(#chBell)"/>
+    <path d="M300 420 Q330 520 320 640" stroke="#c9b394" stroke-width="7" fill="none" opacity=".35" stroke-linecap="round" filter="url(#chBlur2)"/>
+    <path d="M205 430 Q190 520 200 620" stroke="#fff" stroke-width="9" fill="none" opacity=".7" stroke-linecap="round" filter="url(#chBlur2)"/>
     <rect x="205" y="560" width="110" height="70" rx="18" fill="${C.apronD}" opacity=".55"/>
-    <path d="M205 560 H315" stroke="${C.apronD}" stroke-width="5" opacity=".9"/>
+    <rect x="205" y="560" width="110" height="70" rx="18" fill="none" stroke="#fff" stroke-width="3" opacity=".6"/>
+    <path d="M205 560 H315" stroke="#bfa985" stroke-width="5" opacity=".9"/>
+    <ellipse cx="260" cy="410" rx="105" ry="40" fill="#000" opacity=".14" filter="url(#chBlur2)"/>
     <path d="M175 392 L260 452 L345 392 Q260 372 175 392Z" fill="${C.tie}"/>
-    <circle cx="260" cy="418" r="9" fill="${shade(C.tie, -.18)}"/>`;
+    <path d="M175 392 L260 452 L260 380Z" fill="#fff" opacity=".18"/>
+    <circle cx="260" cy="418" r="9" fill="${shade(C.tie, -.18)}"/><circle cx="257" cy="415" r="3" fill="#fff" opacity=".7"/>`;
 
   const headSvg = () => `
-    <ellipse cx="92" cy="268" rx="30" ry="34" fill="${C.skin}"/><ellipse cx="428" cy="268" rx="30" ry="34" fill="${C.skin}"/>
-    <ellipse cx="92" cy="270" rx="15" ry="19" fill="${C.skinD}" opacity=".6"/><ellipse cx="428" cy="270" rx="15" ry="19" fill="${C.skinD}" opacity=".6"/>
-    <ellipse cx="260" cy="258" rx="172" ry="152" fill="${C.skin}"/>
-    <ellipse cx="260" cy="396" rx="95" ry="26" fill="${C.skinD}" opacity=".35"/>
-    <ellipse cx="148" cy="322" rx="34" ry="22" fill="${C.blush}" opacity=".55"/><ellipse cx="372" cy="322" rx="34" ry="22" fill="${C.blush}" opacity=".55"/>
-    <ellipse cx="260" cy="304" rx="11" ry="8" fill="${C.skinD}"/>
-    <path d="M86 250 C70 150 170 78 262 90 C360 78 452 150 434 250 C420 205 372 176 322 172 C290 196 236 180 206 168 C150 176 104 205 86 250Z" fill="${C.hair}"/>
-    <path d="M206 168 C240 120 300 112 340 150 C300 138 250 140 206 168Z" fill="${C.hairD}" opacity=".7"/>
-    <path d="M250 92 C236 52 270 28 304 44 C282 54 284 74 296 94Z" fill="${C.hair}"/>
-    <path d="M134 124 C118 96 140 70 168 76 C152 90 154 108 164 122Z" fill="${C.hair}"/>
-    <path d="M150 160 C168 148 188 146 204 152" stroke="${C.hairD}" stroke-width="7" fill="none" stroke-linecap="round" opacity=".8"/>
-    <path d="M168 200 Q200 184 232 198" stroke="#c8941c" stroke-width="9" fill="none" stroke-linecap="round"/>
-    <path d="M288 198 Q320 184 352 200" stroke="#c8941c" stroke-width="9" fill="none" stroke-linecap="round"/>
-    <circle cx="200" cy="262" r="56" fill="#ffffff" opacity=".28"/><circle cx="320" cy="262" r="56" fill="#ffffff" opacity=".28"/>
-    <circle cx="200" cy="262" r="56" fill="none" stroke="${C.ink}" stroke-width="10"/><circle cx="320" cy="262" r="56" fill="none" stroke="${C.ink}" stroke-width="10"/>
-    <path d="M255 256 Q260 244 265 256" stroke="${C.ink}" stroke-width="9" fill="none" stroke-linecap="round"/>
-    <path d="M144 252 L100 244 M376 252 L420 244" stroke="${C.ink}" stroke-width="8" stroke-linecap="round"/>
-    <path d="M168 232 Q190 218 214 226" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" opacity=".7"/>`;
+    <defs>
+      ${RG('chSkin', 215, 210, 250, 195, 180, SKIN)}
+      ${RG('chEar', 92, 262, 36, 86, 256, [[0, '#ffe6cd'], [1, '#e9a67f']])}
+      ${RG('chHair', 200, 100, 230, 190, 90, [[0, '#ffe07a'], [.5, C.hair], [1, '#c98f14']])}
+      ${RG('chCheek', 148, 322, 40, 148, 322, [[0, '#ff8f86', .75], [1, '#ff8f86', 0]])}
+      ${RG('chCheek2', 372, 322, 40, 372, 322, [[0, '#ff8f86', .75], [1, '#ff8f86', 0]])}
+      ${RG('chLens', 190, 240, 64, 180, 230, [[0, '#ffffff', .55], [.7, '#dff3ff', .18], [1, '#9fd0e6', .22]])}
+      ${RG('chLens2', 310, 240, 64, 300, 230, [[0, '#ffffff', .55], [.7, '#dff3ff', .18], [1, '#9fd0e6', .22]])}
+      ${LG('chFrame', 140, 200, 260, 330, [[0, '#6a4a38'], [.5, '#33231a'], [1, '#1b120d']])}
+      <filter id="chHb" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
+      <filter id="chHb2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+      <clipPath id="chHead"><ellipse cx="260" cy="258" rx="172" ry="152"/></clipPath>
+    </defs>
+    <ellipse cx="92" cy="268" rx="30" ry="34" fill="url(#chEar)"/><ellipse cx="428" cy="268" rx="30" ry="34" fill="url(#chEar)"/>
+    <ellipse cx="94" cy="272" rx="14" ry="19" fill="#d98f69" opacity=".55"/><ellipse cx="426" cy="272" rx="14" ry="19" fill="#d98f69" opacity=".55"/>
+    <ellipse cx="260" cy="258" rx="172" ry="152" fill="url(#chSkin)"/>
+    <g clip-path="url(#chHead)">
+      <ellipse cx="260" cy="440" rx="190" ry="90" fill="#b5694a" opacity=".42" filter="url(#chHb)"/>
+      <ellipse cx="440" cy="260" rx="40" ry="170" fill="#b5694a" opacity=".22" filter="url(#chHb)"/>
+      <ellipse cx="330" cy="150" rx="120" ry="34" fill="#b5694a" opacity=".38" filter="url(#chHb)"/>
+      <ellipse cx="190" cy="140" rx="60" ry="22" fill="#fff" opacity=".3" filter="url(#chHb)"/>
+    </g>
+    <ellipse cx="260" cy="396" rx="95" ry="26" fill="#c47a58" opacity=".3" filter="url(#chHb2)"/>
+    <circle cx="148" cy="322" r="40" fill="url(#chCheek)"/><circle cx="372" cy="322" r="40" fill="url(#chCheek2)"/>
+    <ellipse cx="262" cy="312" rx="16" ry="10" fill="#c47a58" opacity=".45" filter="url(#chHb2)"/>
+    <ellipse cx="260" cy="302" rx="14" ry="11" fill="url(#chEar)"/><ellipse cx="256" cy="298" rx="5" ry="3.5" fill="#fff" opacity=".75"/>
+    <path d="M86 250 C70 150 170 78 262 90 C360 78 452 150 434 250 C420 205 372 176 322 172 C290 196 236 180 206 168 C150 176 104 205 86 250Z" fill="url(#chHair)"/>
+    <path d="M206 168 C240 120 300 112 340 150 C300 138 250 140 206 168Z" fill="#b97d0f" opacity=".55"/>
+    <path d="M250 92 C236 52 270 28 304 44 C282 54 284 74 296 94Z" fill="url(#chHair)"/>
+    <path d="M134 124 C118 96 140 70 168 76 C152 90 154 108 164 122Z" fill="url(#chHair)"/>
+    <path d="M150 160 C168 148 188 146 204 152" stroke="#b97d0f" stroke-width="7" fill="none" stroke-linecap="round" opacity=".7"/>
+    <path d="M300 104 C340 112 392 140 412 190" stroke="#ffeaa0" stroke-width="11" fill="none" stroke-linecap="round" opacity=".6" filter="url(#chHb2)"/>
+    <path d="M130 170 C150 126 196 100 236 98" stroke="#fff6cc" stroke-width="9" fill="none" stroke-linecap="round" opacity=".7" filter="url(#chHb2)"/>
+    <path d="M168 200 Q200 184 232 198" stroke="#b8861a" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M288 198 Q320 184 352 200" stroke="#b8861a" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <ellipse cx="204" cy="290" rx="52" ry="30" fill="#8a4a30" opacity=".3" filter="url(#chHb2)"/><ellipse cx="324" cy="290" rx="52" ry="30" fill="#8a4a30" opacity=".3" filter="url(#chHb2)"/>
+    <circle cx="200" cy="262" r="56" fill="url(#chLens)"/><circle cx="320" cy="262" r="56" fill="url(#chLens2)"/>
+    <circle cx="200" cy="262" r="56" fill="none" stroke="url(#chFrame)" stroke-width="11"/><circle cx="320" cy="262" r="56" fill="none" stroke="url(#chFrame)" stroke-width="11"/>
+    <circle cx="200" cy="262" r="50" fill="none" stroke="#fff" stroke-width="2.5" opacity=".28"/><circle cx="320" cy="262" r="50" fill="none" stroke="#fff" stroke-width="2.5" opacity=".28"/>
+    <path d="M255 256 Q260 244 265 256" stroke="#33231a" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M144 252 L100 244 M376 252 L420 244" stroke="#33231a" stroke-width="8" stroke-linecap="round"/>
+    <path d="M166 234 Q190 214 218 224" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".85"/>
+    <path d="M286 234 Q310 214 338 224" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".85"/>`;
 
   const eyesSvg = () => `
-    <ellipse cx="204" cy="268" rx="13" ry="18" fill="${C.ink}"/><circle cx="209" cy="260" r="5.5" fill="#fff"/>
-    <ellipse cx="316" cy="268" rx="13" ry="18" fill="${C.ink}"/><circle cx="321" cy="260" r="5.5" fill="#fff"/>`;
-  const mouthClosedSvg = () => `<path d="M214 338 Q260 372 306 338" stroke="${C.ink}" stroke-width="8" fill="none" stroke-linecap="round"/>`;
-  const mouthOpenSvg = () => `<path d="M212 332 Q260 346 308 332 Q300 392 260 394 Q220 392 212 332Z" fill="#6e2430"/><path d="M232 372 Q260 358 288 372 Q276 392 260 392 Q244 392 232 372Z" fill="#ff8f8f"/><path d="M222 334 Q260 346 298 334" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".9"/>`;
+    <defs>${RG('chIris', 204, 260, 22, 200, 256, [[0, '#7a4b2d'], [.55, '#3a2418'], [1, '#150b06']])}${RG('chIris2', 316, 260, 22, 312, 256, [[0, '#7a4b2d'], [.55, '#3a2418'], [1, '#150b06']])}</defs>
+    <ellipse cx="204" cy="268" rx="15" ry="20" fill="url(#chIris)"/><ellipse cx="316" cy="268" rx="15" ry="20" fill="url(#chIris2)"/>
+    <circle cx="210" cy="260" r="6.5" fill="#fff"/><circle cx="322" cy="260" r="6.5" fill="#fff"/>
+    <circle cx="198" cy="276" r="3" fill="#fff" opacity=".75"/><circle cx="310" cy="276" r="3" fill="#fff" opacity=".75"/>`;
+  const mouthClosedSvg = () => `<path d="M214 338 Q260 372 306 338" stroke="#4a2a22" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M226 352 Q260 380 294 352" stroke="#fff" stroke-width="4" fill="none" opacity=".25" stroke-linecap="round"/>`;
+  const mouthOpenSvg = () => `<defs>${LG('chMo', 0, 332, 0, 394, [[0, '#4d1620'], [1, '#8e2e3c']])}</defs><path d="M212 332 Q260 346 308 332 Q300 392 260 394 Q220 392 212 332Z" fill="url(#chMo)"/><path d="M232 372 Q260 358 288 372 Q276 392 260 392 Q244 392 232 372Z" fill="#ff8f8f"/><path d="M222 334 Q260 346 298 334" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" opacity=".95"/>`;
 
-  const upperSvg = x => `<rect x="${x - 38}" y="${SH.L[1] - 12}" width="76" height="${L1 + 38}" rx="38" fill="${C.shirt}"/><rect x="${x - 38}" y="${SH.L[1] - 12}" width="76" height="${L1 + 38}" rx="38" fill="none" stroke="${C.shirtD}" stroke-width="5"/>`;
-  const foreSvg = x => `<rect x="${x - 33}" y="${SH.L[1] + L1 - 26}" width="66" height="${L2 + 30}" rx="33" fill="${C.shirt}" stroke="${C.shirtD}" stroke-width="5"/><rect x="${x - 36}" y="${SH.L[1] + L1 + L2 - 22}" width="72" height="26" rx="13" fill="${C.apron}" stroke="${C.apronD}" stroke-width="4"/>`;
-  const handSvg = (x, side) => `<circle cx="${x}" cy="${SH.L[1] + L1 + L2 + 14}" r="40" fill="${C.skin}" stroke="${C.skinD}" stroke-width="4"/><ellipse cx="${x + (side === 'L' ? 34 : -34)}" cy="${SH.L[1] + L1 + L2 + 4}" rx="15" ry="22" fill="${C.skin}" stroke="${C.skinD}" stroke-width="4" transform="rotate(${side === 'L' ? -25 : 25} ${x + (side === 'L' ? 34 : -34)} ${SH.L[1] + L1 + L2 + 4})"/>`;
+  /* sleeves are cylinders: dark edge, lit side, dark edge */
+  const sleeve = (id, x, w) => `<defs>${LG(id, x - w / 2, 0, x + w / 2, 0, [[0, '#256863'], [.28, '#7ad4cc'], [.55, C.shirt], [1, '#215e5a']])}</defs>`;
+  const upperSvg = x => sleeve('chUp' + x, x, 76) + `<rect x="${x - 38}" y="${SH.L[1] - 12}" width="76" height="${L1 + 38}" rx="38" fill="url(#chUp${x})"/><rect x="${x - 38}" y="${SH.L[1] - 12}" width="76" height="${L1 + 38}" rx="38" fill="none" stroke="#1f5753" stroke-width="3" opacity=".6"/>`;
+  const foreSvg = x => sleeve('chFo' + x, x, 66) + `<defs>${LG('chCuff' + x, x - 36, 0, x + 36, 0, [[0, '#d4bf9d'], [.35, '#ffffff'], [1, '#d9c6a6']])}</defs><rect x="${x - 33}" y="${SH.L[1] + L1 - 26}" width="66" height="${L2 + 30}" rx="33" fill="url(#chFo${x})" stroke="#1f5753" stroke-opacity=".6" stroke-width="3"/><path d="M${x - 14} ${SH.L[1] + L1 + 10} Q${x - 4} ${SH.L[1] + L1 + 60} ${x - 14} ${SH.L[1] + L1 + 100}" stroke="#1f5753" stroke-width="5" fill="none" opacity=".25" stroke-linecap="round"/><rect x="${x - 36}" y="${SH.L[1] + L1 + L2 - 22}" width="72" height="26" rx="13" fill="url(#chCuff${x})" stroke="#cdb892" stroke-width="3"/>`;
+  const handSvg = (x, side) => {
+    const hy = SH.L[1] + L1 + L2 + 14, tx = x + (side === 'L' ? 34 : -34), ty = SH.L[1] + L1 + L2 + 4;
+    return `<defs>${RG('chHd' + x, x - 12, hy - 14, 50, x - 14, hy - 16, [[0, '#fff0e0'], [.55, C.skin], [1, '#e29d78']])}</defs>
+      <ellipse cx="${x + 4}" cy="${hy + 30}" rx="34" ry="9" fill="#000" opacity=".15"/>
+      <circle cx="${x}" cy="${hy}" r="40" fill="url(#chHd${x})" stroke="#e0a07c" stroke-width="3"/>
+      <ellipse cx="${tx}" cy="${ty}" rx="15" ry="22" fill="url(#chHd${x})" stroke="#e0a07c" stroke-width="3" transform="rotate(${side === 'L' ? -25 : 25} ${tx} ${ty})"/>
+      <path d="M${x - 22} ${hy + 8} Q${x - 8} ${hy + 20} ${x + 8} ${hy + 10} M${x - 4} ${hy + 20} Q${x + 10} ${hy + 28} ${x + 24} ${hy + 14}" stroke="#d58f6a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".6"/>
+      <ellipse cx="${x - 14}" cy="${hy - 16}" rx="12" ry="7" fill="#fff" opacity=".5" transform="rotate(-30 ${x - 14} ${hy - 16})"/>`;
+  };
 
   function buildChef(host, o) {
     o = o || {};

@@ -50,5 +50,38 @@
     return d;
   }
 
-  root.MMU = { clamp, lerp, prog, eOut, eIn, eIO, eBack, rnd, hex2rgb, rgb2hex, mix, shade, Driver, put, layer };
+
+  /* end card: SUBSCRIBE button + LIKE + FOLLOW, drawn as svg (no emoji fonts needed). Lands on the last ~3 s, above the Shorts UI strip. */
+  function endCta(M, parent, o) {
+    const fps = o.fps || 30, a = Math.max(0, o.total - Math.round((o.secs || 3.2) * fps)), b = o.total;
+    const wrap = document.createElement('div'); wrap.id = 'endcta';
+    wrap.style.cssText = 'position:absolute;left:-75px;top:' + (o.y || 1260) + 'px;width:1080px;height:260px';
+    wrap.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 260" width="1080" height="260" style="overflow:visible;display:block">'
+      + '<defs><filter id="ctaSh" x="-20%" y="-30%" width="140%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".35"/></filter></defs>'
+      + '<g id="ctaSub" filter="url(#ctaSh)"><rect x="150" y="40" width="540" height="130" rx="65" fill="#ff1f3d"/><rect x="150" y="40" width="540" height="62" rx="31" fill="#fff" opacity=".18"/>'
+      + '<path d="M240 140 q-30 0-30-30 q0-6 4-12 l4 0 q-2 8 2 14 q6 10 20 10 q14 0 20-10 q4-6 2-14 l4 0 q4 6 4 12 q0 30-30 30z" fill="#fff" opacity="0"/>'
+      + '<g transform="translate(212 105) scale(.8)"><path d="M0-34 c-18 0-30 14-30 32 v22 l-10 14 h80 l-10-14 v-22 c0-18-12-32-30-32z" fill="#fff"/><circle cx="0" cy="44" r="10" fill="#fff"/></g>'
+      + '<text x="450" y="125" text-anchor="middle" font-family="Nunito, Inter, sans-serif" font-weight="900" font-size="58" fill="#fff" letter-spacing="2">SUBSCRIBE</text></g>'
+      + '<g id="ctaLike" filter="url(#ctaSh)"><circle cx="790" cy="105" r="65" fill="#fff"/>'
+      + '<path d="M762 120 h20 v-34 h-20z M790 120 h30 q8 0 10-8 l6-24 q2-10-8-10 h-24 l4-20 q0-8-8-8 l-10 30 v40z" fill="#1d6dff" transform="translate(-6 0)"/></g>'
+      + '<g id="ctaFol" filter="url(#ctaSh)"><rect x="880" y="62" width="170" height="86" rx="43" fill="#fff"/>'
+      + '<text x="965" y="120" text-anchor="middle" font-family="Nunito, Inter, sans-serif" font-weight="900" font-size="40" fill="#1b1b22">FOLLOW</text></g></svg>';
+    const sw = document.createElement('div'); sw.id = 'endsweep';
+    sw.style.cssText = 'position:absolute;left:0;top:0;width:1080px;height:520px;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.22),rgba(255,255,255,0));pointer-events:none';
+    parent.appendChild(sw);
+    M.show('#endsweep', a, b);
+    M.kf('#endsweep', 'y', [[a, -520], [b, 1920]], { ease: 'linear' });
+    parent.appendChild(wrap);
+    M.show('#endcta', a, b);
+    [['#ctaSub', 0], ['#ctaLike', 8], ['#ctaFol', 14]].forEach(k => {
+      M.kf(k[0], 'scale', [[a + k[1], .3], [a + k[1] + 14, 1, 'popOver']]);
+      M.kf(k[0], 'opacity', [[a + k[1], 0], [a + k[1] + 6, 1]]);
+    });
+    M.kf('#endcta', 'y', [[a, 0], [b, -40]], { ease: 'linear' });
+    M.kf('#endcta', 'scale', [[a, 1], [b, 1.07]], { ease: 'linear' });
+    M.kf('#endcta', 'rotation', [[a, -2], [b, 2]], { ease: 'linear' });
+    return wrap;
+  }
+
+  root.MMU = { endCta, clamp, lerp, prog, eOut, eIn, eIO, eBack, rnd, hex2rgb, rgb2hex, mix, shade, Driver, put, layer };
 })(typeof window !== 'undefined' ? window : globalThis);
