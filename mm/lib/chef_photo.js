@@ -26,7 +26,19 @@
 
     /* photo is 1664x2432 (2x of 832x1216); cover 1080x1920 -> 1314x1920, centred */
     const ph = el(main, 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;transform-origin:50% 62%');
-    const img = el(ph, 'position:absolute;left:' + (-(1314 - W) / 2) + 'px;top:0;width:1314px;height:' + H + 'px;background:url(./lib/chef_photo.jpg) center/cover no-repeat');
+    /* 65-frame image-to-video clip (24 fps), played ping-pong so it loops seamlessly; every frame is a stacked <img> toggled by visibility */
+    const CLIP_N = 65, CLIP_FPS = 24, CW = Math.round(H * 2 / 3);
+    const still = el(ph, 'position:absolute;left:' + (-(1314 - W) / 2) + 'px;top:0;width:1314px;height:' + H + 'px;background:url(./lib/chef_photo.jpg) center/cover no-repeat');
+    const clip = [], loads = [];
+    for (let k = 0; k < CLIP_N; k++) {
+      const im = document.createElement('img');
+      im.style.cssText = 'position:absolute;left:' + (-(CW - W) / 2) + 'px;top:0;width:' + CW + 'px;height:' + H + 'px;visibility:hidden';
+      loads.push(new Promise(r => { im.onload = im.onerror = r; }));
+      im.src = './lib/chef_clip/s' + String(k).padStart(2, '0') + '.jpg';
+      ph.appendChild(im); clip.push(im);
+    }
+    let shown = -1;
+    ChefPhoto.ready = Promise.all(loads);
     const glow = el(main, 'position:absolute;inset:0;background:radial-gradient(ellipse at 30% 35%,rgba(255,210,140,.55),rgba(255,170,90,0) 60%);mix-blend-mode:soft-light');
     const vig = el(main, 'position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(0,0,0,0) 55%,rgba(40,18,6,.55) 100%)');
 
@@ -57,6 +69,8 @@
       /* punch-in resets a little each step, then creeps in; whole film also slowly dollies */
       const sc = 1.03 + eIO(u) * 0.075 + breath * 0.004 + (f / total) * 0.03 + eOut(prog(f, st.a, st.a + 10)) * -0.0;
       put(ph, { x: sway * 14 + alt * (u - .5) * 40, y: breath * -5 + (u - .5) * -24, s: sc, r: sway * 0.35 });
+      const cp = Math.floor(f * CLIP_FPS / fps) % (2 * (CLIP_N - 1)), ci = cp < CLIP_N ? cp : 2 * (CLIP_N - 1) - cp;
+      if (ci !== shown) { if (shown >= 0) clip[shown].style.visibility = 'hidden'; clip[ci].style.visibility = ''; shown = ci; }
       glow.style.opacity = (0.55 + Math.sin(f * 0.07) * 0.25).toFixed(3);
       steps.forEach(s => {
         const on = f >= s.a && f < s.b, o = on ? 1 - prog(f, s.b - 8, s.b) : 0;
