@@ -63,6 +63,10 @@ def check(env: dict[str, str], youtube: bool) -> list[tuple[str, str, str]]:
     if uses_groq:
         need(bool(env.get("GROQ_API_KEY")), "GROQ_API_KEY", "bulk/fallback backend is groq", level="warn")
 
+    for name, key in (("gemini", "GEMINI_API_KEY"), ("cerebras", "CEREBRAS_API_KEY"), ("openrouter", "OPENROUTER_API_KEY")):
+        if name in (env.get("LLM_BACKEND", ""), *env.get("LLM_FALLBACK_BACKEND", "").split(",")):
+            need(bool(env.get(key)), key, f"{name} LLM backend", level="warn")
+
     if env.get("FACTS_VISUAL_SOURCE") == "stock":
         need(bool(env.get("PEXELS_API_KEY")), "PEXELS_API_KEY", "FACTS_VISUAL_SOURCE=stock")
 

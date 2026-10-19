@@ -611,3 +611,27 @@ class GroqAvailableModelsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MultiProviderFallbackTest(unittest.TestCase):
+    """Non-claude primary failing falls through the comma-separated LLM_FALLBACK_BACKEND list."""
+
+    def _resp(self, text):
+        return mock.Mock(status_code=200, raise_for_status=lambda: None,
+                         json=lambda: {"choices": [{"message": {"content": text}, "finish_reason": "stop"}]})
+
+    @mock.patch("pipeline.plan.requests.post")
+    @mock.patch("pipeline.plan._call_groq", side_effect=RuntimeError("429"))
+    def test_groq_failure_walks_the_chain(self, _groq, post):
+        post.side_effect = [RuntimeError("gemini down"), self._resp("from cerebras")]
+        env = {"LLM_BACKEND": "groq", "LLM_FALLBACK_BACKEND": "groq,gemini,cerebras,openrouter",
+               "GEMINI_API_KEY": "k", "CEREBRAS_API_KEY": "k"}
+        with mock.patch.dict("os.environ", env):
+            self.assertEqual(call_llm("p"), "from cerebras")
+        self.assertIn("cerebras", post.call_args_list[1].args[0])
+
+    @mock.patch("pipeline.plan._call_groq", side_effect=RuntimeError("boom"))
+    def test_all_fail_raises_and_missing_key_is_skipped(self, _groq):
+        env = {"LLM_BACKEND": "groq", "LLM_FALLBACK_BACKEND": "gemini", "GEMINI_API_KEY": ""}
+        with mock.patch.dict("os.environ", env), self.assertRaises(RuntimeError):
+            call_llm("p")

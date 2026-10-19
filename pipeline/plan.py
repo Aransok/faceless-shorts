@@ -349,6 +349,32 @@ def _groq_available_models(api_key: str) -> list[str]:
     return [m for m in ids if not _GROQ_NON_CHAT.search(m)]
 
 
+# Free-tier OpenAI-compatible hosts: name -> (chat URL, key env var, default model env, default model).
+OPENAI_COMPAT = {
+    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GEMINI_API_KEY", "GEMINI_MODEL", "gemini-2.5-flash"),
+    "cerebras": ("https://api.cerebras.ai/v1/chat/completions", "CEREBRAS_API_KEY", "CEREBRAS_MODEL", "gpt-oss-120b"),
+    "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY", "OPENROUTER_MODEL", "openai/gpt-oss-120b:free"),
+}
+
+
+def _call_openai_compat(name: str, prompt: str) -> str:
+    url, key_env, model_env, default = OPENAI_COMPAT[name]
+    api_key = os.environ.get(key_env, "")
+    if not api_key:
+        raise RuntimeError(f"{key_env} not set -- required for backend {name}")
+    response = requests.post(
+        url,
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={"model": os.environ.get(model_env, default), "messages": [{"role": "user", "content": prompt}]},
+        timeout=120,
+    )
+    response.raise_for_status()
+    choice = response.json()["choices"][0]
+    if choice.get("finish_reason") == "length":
+        raise RuntimeError(f"{name} reply was cut off")
+    return choice["message"]["content"]
+
+
 def _dispatch_llm(backend: str, prompt: str) -> str:
     if backend == "claude_code":
         return _call_claude_code(prompt)
@@ -356,19 +382,31 @@ def _dispatch_llm(backend: str, prompt: str) -> str:
         return _call_ollama(prompt)
     if backend == "groq":
         return _call_groq(prompt)
-    raise ValueError(f"unknown LLM backend: {backend!r} (expected 'claude_code', 'ollama', or 'groq')")
+    if backend in OPENAI_COMPAT:
+        return _call_openai_compat(backend, prompt)
+    raise ValueError(f"unknown LLM backend: {backend!r} (expected 'claude_code', 'ollama', 'groq', or one of {sorted(OPENAI_COMPAT)})")
+
+
+def _try_fallbacks(backend: str, prompt: str, exc: Exception) -> str:
+    """Tries each comma-separated LLM_FALLBACK_BACKEND other than `backend`, in order; re-raises exc if none work."""
+    for name in (n.strip() for n in os.environ.get("LLM_FALLBACK_BACKEND", "").split(",")):
+        if not name or name == backend:
+            continue
+        print(f"warning: {exc} -- falling back to {name!r} for this call")
+        try:
+            return _dispatch_llm(name, prompt)
+        except Exception as fb_exc:  # next provider; the original error is what we raise if all fail
+            exc = fb_exc
+    raise exc
 
 
 def call_llm(prompt: str) -> str:
-    """Dispatches to LLM_BACKEND (default claude_code). When the primary
-    backend is claude_code and it fails specifically because the account's
-    usage limit was hit, and LLM_FALLBACK_BACKEND names a different
-    backend, retries this one call on the fallback instead of failing the
-    whole video — a usage-limit day shouldn't mean zero videos produced
-    when a free backend could still generate them. Any other failure
-    (bad prompt, CLI missing, transient crash) is NOT treated as
-    fallback-eligible: only the usage-limit condition is a "this backend
-    is exhausted for today" signal, not "this backend is broken"."""
+    """Dispatches to LLM_BACKEND (default claude_code). If that fails --
+    a claude usage limit (after waiting out a known reset time) or, for
+    any other backend, a rate limit/outage -- the call is retried on each
+    backend in LLM_FALLBACK_BACKEND (comma-separated) in turn. A claude_code
+    failure that is NOT the usage limit (bad prompt, CLI missing) is not
+    fallback-eligible."""
     backend = os.environ.get("LLM_BACKEND", "claude_code")
     try:
         return _dispatch_llm(backend, prompt)
@@ -382,11 +420,11 @@ def call_llm(prompt: str) -> str:
                 return _dispatch_llm(backend, prompt)
             except ClaudeUsageLimitError as retry_exc:
                 exc = retry_exc
-        fallback = os.environ.get("LLM_FALLBACK_BACKEND", "").strip()
-        if not fallback or fallback == backend:
+        return _try_fallbacks(backend, prompt, exc)
+    except Exception as exc:
+        if backend == "claude_code":
             raise
-        print(f"warning: {exc} -- falling back to LLM_FALLBACK_BACKEND={fallback!r} for this call")
-        return _dispatch_llm(fallback, prompt)
+        return _try_fallbacks(backend, prompt, exc)
 
 
 def call_bulk_llm(prompt: str) -> str:
