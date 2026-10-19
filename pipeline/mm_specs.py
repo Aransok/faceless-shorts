@@ -244,3 +244,124 @@ if __name__ == "__main__":
     import json
     print(json.dumps(chef_spec([{"script_text": "Pour cream into a hot pan, add fresh thyme, then salt right away.", "duration": 12.0}]), indent=1)[:900])
     print(json.dumps(facts_spec([{"script_text": "Octopuses have 3 hearts. Two pump blood to the gills.", "duration": 10}]), indent=1)[:600])
+
+
+# ---------------------------------------------------------------- doodle
+BACKDROPS = ("#fff", "#fff3c9", "#d9f2c4", "#cfeaff", "#f6e7c1", "#e1deff")
+MARKS = (None, "circle", "arrow")
+POSES = ("point", "think", "cheer", "stand", "run")
+LAYOUTS = ("fig-left", "icon", "fig-right")
+MIN_BEAT = 1.5
+_ICON_WORDS = {
+    "pumpkin": "pumpkin halloween", "heart": "love heart", "star": "star famous", "sun": "sun sunny summer day", "moon": "moon night sleep",
+    "clock": "time clock hour minute year age", "bulb": "idea think invent invention inventor discover", "book": "book read story write",
+    "house": "house home building", "tree": "tree forest plant nature", "cup": "coffee tea cup drink", "fire": "fire hot burn heat",
+    "money": "money cash dollar price sale sell cost pay rich", "question": "why mystery question wonder", "chart": "grow growth increase rise percent million billion more",
+    "globe": "world earth global country planet", "bowl": "soup bowl food eat meal dinner noodle rice pasta", "garlic": "garlic onion",
+    "butter": "butter cheese cream", "drop": "water rain ocean sea liquid milk", "magnifier": "search find study research scientist",
+    "rocket": "space rocket launch fast", "eye": "see eye look watch", "check": "true correct right yes", "exclaim": "danger warning never stop fact",
+    "pan": "pan cook fry sauce stir pot",
+}
+WORD_ICON = {w: i for i, ws in _ICON_WORDS.items() for w in ws.split()}
+_STOP = {"a", "an", "the", "of", "and", "with", "most", "this", "that", "they", "them", "then", "than", "there", "their", "were", "was", "are", "is", "it", "its", "we",
+         "you", "your", "now", "just", "like", "from", "have", "has", "had", "every", "everyone", "entire", "each", "all", "any", "some", "so", "but", "or", "in", "on",
+         "at", "to", "for", "by", "as", "be", "been", "do", "does", "did", "not", "no", "yes", "how", "why", "what", "when", "who", "which", "still", "even", "only",
+         "also", "about", "into", "over", "more", "much", "very", "will", "can", "could", "would", "get", "got"}
+
+
+def _stem(w: str) -> str:
+    return w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
+
+
+def doodle_icons(sentence: str, used: set[str]) -> list[str]:
+    """Up to two icons for words in the sentence, unused ones first so pictures do not repeat back to back."""
+    found: list[str] = []
+    for w in re.findall(r"[a-z]+", sentence.lower()):
+        i = WORD_ICON.get(w) or WORD_ICON.get(_stem(w))
+        if i and i not in found:
+            found.append(i)
+    return ([i for i in found if i not in used] or [])[:2]
+
+
+def doodle_word(sentence: str) -> str:
+    """First two content words: the keyword drawn big when no icon fits. Letters only (digits trip lint C3)."""
+    ws = [w for w in re.findall(r"[a-z]+", sentence.lower()) if w not in _STOP and len(w) > 2]
+    return " ".join(ws[:2]) or "wow"
+
+
+def doodle_title(title: str) -> str:
+    """Title in at most 7 words, wrapped to 2 lines."""
+    w = re.sub(r"[^\w' ?!-]", "", title).split()[:7]
+    if len(w) < 3:
+        return " ".join(w)
+    best = min(range(1, len(w)), key=lambda i: abs(len(" ".join(w[:i])) - len(" ".join(w[i:]))))
+    return " ".join(w[:best]) + "\n" + " ".join(w[best:])
+
+
+def doodle_beats(steps: list[dict]) -> list[tuple[str, float, float]]:
+    """(text, t0, t1) per spoken beat: one per sentence, short ones merged into the previous one.
+
+    shortcut: sentence timing is proportional to characters, not word timestamps; upgrade if drift shows.
+    """
+    out: list[tuple[str, float, float]] = []
+    cursor = 0.0
+    for s in steps:
+        dur = float(s["duration"])
+        sents = _sentences(s["script_text"]) or [s["script_text"] or "..."]
+        chars = sum(len(x) for x in sents) or 1
+        t, groups = cursor, []
+        for x in sents:
+            d = dur * len(x) / chars
+            if groups and (groups[-1][2] - groups[-1][1] < MIN_BEAT or d < MIN_BEAT):
+                groups[-1] = (groups[-1][0] + " " + x, groups[-1][1], t + d)
+            else:
+                groups.append((x, t, t + d))
+            t += d
+        out += groups
+        cursor += dur
+    return out
+
+
+def doodle_subs(steps: list[dict], per: int = 4) -> list[dict]:
+    """Subtitle chunks [{t0,t1,text}] of up to `per` words, timed from word timestamps when present, else spread over the step by characters."""
+    out: list[dict] = []
+    cursor = 0.0
+    for s in steps:
+        dur = float(s["duration"])
+        ws = [(str(w.get("word", "")).strip(), float(w.get("start", 0.0)), float(w.get("end", 0.0))) for w in (s.get("words") or [])]
+        ws = [w for w in ws if w[0]]
+        if not ws:
+            toks = (s["script_text"] or "").split()
+            tot = sum(len(t) + 1 for t in toks) or 1
+            t, ws = 0.0, []
+            for tok in toks:
+                d = dur * (len(tok) + 1) / tot
+                ws.append((tok, t, t + d))
+                t += d
+        for i in range(0, len(ws), per):
+            c = ws[i:i + per]
+            end = ws[i + per][1] if i + per < len(ws) else dur
+            out.append({"t0": round(cursor + c[0][1], 2), "t1": round(cursor + end, 2), "text": " ".join(w[0] for w in c)})
+        cursor += dur
+    return out
+
+
+def doodle_spec(steps: list[dict], title: str, planner=None) -> dict:
+    """Beats for the doodle template. planner(sentences, title) -> [{icons, pose, caption}|None] supplies LLM-picked kit objects;
+    a beat without one falls back to the built-in stick figure + icon or keyword scene."""
+    groups = doodle_beats(steps)
+    plan = (planner([g[0] for g in groups], title) if planner else None) or [None] * len(groups)
+    beats: list[dict] = []
+    used: set[str] = set()
+    for n, ((text, a, b), pl) in enumerate(zip(groups, plan)):
+        icons = pl["icons"] if pl else doodle_icons(text, used)
+        used.update(icons)
+        word = doodle_word(text)
+        pose = "think" if "?" in text else "cheer" if "!" in text else POSES[n % len(POSES)]
+        beat = {"t0": round(a, 2), "t1": round(b, 2), "icons": icons, "pose": pose, "word": word, "layout": LAYOUTS[n % len(LAYOUTS)],
+                "label": word if icons else re.sub(r"[^A-Za-z' ]", "", _clip_words(text, 4)),
+                "bg": BACKDROPS[n % len(BACKDROPS)], "mark_kind": MARKS[n % len(MARKS)] if n and icons and not pl else None}
+        if pl:
+            beat.update(label=pl["caption"], layout="icon" if pl["pose"] == "none" else "fig-right" if n % 2 else "fig-left", pose=pl["pose"] if pl["pose"] != "none" else pose)
+        beats.append(beat)
+    return {"duration": round(sum(float(s["duration"]) for s in steps), 2), "title": doodle_title(title), "beats": beats, "subs": doodle_subs(steps)}

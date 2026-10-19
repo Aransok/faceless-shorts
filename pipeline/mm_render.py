@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MM_DIR = ROOT / "mm"
 VENDOR = ROOT / "vendor" / "motionmaxxing"
 WORK_DIR = ROOT / "assets" / "mm_work"
-TEMPLATES = ("chef", "facts", "code")
+TEMPLATES = ("chef", "facts", "code", "doodle")
 TRIAL_END = date(2026, 10, 26)  # flag auto-offs on this day (last trial day is 10-25)
 
 
@@ -108,7 +108,8 @@ def render_film(template: str, spec: dict, out_mp4: Path, work_name: str | None 
     return out_mp4
 
 
-TEMPLATE_KIND = {"sauce_recipe": "chef", "food": "chef", "facts": "facts", "programming": "code"}
+# doodle replaces chef/facts after the one-week trial sample was approved; programming keeps the code view
+TEMPLATE_KIND = {"sauce_recipe": "doodle", "food": "doodle", "facts": "doodle", "programming": "code"}
 
 
 def kind_for(template: str) -> str | None:
@@ -147,7 +148,10 @@ def try_motionmaxxing(video_id: str, out_dir: Path) -> Path | None:
         for s in steps:
             s["script_text"] = s.get("script_text") or ""
             s["words"] = _step_words(s)
-        if kind == "chef":
+        if kind == "doodle":
+            from pipeline import doodle_plan
+            spec = mm_specs.doodle_spec(steps, video["title"] or "", doodle_plan.plan_drawings)
+        elif kind == "chef":
             spec = mm_specs.chef_spec(steps)
         elif kind == "facts":
             spec = mm_specs.facts_spec(steps)

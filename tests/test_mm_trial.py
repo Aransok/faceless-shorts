@@ -26,9 +26,9 @@ def test_trial_auto_off():
 
 def test_kind_for_leaves_weird_alone():
     assert mm_render.kind_for("weird") is None
-    assert mm_render.kind_for("sauce_recipe") == "chef"
-    assert mm_render.kind_for("food") == "chef"
-    assert mm_render.kind_for("facts") == "facts"
+    assert mm_render.kind_for("sauce_recipe") == "doodle"
+    assert mm_render.kind_for("food") == "doodle"
+    assert mm_render.kind_for("facts") == "doodle"
     assert mm_render.kind_for("programming") == "code"
 
 

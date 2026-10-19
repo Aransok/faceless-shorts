@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>doodle</title>
+<meta name="viewport" content="width=1080, height=1920">
+<link rel="stylesheet" href="./runtime/fonts.css">
+<link rel="stylesheet" href="./fonts/fonts_extra.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+#main { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; background: #fbf9f3; font-family: Nunito, Inter, sans-serif; }
+.sub { position: absolute; left: 40px; top: 1730px; width: 1000px; height: 150px; text-align: center; font: 900 64px/72px Nunito, sans-serif; color: #111; display: flex; align-items: center; justify-content: center; }
+.lab { position: absolute; left: 0; top: 1110px; width: 1080px; text-align: center; font: 700 112px/118px Caveat, cursive; color: #111; white-space: pre; }
+</style>
+</head>
+<body>
+<div id="main"></div>
+<script src="./runtime/vendor/gsap.min.js"></script>
+<script src="./runtime/motion.js"></script>
+<script src="./spec.js"></script>
+<script src="./lib/util.js"></script>
+<script src="./lib/doodle_art.js"></script>
+<script>
+/* Doodle explainer: pinned title, square panel, one black-line icon per spoken sentence, handwritten label, red circle/arrow.
+   Beats: {t0,t1,icons:[svg strings],label,bg,mark_kind:'circle'|'arrow'|'x'}. Everything is a pure function of the frame. */
+const S = window.SPEC, U = window.MMU, fps = S.fps || 30;
+const { clamp, prog, eOut, eBack, eIO, put } = U;
+const M = Motion.film({ fps, duration: S.duration, width: 1080, height: 1920, clock: 'smooth' });
+const main = document.getElementById('main');
+main.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute"><filter id="wob"><feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="9"/></filter></svg>');
+const total = Math.round(S.duration * fps), RED = '#e5232e';
+const mk = (p, css, html) => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;' + css; if (html != null) d.innerHTML = html; p.appendChild(d); return d; };
+
+/* pinned title */
+const lines = String(S.title).toUpperCase().split('\n');
+const title = mk(main, 'left:40px;top:130px;width:1000px;text-align:center;font:900 ' + Math.min(74, Math.floor(1000 / (0.62 * Math.max(...lines.map(l => l.length))))) + 'px/90px Nunito,sans-serif;color:#111;white-space:pre');
+title.textContent = lines.join('\n');
+mk(main, 'left:260px;top:' + (130 + lines.length * 90 + 10) + 'px;width:560px;height:14px;border-radius:7px;background:' + RED);
+
+/* stage: no frame, the drawing sits straight on the page */
+const beats = S.beats;
+beats.forEach((b, i) => {
+  b.a = i === 0 ? 0 : Math.round(b.t0 * fps); b.e = i === beats.length - 1 ? total : Math.round(b.t1 * fps);
+  b.root = mk(main, 'left:0;top:400px;width:1080px;height:1300px;visibility:hidden;background:' + (b.bg || '#fff'));
+  b.pic = mk(b.root, 'left:0;top:0;width:1080px;height:1080px;filter:url(#wob)', (b.svg ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="1000" height="1000" style="position:absolute;left:40px;top:20px;overflow:visible"><g fill="none" stroke="#111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">' + b.svg + '</g></svg>' : DoodleArt.scene(b))); b.paths = [...b.pic.querySelectorAll('.dp')]; b.paths.forEach(p => { p.style.strokeDasharray = '1'; });
+  b.lab = mk(b.root, '', ''); b.lab.className = 'lab'; b.lab.textContent = b.label; b.lab.style.fontSize = Math.min(112, Math.floor(1000 / (0.45 * Math.max(1, String(b.label).length)))) + 'px';
+  b.mark = null;
+  if (b.mark_kind) {
+    const k = b.mark_kind, st = ' fill="none" stroke="' + RED + '" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" class="mk"';
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1100" width="1080" height="1100" style="overflow:visible;position:absolute;left:0;top:0">'
+      + (k === 'circle' ? '<ellipse cx="540" cy="500" rx="400" ry="380" stroke-width="16"' + st + ' transform="rotate(-6 540 500)"/>'
+      : k === 'x' ? '<path d="M200 200 L880 840 M880 200 L200 840" stroke-width="30"' + st + '/>'
+      : '<path d="M140 820 C 240 700 320 720 420 660 M420 660 l-80 -6 M420 660 l-26 -70" stroke-width="18"' + st + '/>')
+      + '</svg>';
+    b.mark = mk(b.root, 'left:0;top:0;width:1080px;height:1100px', svg).querySelector('.mk');
+  }
+});
+const sub = mk(main, '', ''); sub.className = 'sub';
+const subs = S.subs || [], ctaA = total - Math.round(3.2 * fps);
+const D = U.Driver(M, fps, S.duration);
+D.add(f => {
+  const bi = beats.findIndex(b => f < b.e), cur = bi < 0 ? beats.length - 1 : bi;
+  beats.forEach((b, i) => { b.root.style.visibility = i === cur ? '' : 'hidden'; });
+  const b = beats[cur], u = f - b.a, n = b.e - b.a, alt = cur % 2 ? -1 : 1;
+  /* left-to-right wipe = the draw-on; constant drift so no frame is flat */
+  b.paths.forEach((p, k) => { p.style.strokeDashoffset = (1 - eOut(prog(u, k * 3, k * 3 + 14))).toFixed(3); });
+  put(b.pic, { x: 0, y: 0, r: 0, s: 1 + u / n * 0.05 });
+  const lt = prog(u, 12, 24);
+  put(b.lab, { x: 0, y: (1 - eOut(lt)) * 40, s: 1, o: f >= ctaA ? 0 : lt });
+  const sc = subs.find(c => f >= Math.round(c.t0 * fps) && f < Math.round(c.t1 * fps)); sub.textContent = sc ? sc.text : '';
+  if (b.mark) b.mark.style.strokeDashoffset = (1 - eIO(prog(u, 24, 44))).toFixed(3);
+});
+window.MMU.endCta(M, main, { total, fps, y: 1480 });
+window.__ready = Motion.loaded().then(() => { if (/selftest/.test(location.search)) Motion.selfTest(M, { samples: 24 }); });
+</script>
+</body>
+</html>
