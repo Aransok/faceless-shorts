@@ -142,7 +142,7 @@ jobs:
       # secret instead of after a long render. See scripts/doctor.py.
       - name: Doctor
         env:
-          LLM_BACKEND: claude_code
+          LLM_BACKEND: groq
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           LLM_FALLBACK_BACKEND: groq
           BULK_LLM_BACKEND: groq
@@ -156,7 +156,7 @@ jobs:
 
       - name: Run daily pipeline
         env:
-          LLM_BACKEND: claude_code
+          LLM_BACKEND: groq
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Owner cost-reduction request (2026-09-20): Haiku instead of
           # the CLI's default model for the script draft/review/rewrite
