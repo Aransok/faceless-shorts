@@ -18,5 +18,10 @@
     "video_id": "6a8730a0-55f8-4e92-9fee-4df72d5bbac5",
     "text": "Anyone else think the aye\u2011aye\u2019s creepy middle finger would make a perfect Halloween costume?",
     "posted_at": "2026-10-20T00:23:24.217998+00:00"
+  },
+  {
+    "video_id": "0a455253-167c-43d7-9bfd-72552d0c6fe9",
+    "text": "What weirdness makes wait() explode with IllegalMonitorStateException when you skip the synchronized block?",
+    "posted_at": "2026-10-20T20:37:10.291225+00:00"
   }
 ]
