@@ -2202,5 +2202,15 @@
     "renderer": "motionmaxxing",
     "scheduled_publish_at": "2026-10-19T12:47:57.532168+00:00",
     "publish_arm": "morning"
+  },
+  {
+    "video_id": "0a455253-167c-43d7-9bfd-72552d0c6fe9",
+    "youtube_video_id": "xUpX5mmkjpo",
+    "uploaded_at": "2026-10-20T18:28:07.135999+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "renderer": "motionmaxxing",
+    "scheduled_publish_at": "2026-10-20T20:25:18.841556+00:00",
+    "publish_arm": "evening"
   }
 ]
