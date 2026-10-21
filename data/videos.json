@@ -2212,5 +2212,14 @@
     "renderer": "motionmaxxing",
     "scheduled_publish_at": "2026-10-20T20:25:18.841556+00:00",
     "publish_arm": "evening"
+  },
+  {
+    "video_id": "8a5448dc-2105-412c-9642-877f9b3d4f15",
+    "youtube_video_id": "zclWxmuhmRQ",
+    "uploaded_at": "2026-10-21T18:39:52.883107+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "renderer": "motionmaxxing",
+    "scheduled_publish_at": "2026-10-21T20:01:28.528362+00:00"
   }
 ]
