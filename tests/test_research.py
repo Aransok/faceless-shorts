@@ -253,8 +253,9 @@ class SuggestResearchSeedTest(unittest.TestCase):
             self.assertEqual(fetch.call_count, 1)
         self.trending_patcher.start()
 
-    def test_programming_gets_no_seed(self):
-        self.assertIsNone(research.suggest_research_seed("programming"))
+    def test_programming_without_stackoverflow_results_gets_no_seed(self):
+        with mock.patch.object(research, "fetch_stackoverflow_gotchas", return_value=[]):
+            self.assertIsNone(research.suggest_research_seed("programming"))
 
     @mock.patch.object(research, "fetch_dyk_hooks")
     def test_facts_seed_lists_candidates_and_marks_them_used(self, mock_fetch):

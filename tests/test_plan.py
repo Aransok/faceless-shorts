@@ -609,6 +609,46 @@ class GroqAvailableModelsTest(unittest.TestCase):
         self.assertEqual(_groq_available_models("k"), ["openai/gpt-oss-20b"])
 
 
+class OpenAiCompatTest(unittest.TestCase):
+    def _resp(self, status, content="ok"):
+        r = mock.Mock(status_code=status)
+        r.json = lambda: {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]}
+        r.raise_for_status = mock.Mock(side_effect=None if status < 400 else RuntimeError(f"HTTP {status}"))
+        return r
+
+    def test_ranking_keeps_only_free_chat_models_on_openrouter(self):
+        from pipeline.plan import rank_discovered_models
+        ids = ["x/paid-llama", "nvidia/nemotron-3.5-content-safety:free", "google/gemma-4-31b-it:free",
+               "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3.5-super-vl:free"]
+        self.assertEqual(rank_discovered_models("openrouter", ids),
+                         ["google/gemma-4-31b-it:free", "nvidia/nemotron-3-super-120b-a12b:free"])
+
+    def test_ranking_prefers_newest_gemini_flash(self):
+        from pipeline.plan import rank_discovered_models
+        ids = ["models/gemini-2.5-flash", "models/gemini-3-flash", "models/text-embedding-004",
+               "models/gemini-3-pro", "models/gemini-3-flash-image"]
+        self.assertEqual(rank_discovered_models("gemini", ids)[:2], ["gemini-3-flash", "gemini-2.5-flash"])
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_retired_model_falls_through_to_listed_ones(self, mock_post):
+        from pipeline.plan import _call_openai_compat
+        mock_post.side_effect = [self._resp(404), self._resp(200, "script")]
+        with mock.patch.dict("os.environ", {"GEMINI_API_KEY": "key\n", "GEMINI_MODEL": ""}), \
+                mock.patch("pipeline.plan._list_openai_compat_models", return_value=["models/gemini-3-flash"]):
+            self.assertEqual(_call_openai_compat("gemini", "prompt"), "script")
+        self.assertEqual(mock_post.call_args.kwargs["json"]["model"], "gemini-3-flash")
+        self.assertEqual(mock_post.call_args.kwargs["headers"]["Authorization"], "Bearer key")
+
+    @mock.patch("pipeline.plan.requests.post")
+    def test_nothing_listed_still_raises(self, mock_post):
+        from pipeline.plan import _call_openai_compat
+        mock_post.return_value = self._resp(404)
+        with mock.patch.dict("os.environ", {"CEREBRAS_API_KEY": "k"}), \
+                mock.patch("pipeline.plan._list_openai_compat_models", return_value=[]):
+            with self.assertRaises(RuntimeError):
+                _call_openai_compat("cerebras", "prompt")
+
+
 if __name__ == "__main__":
     unittest.main()
 

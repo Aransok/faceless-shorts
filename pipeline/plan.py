@@ -267,7 +267,7 @@ def _call_groq(prompt: str) -> str:
     is set and the primary backend hits ClaudeUsageLimitError, since
     ollama needs a locally-running model server this project's CI runner
     doesn't have, but Groq is a plain hosted HTTPS API."""
-    api_key = os.environ.get("GROQ_API_KEY", "")
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("GROQ_API_KEY not set — required for LLM_BACKEND/LLM_FALLBACK_BACKEND=groq")
     # Real production failure (2026-09-13): every Groq call 404'd with
@@ -353,26 +353,83 @@ def _groq_available_models(api_key: str) -> list[str]:
 OPENAI_COMPAT = {
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GEMINI_API_KEY", "GEMINI_MODEL", "gemini-2.5-flash"),
     "cerebras": ("https://api.cerebras.ai/v1/chat/completions", "CEREBRAS_API_KEY", "CEREBRAS_MODEL", "gpt-oss-120b"),
-    "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY", "OPENROUTER_MODEL", "openai/gpt-oss-120b:free"),
+    "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY", "OPENROUTER_MODEL", "google/gemma-4-31b-it:free"),
 }
+# Model ids that aren't general text-chat models.
+_NON_CHAT_MODEL = re.compile(
+    r"embed|image|imagen|veo|tts|audio|live|whisper|guard|safety|aqa|vision|-vl|omni|code|lyria|robotics",
+    re.IGNORECASE,
+)
+# Higher = tried first among discovered models.
+_MODEL_PREFERENCE = ("flash", "gemma", "gpt-oss", "llama", "qwen", "nemotron")
+OPENAI_COMPAT_DISCOVERED_TRIES = 3
+
+
+def rank_discovered_models(name: str, ids: list[str]) -> list[str]:
+    """Chat models from a /models listing, best guess first. OpenRouter
+    only counts if free (":free"); Gemini lists ids as "models/..."."""
+    ids = [i.removeprefix("models/") for i in ids]
+    ids = [i for i in ids if not _NON_CHAT_MODEL.search(i)]
+    if name == "openrouter":
+        ids = [i for i in ids if i.endswith(":free")]
+
+    def score(model_id: str) -> int:
+        hits = [n for n, kw in enumerate(_MODEL_PREFERENCE) if kw in model_id.lower()]
+        return len(_MODEL_PREFERENCE) - hits[0] if hits else 0
+
+    # Newer versions sort later alphabetically (gemini-3 > gemini-2.5).
+    return sorted(sorted(ids, reverse=True), key=score, reverse=True)
+
+
+def _list_openai_compat_models(url: str, api_key: str) -> list[str]:
+    try:
+        response = requests.get(
+            url.removesuffix("/chat/completions") + "/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=30,
+        )
+        response.raise_for_status()
+        return [m["id"] for m in response.json().get("data", [])]
+    except (requests.RequestException, ValueError, KeyError) as exc:
+        print(f"warning: couldn't list models at {url}: {exc}")
+        return []
 
 
 def _call_openai_compat(name: str, prompt: str) -> str:
+    """Real 2026-10-22: zero videos for days -- Gemini's and OpenRouter's
+    default models were retired (404) and the Cerebras key secret had a
+    trailing newline. So keys are stripped, and on 404 the host's own
+    /models listing supplies replacements instead of failing outright."""
     url, key_env, model_env, default = OPENAI_COMPAT[name]
-    api_key = os.environ.get(key_env, "")
+    api_key = os.environ.get(key_env, "").strip()
     if not api_key:
         raise RuntimeError(f"{key_env} not set -- required for backend {name}")
-    response = requests.post(
-        url,
-        headers={"Authorization": f"Bearer {api_key}"},
-        json={"model": os.environ.get(model_env, default), "messages": [{"role": "user", "content": prompt}]},
-        timeout=120,
-    )
+    models = [os.environ.get(model_env, "").strip() or default]
+    discovered = False
+    i = 0
+    while i < len(models):
+        model = models[i]
+        i += 1
+        response = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={"model": model, "messages": [{"role": "user", "content": prompt}]},
+            timeout=120,
+        )
+        if response.status_code in (404, 413) or (response.status_code == 400 and discovered):
+            print(f"warning: {name} {model} returned {response.status_code} -- trying another model")
+            if not discovered:
+                discovered = True
+                found = rank_discovered_models(name, _list_openai_compat_models(url, api_key))
+                models += [m for m in found if m not in models][:OPENAI_COMPAT_DISCOVERED_TRIES]
+            continue
+        response.raise_for_status()
+        choice = response.json()["choices"][0]
+        if choice.get("finish_reason") == "length":
+            raise RuntimeError(f"{name} reply was cut off")
+        return choice["message"]["content"]
     response.raise_for_status()
-    choice = response.json()["choices"][0]
-    if choice.get("finish_reason") == "length":
-        raise RuntimeError(f"{name} reply was cut off")
-    return choice["message"]["content"]
+    raise RuntimeError(f"no {name} model accepted this prompt")
 
 
 def _dispatch_llm(backend: str, prompt: str) -> str:
