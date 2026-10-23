@@ -2221,5 +2221,32 @@
     "approach": "storytelling_hook",
     "renderer": "motionmaxxing",
     "scheduled_publish_at": "2026-10-21T20:01:28.528362+00:00"
+  },
+  {
+    "video_id": "d1e180bd-83aa-4ba5-aebe-17b68ab20ddd",
+    "youtube_video_id": "9a5-VHeuMGU",
+    "uploaded_at": "2026-10-23T10:12:02.939319+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "motionmaxxing",
+    "scheduled_publish_at": "2026-10-23T20:25:59.399265+00:00"
+  },
+  {
+    "video_id": "7bb608ae-b060-4ade-a7fd-daf6cbfaf067",
+    "youtube_video_id": "7ar5r1-3p3w",
+    "uploaded_at": "2026-10-23T10:22:08.124360+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "renderer": "motionmaxxing",
+    "scheduled_publish_at": "2026-10-23T21:32:55.731467+00:00"
+  },
+  {
+    "video_id": "fd9208a2-0cf2-41f8-bf4a-afd96cf6ee5a",
+    "youtube_video_id": "krl52Sxvlfo",
+    "uploaded_at": "2026-10-23T10:33:15.018589+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "motionmaxxing",
+    "scheduled_publish_at": "2026-10-23T22:41:28.670564+00:00"
   }
 ]
