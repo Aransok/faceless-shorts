@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "Most versions of this story skip the actual cause:",
-    "There's a real reason this is true, and it's not what you'd guess:",
-    "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
-    "Here's the reasoning behind this that usually gets cut:",
-    "This is accurate, and the actual mechanism is worth knowing:",
-    "What usually gets skipped here is the actual why:",
     "This is true for a specific, checkable reason, not just 'because':",
     "The explanation for this usually gets left out entirely:",
     "The full explanation for this rarely makes the cut:",
@@ -14,15 +8,15 @@
     "This isn't the explanation most people settle for:",
     "The real cause here gets simplified out of most versions of the story:",
     "This one holds up, and the reason why is the actual point:",
-    "Here's the part of this story most explanations skip:"
+    "Here's the part of this story most explanations skip:",
+    "Nobody explains why this is actually true, so here goes:",
+    "Most versions of this story skip the actual cause:",
+    "Most people get the story behind this completely wrong:",
+    "There's a real reason this is true, and it's not what you'd guess:",
+    "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
+    "This is real, and the reason is more specific than most people assume:"
   ],
   "script_structures": [
-    "Open with a confession, then explain what led to it.",
-    "Start with the punchline, then explain why it's true.",
-    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
-    "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
-    "Frame it as a mystery, then solve it by the end.",
-    "Build toward an 'and that's when it got weird' turn.",
     "Cold open on the surprising moment, then unpack how we got there.",
     "Use a slow build with one big reveal near the very end.",
     "Introduce the normal expectation, then subvert it hard.",
@@ -31,15 +25,15 @@
     "Lead with a question the story answers by the end.",
     "Set expectations early, then flip them in the back half.",
     "Start in the middle of the action, then rewind to explain.",
-    "Build tension gradually across three beats, then release it in the last line."
+    "Build tension gradually across three beats, then release it in the last line.",
+    "Contrast what you'd expect against what actually happened.",
+    "Structure it as three escalating moments, biggest last.",
+    "Start with the punchline, then explain why it's true.",
+    "Walk through it in real time, like you're narrating it as it unfolds.",
+    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
+    "Open with a confession, then explain what led to it."
   ],
   "phrasing_styles": [
-    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
-    "Reflective, like you're still a little surprised by it yourself.",
-    "Unhurried \u2014 let the details breathe before moving on.",
-    "A little wry, noticing the absurdity without overplaying it.",
-    "Earnest, like you genuinely want the listener to feel what you felt.",
-    "Conversational, like explaining it to a friend over coffee.",
     "Slightly conspiratorial, like you're letting them in on something.",
     "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
@@ -48,7 +42,13 @@
     "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
     "Curious and searching, like you're figuring it out as you go.",
     "Slightly dramatic \u2014 build a little tension before the reveal.",
-    "Warm humor threaded through, without undercutting the actual point."
+    "Warm humor threaded through, without undercutting the actual point.",
+    "Intimate, like sharing something you don't tell everyone.",
+    "Plainspoken but with real conviction underneath it.",
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
+    "Reflective, like you're still a little surprised by it yourself.",
+    "A little wry, noticing the absurdity without overplaying it.",
+    "Earnest, like you genuinely want the listener to feel what you felt."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,7 +60,7 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "late_banner_cadence"
+    "save_for_later_early"
   ],
   "code_theme": [
     "monokai",
@@ -478,6 +478,12 @@
     "[javascript] Why eslint consider JSX or some react @types undefined, since upgrade typescript-eslint/parser to version 4.0.0",
     "[reactjs] Why is the React `MouseEvent` in the checkbox event handler not generic?",
     "[javascript] Why does Vite create two TypeScript config files: tsconfig.json and tsconfig.node.json?",
-    "[typescript] Why is --isolatedModules error fixed by any import?"
+    "[typescript] Why is --isolatedModules error fixed by any import?",
+    "[typescript] Why does TypeScript have both `void` and `undefined`?",
+    "[typescript] Typescript: Why does `as unknown as x` work",
+    "[typescript] Why ESLint throws 'no-unused-vars' for TypeScript interface?",
+    "[javascript] What is TypeScript and why should I use it instead of JavaScript?",
+    "[angular] Why does Angular 2 use the .ts file extension?",
+    "[typescript] Why are these tsconfig paths not working?"
   ]
 }
