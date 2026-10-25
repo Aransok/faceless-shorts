@@ -1161,5 +1161,23 @@
     "method": "card",
     "template": "sauce_recipe",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/8467ddba-d06b-45f5-a68b-ecb018a49d53_thumbnail.jpg"
+  },
+  {
+    "video_id": "2e5ccd80-69c0-45eb-866c-2253bac0d5e7",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/2e5ccd80-69c0-45eb-866c-2253bac0d5e7_thumbnail.jpg"
+  },
+  {
+    "video_id": "5215c0f4-76d9-49ca-9a2b-6cbe96451934",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/5215c0f4-76d9-49ca-9a2b-6cbe96451934_thumbnail.jpg"
+  },
+  {
+    "video_id": "23bbdad7-6e79-484e-86ef-47e1253af494",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/23bbdad7-6e79-484e-86ef-47e1253af494_thumbnail.jpg"
   }
 ]
