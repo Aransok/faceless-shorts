@@ -193,10 +193,10 @@ jobs:
           KOKORO_MODEL_PATH: /home/runner/kokoro/kokoro-v1.0.onnx
           KOKORO_VOICES_PATH: /home/runner/kokoro/voices-v1.0.bin
           KOKORO_VOICE: am_adam
-          # Motionmaxxing one-week trial (auto-off 2026-10-26, see pipeline/mm_render.py).
-          # OFF until the owner approves the test renders: to start the trial
-          # uncomment the next line. Failures fall back to the old renderer.
-          RENDERER: motionmaxxing
+          # Motionmaxxing/doodle trial ENDED 2026-10-26 and lost: ~50 avg views
+          # vs ~226 on the original renderer, and every programming video
+          # failed its lint gate. Left OFF on purpose. See HANDOFF.md.
+          # RENDERER: motionmaxxing
           CHROME_PATH: ${{ github.workspace }}/scripts/chrome_wrapper.sh
           FACTS_VISUAL_SOURCE: stock
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}

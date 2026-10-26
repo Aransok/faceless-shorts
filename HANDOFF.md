@@ -1,5 +1,24 @@
 # Session handoff — game-night track
 
+## Doodle / motionmaxxing renderer trial -- ENDED, LOST (2026-10-26)
+
+Owner verdict: "I thought doodle-like shorts would be good but nope."
+The data agrees (state.db, uploads 2026-10-05..25):
+- Views: doodle ~50 avg (13 videos) vs original renderer ~226 avg. At a
+  comparable age (~7 days old) doodle videos had 41-147 views, original
+  ones 170-360.
+- Retention was about the same (~31-34% vs ~33-42% viewed), so the
+  doodle look mostly lost the swipe -- fewer people chose to watch.
+- Output dropped too: every `programming` video (the highest-RPM
+  template) failed motionmaxxing's lint gate G5 from 10-19 on, plus some
+  food/sauce look.py gate failures, because the trial had no fallback.
+
+Action: `RENDERER: motionmaxxing` commented out in
+`.github/workflows/daily-shorts.yml` (the date gate in
+`pipeline/mm_render.py` would also have stopped it from 10-26). All
+templates are back on the original renderer. Do not re-enable without a
+new owner decision.
+
 Quick-reference status for picking this back up from any device. Full
 engineering detail lives in `ROADMAP.md` Phase 15/16 — this file is the
 short version.
