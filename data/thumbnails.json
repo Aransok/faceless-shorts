@@ -1179,5 +1179,35 @@
     "method": "card",
     "template": "sauce_recipe",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/23bbdad7-6e79-484e-86ef-47e1253af494_thumbnail.jpg"
+  },
+  {
+    "video_id": "7e9d9c57-6e63-4be9-b8af-51a664ce6d90",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/7e9d9c57-6e63-4be9-b8af-51a664ce6d90_thumbnail.jpg"
+  },
+  {
+    "video_id": "a3e5a9cb-fe2a-404c-b78b-00436446f2c8",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/a3e5a9cb-fe2a-404c-b78b-00436446f2c8_thumbnail.jpg"
+  },
+  {
+    "video_id": "3e659d1c-21e8-4392-8b68-58d33675ac1a",
+    "method": "card",
+    "template": "programming",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/3e659d1c-21e8-4392-8b68-58d33675ac1a_thumbnail.jpg"
+  },
+  {
+    "video_id": "014918cb-bdfd-4158-81c3-14948ecfa191",
+    "method": "card",
+    "template": "food",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/014918cb-bdfd-4158-81c3-14948ecfa191_thumbnail.jpg"
+  },
+  {
+    "video_id": "d4f6ad10-0696-4015-9e9e-75dfe901642c",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/d4f6ad10-0696-4015-9e9e-75dfe901642c_thumbnail.jpg"
   }
 ]
