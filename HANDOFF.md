@@ -1,5 +1,26 @@
 # Session handoff — game-night track
 
+## Comic-style visuals + new voice -- one-week trial (2026-10-26 to 11-01)
+
+Owner: the videos looked cheap, sounded robotic and felt slow. Picked from
+rendered samples (voice reel + 3 art styles, same script):
+- **Voice:** Edge `en-US-AndrewMultilingualNeural` on every template
+  (workflow `TTS_BACKEND: edge_tts`; Kokoro steps removed).
+- **Visuals:** style B, comic (`pipeline/visuals_comic.py`) for
+  facts/sauce_recipe/food. Free Pollinations panels, one picture per ~5s
+  in two framings, so a cut every ~2.5s with a punch-in zoom and a whoosh
+  on every cut. The gap between beats drops from 3.5s to 0.6s during the
+  trial.
+- Flag `VISUAL_STYLE: comic`. It auto-offs 2026-11-02. Any failure falls
+  back to stock footage (renderer NULL), so a bad day doesn't cost
+  videos, unlike the doodle trial.
+- Judge it in the weekly report's renderer table: `comic` vs `original`.
+  The voice changed for every template at the same time, so compare
+  programming before/after too.
+- Programming keeps its code renderer. Gameplay/split-screen was
+  considered and rejected: not original footage, it risks YouTube's
+  reused-content policy, and it reads as low effort.
+
 ## Doodle / motionmaxxing renderer trial -- ENDED, LOST (2026-10-26)
 
 Owner verdict: "I thought doodle-like shorts would be good but nope."

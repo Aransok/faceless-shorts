@@ -30,7 +30,14 @@ REQUEST_TIMEOUT_SECONDS = 60
 # specific exception type -- a real 4xx (bad prompt encoding, etc.)
 # still fails immediately, since retrying that would just fail the same
 # way three more times.
-RETRY_DELAYS_SECONDS = (2, 5, 10)
+#
+# 402/429/503 "the Classic API is at its limit right now, retry after 10s"
+# were all seen for real (2026-10-26, rendering comic-style samples at
+# a few requests in a row) -- those are the free tier's rate limit, not a
+# bad request, so they're retried too, with waits longer than the 10s it
+# asks for.
+RETRY_DELAYS_SECONDS = (5, 12, 20)
+_RETRYABLE_4XX = (402, 429)
 
 
 def build_image_url(prompt: str, width: int, height: int, seed: int | None = None) -> str:
@@ -53,7 +60,7 @@ def download_image(prompt: str, out_path: Path, width: int, height: int, seed: i
         if delay:
             time.sleep(delay)
         response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
-        if response.status_code < 500:
+        if response.status_code < 500 and response.status_code not in _RETRYABLE_4XX:
             response.raise_for_status()
             out_path.write_bytes(response.content)
             return

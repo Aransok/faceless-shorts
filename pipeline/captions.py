@@ -56,6 +56,11 @@ FONT_NAME = "Poppins"
 # caption zone it had no idea existed).
 FONT_SIZE_RATIO = 58 / 1080
 ACTIVE_FONT_SIZE_RATIO = 78 / 1080  # the word being spoken right now — bigger + accent color
+# Comic-style trial (pipeline/visuals_comic.py): the bigger, punchier
+# captions the owner saw in the samples they picked, 3 words a card.
+COMIC_FONT_SIZE_RATIO = 84 / 1080
+COMIC_ACTIVE_FONT_SIZE_RATIO = 100 / 1080
+COMIC_CHUNK_SIZE = 3
 MARGIN_V_RATIO_PORTRAIT = CAPTION_MARGIN_V_RATIO_PORTRAIT
 MARGIN_V_RATIO_LANDSCAPE = 0.09  # thin bottom strip — quiz longform only, no code panel to coordinate with
 
@@ -176,7 +181,7 @@ def _align_script_to_timed_words(script_words: list[str], timed_words: list[dict
 _SENTENCE_END_RE = re.compile(r"[.!?]$")
 
 
-def _chunk_words(words: list[dict]) -> list[list[dict]]:
+def _chunk_words(words: list[dict], chunk_size: int = CHUNK_SIZE) -> list[list[dict]]:
     """Groups words into caption cards of at most CHUNK_SIZE, but never
     lets a card cross a sentence boundary — a real observed bug (a fixed
     sliding window with no punctuation awareness) grouped a sentence's
@@ -193,7 +198,7 @@ def _chunk_words(words: list[dict]) -> list[list[dict]]:
     for w in words:
         current.append(w)
         ends_sentence = bool(_SENTENCE_END_RE.search(w["word"].strip()))
-        if ends_sentence or len(current) >= CHUNK_SIZE:
+        if ends_sentence or len(current) >= chunk_size:
             chunks.append(current)
             current = []
     if current:
@@ -201,10 +206,10 @@ def _chunk_words(words: list[dict]) -> list[list[dict]]:
     return chunks
 
 
-def _build_ass(words: list[dict], out_path: Path, width: int, height: int) -> None:
+def _build_ass(words: list[dict], out_path: Path, width: int, height: int, comic: bool = False) -> None:
     short_side = min(width, height)
-    font_size = round(short_side * FONT_SIZE_RATIO)
-    active_font_size = round(short_side * ACTIVE_FONT_SIZE_RATIO)
+    font_size = round(short_side * (COMIC_FONT_SIZE_RATIO if comic else FONT_SIZE_RATIO))
+    active_font_size = round(short_side * (COMIC_ACTIVE_FONT_SIZE_RATIO if comic else ACTIVE_FONT_SIZE_RATIO))
     is_landscape = width > height
     margin_ratio = MARGIN_V_RATIO_LANDSCAPE if is_landscape else MARGIN_V_RATIO_PORTRAIT
     margin_v = round(height * margin_ratio)
@@ -215,7 +220,7 @@ def _build_ass(words: list[dict], out_path: Path, width: int, height: int) -> No
             text_color=TEXT_COLOR, margin_v=margin_v,
         )
     ]
-    for chunk in _chunk_words(words):
+    for chunk in _chunk_words(words, COMIC_CHUNK_SIZE if comic else CHUNK_SIZE):
         for j, active in enumerate(chunk):
             start = _format_ass_time(active["start"])
             end = _format_ass_time(active["end"])
@@ -315,7 +320,7 @@ def captions(video_id: str) -> str:
 
     ass_path = OUTPUT_DIR / f"{video_id}_captions.ass"
     width, height = _probe_dimensions(Path(video["video_path"]))
-    _build_ass(words, ass_path, width, height)
+    _build_ass(words, ass_path, width, height, comic=video.get("renderer") == "comic")
 
     output_path = OUTPUT_DIR / f"{video_id}_final.mp4"
     vf = f"subtitles='{_ffmpeg_filter_path(ass_path)}':fontsdir='{_ffmpeg_filter_path(FONTS_DIR)}'"

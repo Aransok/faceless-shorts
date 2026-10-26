@@ -31,6 +31,7 @@ from pipeline.upload import upload
 from pipeline.mm_render import try_motionmaxxing
 from pipeline.voice import OUTPUT_DIR
 from pipeline.visuals_code import visuals_code
+from pipeline.visuals_comic import try_comic
 from pipeline.visuals_facts import visuals_facts
 from pipeline.visuals_game import visuals_game
 from pipeline.visuals_quiz import visuals_quiz
@@ -155,7 +156,9 @@ def _advance_one_stage(video_id: str) -> str:
         else:
             voice(video_id)
     elif status == "voiced":
-        if try_motionmaxxing(video_id, OUTPUT_DIR) is not None:
+        if try_comic(video_id) is not None:
+            pass
+        elif try_motionmaxxing(video_id, OUTPUT_DIR) is not None:
             pass
         elif template == "programming":
             visuals_code(video_id)
