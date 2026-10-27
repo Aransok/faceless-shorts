@@ -131,6 +131,14 @@ def _probe_dimensions(path: Path) -> tuple[int, int]:
 MUSIC_ROTATION_WINDOW = 1
 
 
+def _has_audio_stream(path: Path) -> bool:
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    )
+    return bool(result.stdout.strip())
+
+
 def _pick_music_track() -> Path:
     tracks = [p for p in MUSIC_DIR.iterdir() if p.suffix.lower() in MUSIC_EXTENSIONS]
     if not tracks:
@@ -356,6 +364,10 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
             f"fade=t=out:st={fade_out_start:.3f}:d={CTA_FADE_OUT}:alpha=1[cta];"
             f"[{base_label}][cta]overlay={cta_x}:{cta_y}:format=auto[vout]"
         )
+        # A visuals stage can ship its own sound effects on the visuals
+        # file (visuals_comic.py's whoosh on every cut); mix them in under
+        # the narration rather than dropping them.
+        sfx = "[0:a]" if _has_audio_stream(Path(video["video_path"])) else ""
         if use_music:
             # normalize=0 is load-bearing: amix's default normalize=1
             # scales output based on how many inputs are momentarily
@@ -369,8 +381,11 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
             filter_complex = (
                 f"{cta_filter};"
                 f"[2:a]volume={music_gain:.4f}[music];"
-                f"[1:a][music]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]"
+                f"[1:a][music]{sfx}amix=inputs={3 if sfx else 2}:duration=first:dropout_transition=0:normalize=0[aout]"
             )
+            audio_map = "[aout]"
+        elif sfx:
+            filter_complex = f"{cta_filter};[1:a]{sfx}amix=inputs=2:duration=first:normalize=0[aout]"
             audio_map = "[aout]"
         else:
             filter_complex = cta_filter

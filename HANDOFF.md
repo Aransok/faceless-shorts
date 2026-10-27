@@ -1,5 +1,53 @@
 # Session handoff — game-night track
 
+## Comic-style visuals + new voice -- one-week trial (to 2026-11-03)
+
+Owner: the videos looked cheap, sounded robotic and felt slow. Picked from
+rendered samples (voice reel + 3 art styles, same script):
+- **Voice:** Edge `en-US-AndrewMultilingualNeural` on every template
+  (workflow `TTS_BACKEND: edge_tts`; Kokoro steps removed).
+- **Visuals:** style B, comic (`pipeline/visuals_comic.py`) for
+  facts/sauce_recipe/food. Free Pollinations panels, one picture per ~5s
+  in two framings, so a cut every ~2.5s with a punch-in zoom and a whoosh
+  on every cut. The gap between beats drops from 3.5s to 0.6s during the
+  trial.
+- **Half and half (owner, 2026-10-27):** only about half of the eligible
+  videos go comic (`in_comic_half`, from a hash of the video id). The
+  rest stay on the old stock-footage look with its 3.5s beat gap, but
+  with the new voice. That half also serves as the control group.
+- Flag `VISUAL_STYLE: comic`. It auto-offs 2026-11-04. Any failure falls
+  back to stock footage (renderer NULL), so a bad day doesn't cost
+  videos, unlike the doodle trial.
+- Judge it in the weekly report's renderer table: `comic` vs `original`.
+  The voice changed for every template at the same time, so compare
+  programming before/after too.
+- The Hyperframes hybrid trial (pipeline/hf_render.py, merged to main
+  the same morning from another session) is **paused** in the workflow
+  so it doesn't overlap this one. The owner chose comic + plain old.
+  Run it after this trial ends.
+- Programming keeps its code renderer. Gameplay/split-screen was
+  considered and rejected: not original footage, it risks YouTube's
+  reused-content policy, and it reads as low effort.
+
+## Doodle / motionmaxxing renderer trial -- ENDED, LOST (2026-10-26)
+
+Owner verdict: "I thought doodle-like shorts would be good but nope."
+The data agrees (state.db, uploads 2026-10-05..25):
+- Views: doodle ~50 avg (13 videos) vs original renderer ~226 avg. At a
+  comparable age (~7 days old) doodle videos had 41-147 views, original
+  ones 170-360.
+- Retention was about the same (~31-34% vs ~33-42% viewed), so the
+  doodle look mostly lost the swipe -- fewer people chose to watch.
+- Output dropped too: every `programming` video (the highest-RPM
+  template) failed motionmaxxing's lint gate G5 from 10-19 on, plus some
+  food/sauce look.py gate failures, because the trial had no fallback.
+
+Action: `RENDERER: motionmaxxing` commented out in
+`.github/workflows/daily-shorts.yml` (the date gate in
+`pipeline/mm_render.py` would also have stopped it from 10-26). All
+templates are back on the original renderer. Do not re-enable without a
+new owner decision.
+
 Quick-reference status for picking this back up from any device. Full
 engineering detail lives in `ROADMAP.md` Phase 15/16 — this file is the
 short version.

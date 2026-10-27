@@ -258,6 +258,14 @@ def _concat_audio(paths: list[Path], output_path: Path) -> None:
         os.unlink(filelist_path)
 
 
+def beat_pause_seconds(template: str, video_id: str) -> float:
+    """The comic-style trial cuts every ~2.5s, so it uses its own much
+    shorter gap between beats (see pipeline/visuals_comic.py)."""
+    from pipeline import visuals_comic  # lazy: visuals_comic -> visuals_facts -> voice
+
+    return visuals_comic.BEAT_PAUSE_SECONDS if visuals_comic.applies(template, video_id) else BEAT_PAUSE_SECONDS
+
+
 def _voice_steps(video_id: str, backend: str, template: str) -> str:
     """Synthesize each step's narration separately so each gets an exact,
     known duration — that's what lets visuals_code.py switch the on-screen
@@ -276,6 +284,7 @@ def _voice_steps(video_id: str, backend: str, template: str) -> str:
     steps = get_video_steps(video_id)
     _, ext = _BACKENDS[backend]
     add_pause = template in _PAUSED_TEMPLATES
+    beat_pause = beat_pause_seconds(template, video_id)
     is_game_night = template == "game_night"
 
     step_paths = []
@@ -283,7 +292,7 @@ def _voice_steps(video_id: str, backend: str, template: str) -> str:
         step_path = OUTPUT_DIR / f"{video_id}_step{step['step_index']}_{backend}.{ext}"
         synthesize(step["script_text"], step_path, backend=backend)
         if add_pause and i < len(steps) - 1:
-            _pad_with_silence(step_path, BEAT_PAUSE_SECONDS)
+            _pad_with_silence(step_path, beat_pause)
         duration = audio_duration_seconds(step_path)
         if is_game_night:
             floor = GAME_NIGHT_MIN_BEAT_SECONDS.get(step["beat_type"])

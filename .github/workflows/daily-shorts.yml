@@ -115,26 +115,6 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      # Natural-sounding voice (Kokoro, CPU onnx). Model files are ~350 MB,
-      # downloaded once and then restored from the Actions cache.
-      - name: Install Kokoro TTS
-        run: pip install -r requirements-kokoro.txt
-
-      - name: Cache Kokoro model
-        id: kokoro-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/kokoro
-          key: kokoro-model-v1.0
-
-      - name: Download Kokoro model
-        if: steps.kokoro-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/kokoro
-          base=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
-          curl -fL --retry 3 -o ~/kokoro/kokoro-v1.0.onnx "$base/kokoro-v1.0.onnx"
-          curl -fL --retry 3 -o ~/kokoro/voices-v1.0.bin "$base/voices-v1.0.bin"
-
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
@@ -200,16 +180,24 @@ jobs:
           # pipeline/plan.py's call_bulk_llm()). Same GROQ_API_KEY as the
           # fallback above; a no-op until that secret exists.
           BULK_LLM_BACKEND: groq
-          TTS_BACKEND: kokoro
-          KOKORO_MODEL_PATH: /home/runner/kokoro/kokoro-v1.0.onnx
-          KOKORO_VOICES_PATH: /home/runner/kokoro/voices-v1.0.bin
-          KOKORO_VOICE: am_adam
-          # Motionmaxxing trial ended 2026-10-26 (auto-off in pipeline/mm_render.py).
-          # Hyperframes hybrid trial 2026-10-27..11-02 (auto-off 2026-11-03, see
-          # pipeline/hf_render.py): design layer over the same stock footage for
-          # facts/food/sauce_recipe/weird. A failed render keeps the plain
-          # footage video, so it never costs an upload. Delete the line to stop.
-          VISUAL_RENDERER: hyperframes
+          # Voice picked by the owner 2026-10-26 from a side-by-side reel
+          # (Kokoro am_adam read as robotic). Same voice on every template.
+          TTS_BACKEND: edge_tts
+          EDGE_TTS_VOICE: en-US-AndrewMultilingualNeural
+          CHEF_TTS_VOICE: en-US-AndrewMultilingualNeural
+          # Motionmaxxing/doodle trial ENDED 2026-10-26 and lost: ~50 avg views
+          # vs ~226 on the original renderer, and every programming video
+          # failed its lint gate. Left OFF on purpose. See HANDOFF.md.
+          # RENDERER: motionmaxxing
+          # Comic-style visuals one-week trial for facts/sauce_recipe/food
+          # (about half of them; auto-off 2026-11-04, see pipeline/visuals_comic.py). Any failure
+          # falls back to stock footage.
+          VISUAL_STYLE: comic
+          # Hyperframes hybrid trial (pipeline/hf_render.py) PAUSED 2026-10-27 by
+          # the owner so it doesn't overlap the comic trial (half comic, half
+          # plain old style). Run it after the comic trial ends: uncomment and
+          # move TRIAL_END in pipeline/hf_render.py forward.
+          # VISUAL_RENDERER: hyperframes
           CHROME_PATH: ${{ github.workspace }}/scripts/chrome_wrapper.sh
           FACTS_VISUAL_SOURCE: stock
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}

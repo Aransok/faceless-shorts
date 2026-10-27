@@ -77,6 +77,15 @@ class TestDownloadImage(unittest.TestCase):
         mock_write.assert_called_once_with(b"finally-worked")
         self.assertEqual(mock_sleep.call_count, 2)
 
+    def test_a_rate_limit_402_is_retried_not_failed(self):
+        responses = [_response(402), _response(200, b"after-wait")]
+        with patch.object(pollinations.requests, "get", side_effect=responses) as mock_get:
+            with patch.object(pollinations.time, "sleep"):
+                with patch.object(Path, "write_bytes") as mock_write:
+                    pollinations.download_image("a hero", Path("/tmp/fake.jpg"), width=10, height=10)
+        self.assertEqual(mock_get.call_count, 2)
+        mock_write.assert_called_once_with(b"after-wait")
+
     def test_exhausting_all_retries_on_persistent_5xx_raises(self):
         responses = [_response(500)] * 4  # first attempt + all 3 retries
         with patch.object(pollinations.requests, "get", side_effect=responses):
