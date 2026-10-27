@@ -179,7 +179,7 @@ jobs:
           # failed its lint gate. Left OFF on purpose. See HANDOFF.md.
           # RENDERER: motionmaxxing
           # Comic-style visuals one-week trial for facts/sauce_recipe/food
-          # (auto-off 2026-11-02, see pipeline/visuals_comic.py). Any failure
+          # (about half of them; auto-off 2026-11-04, see pipeline/visuals_comic.py). Any failure
           # falls back to stock footage.
           VISUAL_STYLE: comic
           CHROME_PATH: ${{ github.workspace }}/scripts/chrome_wrapper.sh

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
+import uuid
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
@@ -22,16 +23,29 @@ def test_trial_requires_flag():
 
 
 def test_trial_auto_off():
-    assert visuals_comic.trial_active(date(2026, 11, 1), ON)
-    assert not visuals_comic.trial_active(date(2026, 11, 2), ON)
+    assert visuals_comic.trial_active(date(2026, 11, 3), ON)
+    assert not visuals_comic.trial_active(date(2026, 11, 4), ON)
+
+
+COMIC_ID = next(f"v{i}" for i in range(100) if visuals_comic.in_comic_half(f"v{i}"))
+STOCK_ID = next(f"v{i}" for i in range(100) if not visuals_comic.in_comic_half(f"v{i}"))
 
 
 def test_applies_only_to_stock_footage_shorts():
     day = date(2026, 10, 27)
     for t in ("facts", "sauce_recipe", "food"):
-        assert visuals_comic.applies(t, day, ON)
+        assert visuals_comic.applies(t, COMIC_ID, day, ON)
     for t in ("programming", "weird", "quiz_longform", "veylorn_story"):
-        assert not visuals_comic.applies(t, day, ON)
+        assert not visuals_comic.applies(t, COMIC_ID, day, ON)
+
+
+def test_about_half_the_videos_stay_old_style():
+    day = date(2026, 10, 27)
+    assert not visuals_comic.applies("facts", STOCK_ID, day, ON)
+    ids = [str(uuid.uuid4()) for _ in range(2000)]
+    share = sum(visuals_comic.in_comic_half(i) for i in ids) / len(ids)
+    assert 0.45 < share < 0.55
+    assert all(visuals_comic.in_comic_half(i) == visuals_comic.in_comic_half(i) for i in ids[:50])
 
 
 def test_shot_frames_sum_exactly_to_beat():
@@ -94,13 +108,14 @@ def test_image_prompt_carries_the_style():
     assert visuals_comic.image_prompt("a drill rig").endswith(visuals_comic.STYLE_SUFFIX)
 
 
-def test_beat_pause_shortened_only_during_trial():
+def test_beat_pause_shortened_only_for_comic_videos_during_trial():
     with patch.dict("os.environ", ON):
         with patch.object(visuals_comic, "TRIAL_END", date(2999, 1, 1)):
-            assert voice.beat_pause_seconds("facts") == visuals_comic.BEAT_PAUSE_SECONDS
-            assert voice.beat_pause_seconds("programming") == voice.BEAT_PAUSE_SECONDS
+            assert voice.beat_pause_seconds("facts", COMIC_ID) == visuals_comic.BEAT_PAUSE_SECONDS
+            assert voice.beat_pause_seconds("facts", STOCK_ID) == voice.BEAT_PAUSE_SECONDS
+            assert voice.beat_pause_seconds("programming", COMIC_ID) == voice.BEAT_PAUSE_SECONDS
     with patch.dict("os.environ", {"VISUAL_STYLE": ""}):
-        assert voice.beat_pause_seconds("facts") == voice.BEAT_PAUSE_SECONDS
+        assert voice.beat_pause_seconds("facts", COMIC_ID) == voice.BEAT_PAUSE_SECONDS
 
 
 def test_comic_captions_are_bigger_three_word_cards(tmp_path):

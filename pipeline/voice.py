@@ -258,12 +258,12 @@ def _concat_audio(paths: list[Path], output_path: Path) -> None:
         os.unlink(filelist_path)
 
 
-def beat_pause_seconds(template: str) -> float:
+def beat_pause_seconds(template: str, video_id: str) -> float:
     """The comic-style trial cuts every ~2.5s, so it uses its own much
     shorter gap between beats (see pipeline/visuals_comic.py)."""
     from pipeline import visuals_comic  # lazy: visuals_comic -> visuals_facts -> voice
 
-    return visuals_comic.BEAT_PAUSE_SECONDS if visuals_comic.applies(template) else BEAT_PAUSE_SECONDS
+    return visuals_comic.BEAT_PAUSE_SECONDS if visuals_comic.applies(template, video_id) else BEAT_PAUSE_SECONDS
 
 
 def _voice_steps(video_id: str, backend: str, template: str) -> str:
@@ -284,7 +284,7 @@ def _voice_steps(video_id: str, backend: str, template: str) -> str:
     steps = get_video_steps(video_id)
     _, ext = _BACKENDS[backend]
     add_pause = template in _PAUSED_TEMPLATES
-    beat_pause = beat_pause_seconds(template)
+    beat_pause = beat_pause_seconds(template, video_id)
     is_game_night = template == "game_night"
 
     step_paths = []

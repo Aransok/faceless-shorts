@@ -29,7 +29,7 @@ from pipeline.pollinations import download_image
 from pipeline.state import get_video, get_video_steps, list_by_status, update_video
 from pipeline.visuals_facts import FPS, HEIGHT, OUTPUT_DIR, WIDTH, _concat_segments, _parse_beat_visual_plan
 
-TRIAL_END = date(2026, 11, 2)  # flag auto-offs on this day (last trial day is 11-01)
+TRIAL_END = date(2026, 11, 4)  # flag auto-offs on this day (last trial day is 11-03)
 TEMPLATES = ("facts", "sauce_recipe", "food")
 RENDERER_NAME = "comic"
 
@@ -66,8 +66,17 @@ def trial_active(today: date | None = None, env: dict[str, str] | None = None) -
     return (today or date.today()) < TRIAL_END
 
 
-def applies(template: str, today: date | None = None, env: dict[str, str] | None = None) -> bool:
-    return template in TEMPLATES and trial_active(today, env)
+def in_comic_half(video_id: str) -> bool:
+    """The owner wants old-style videos to keep coming during the trial,
+    so only about half the eligible videos go comic. Decided from the id,
+    not at random, so voice() (which sets the beat gap) and the visuals
+    stage agree, even across a resumed run. The other half are the old
+    stock footage control group for the weekly report."""
+    return int(hashlib.sha256(video_id.encode()).hexdigest(), 16) % 2 == 0
+
+
+def applies(template: str, video_id: str, today: date | None = None, env: dict[str, str] | None = None) -> bool:
+    return template in TEMPLATES and in_comic_half(video_id) and trial_active(today, env)
 
 
 def images_for_duration(duration: float) -> int:
@@ -263,11 +272,11 @@ def visuals_comic(video_id: str) -> str:
 
 
 def try_comic(video_id: str) -> str | None:
-    """Renders comic visuals while the trial is on for this template.
+    """Renders comic visuals while the trial is on for this video.
     Returns None (after logging why) when it doesn't apply or fails, so the
     caller falls back to the stock-footage renderer."""
     video = get_video(video_id)
-    if video is None or not applies(video["template"]):
+    if video is None or not applies(video["template"], video_id):
         return None
     try:
         return visuals_comic(video_id)

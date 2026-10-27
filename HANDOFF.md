@@ -1,6 +1,6 @@
 # Session handoff — game-night track
 
-## Comic-style visuals + new voice -- one-week trial (2026-10-26 to 11-01)
+## Comic-style visuals + new voice -- one-week trial (to 2026-11-03)
 
 Owner: the videos looked cheap, sounded robotic and felt slow. Picked from
 rendered samples (voice reel + 3 art styles, same script):
@@ -11,7 +11,11 @@ rendered samples (voice reel + 3 art styles, same script):
   in two framings, so a cut every ~2.5s with a punch-in zoom and a whoosh
   on every cut. The gap between beats drops from 3.5s to 0.6s during the
   trial.
-- Flag `VISUAL_STYLE: comic`. It auto-offs 2026-11-02. Any failure falls
+- **Half and half (owner, 2026-10-27):** only about half of the eligible
+  videos go comic (`in_comic_half`, from a hash of the video id). The
+  rest stay on the old stock-footage look with its 3.5s beat gap, but
+  with the new voice. That half also serves as the control group.
+- Flag `VISUAL_STYLE: comic`. It auto-offs 2026-11-04. Any failure falls
   back to stock footage (renderer NULL), so a bad day doesn't cost
   videos, unlike the doodle trial.
 - Judge it in the weekly report's renderer table: `comic` vs `original`.
