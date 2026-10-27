@@ -138,6 +138,17 @@ jobs:
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
+      # Hyperframes trial: fetch its headless Chrome and warm the pinned CLI
+      # once, so per-video renders don't each pay for an npm install.
+      # continue-on-error: if this fails, every video just falls back to the
+      # footage-only render (pipeline/hf_render.py never fails a video).
+      - name: Prepare Hyperframes
+        continue-on-error: true
+        env:
+          HYPERFRAMES_SKIP_SKILLS: "1"
+          DO_NOT_TRACK: "1"
+        run: npx --yes hyperframes@0.8.170 browser ensure
+
       # Pre-flight (2026-10-18): fail in seconds on a missing tool or
       # secret instead of after a long render. See scripts/doctor.py.
       - name: Doctor
@@ -193,10 +204,12 @@ jobs:
           KOKORO_MODEL_PATH: /home/runner/kokoro/kokoro-v1.0.onnx
           KOKORO_VOICES_PATH: /home/runner/kokoro/voices-v1.0.bin
           KOKORO_VOICE: am_adam
-          # Motionmaxxing one-week trial (auto-off 2026-10-26, see pipeline/mm_render.py).
-          # OFF until the owner approves the test renders: to start the trial
-          # uncomment the next line. Failures fall back to the old renderer.
-          RENDERER: motionmaxxing
+          # Motionmaxxing trial ended 2026-10-26 (auto-off in pipeline/mm_render.py).
+          # Hyperframes hybrid trial 2026-10-27..11-02 (auto-off 2026-11-03, see
+          # pipeline/hf_render.py): design layer over the same stock footage for
+          # facts/food/sauce_recipe/weird. A failed render keeps the plain
+          # footage video, so it never costs an upload. Delete the line to stop.
+          VISUAL_RENDERER: hyperframes
           CHROME_PATH: ${{ github.workspace }}/scripts/chrome_wrapper.sh
           FACTS_VISUAL_SOURCE: stock
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}

@@ -3654,6 +3654,31 @@ repeating. Ideas borrowed (not installed) from blader/humanizer and the
   (Stack Exchange blocked there); first real run will show in the log
   line `[research] programming: offering ...`.
 
+## Motionmaxxing trial result; Hyperframes hybrid trial (2026-10-27)
+
+Motionmaxxing week (videos created 10-19..10-25) vs the week before on the
+old renderer, from state.db on 10-27 (views not age-matched: trial videos
+are a week younger and 7 had no stats synced yet; watch % is age-neutral):
+median watched 28% vs 37%, median watch time ~14s vs ~18s, median views
+73 vs 191, 8 failed videos during the trial (6 programming). The trial
+auto-switched off on 10-26.
+
+Hyperframes hybrid week, 10-27..11-02 (`pipeline/hf_render.py`, flag
+`VISUAL_RENDERER=hyperframes` in daily-shorts.yml, auto-off 11-03):
+- Same stock footage from `visuals_facts()`; Hyperframes adds a design
+  layer: ByteBits wordmark, segmented progress bar, per-beat number +
+  subject label in the top area. Owner liked this UI in the 10-18 sample
+  but missed real visuals.
+- Deliberately one variable: no hook title card (hook overlay stays off
+  per 09-29), no end card (assemble's CTA badge stays), nothing in the
+  caption zone.
+- A failed render keeps the footage-only video (renderer stays original),
+  so it never costs an upload. `renderer='hyperframes'` only on success;
+  weekly_report.py's renderer table groups by it.
+- Verified locally: 52s stand-in footage rendered in 178s on 2 cores
+  (~3 extra minutes per facts/food/sauce video). First real-footage run
+  is the 10-27 daily job; check its log for `[hyperframes]` lines.
+
 ## Later (not part of initial build)
 - Moving the scheduler/trigger to an always-on free-tier VM
 - Alerting on repeated failures
