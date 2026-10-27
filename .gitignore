@@ -17,3 +17,4 @@ node_modules/
 assets/mm_work/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+assets/hf_work/

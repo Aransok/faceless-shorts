@@ -28,6 +28,7 @@ from pipeline.research import suggest_research_seed, trending_candidates
 from pipeline.seasonal import active_event, in_peak
 from pipeline.state import get_video, list_by_status, update_video
 from pipeline.upload import upload
+from pipeline.hf_render import try_hyperframes
 from pipeline.mm_render import try_motionmaxxing
 from pipeline.voice import OUTPUT_DIR
 from pipeline.visuals_code import visuals_code
@@ -168,6 +169,10 @@ def _advance_one_stage(video_id: str) -> str:
             visuals_game(video_id)
         else:
             visuals_facts(video_id)
+            # Hyperframes hybrid trial (pipeline/hf_render.py): design layer
+            # over the footage just built; no-op outside the trial window,
+            # and any failure keeps the footage-only video.
+            try_hyperframes(video_id)
     elif status == "visuals_ready":
         assemble(video_id)
     elif status == "assembled":

@@ -21,6 +21,10 @@ rendered samples (voice reel + 3 art styles, same script):
 - Judge it in the weekly report's renderer table: `comic` vs `original`.
   The voice changed for every template at the same time, so compare
   programming before/after too.
+- The Hyperframes hybrid trial (pipeline/hf_render.py, merged to main
+  the same morning from another session) is **paused** in the workflow
+  so it doesn't overlap this one. The owner chose comic + plain old.
+  Run it after this trial ends.
 - Programming keeps its code renderer. Gameplay/split-screen was
   considered and rejected: not original footage, it risks YouTube's
   reused-content policy, and it reads as low effort.
