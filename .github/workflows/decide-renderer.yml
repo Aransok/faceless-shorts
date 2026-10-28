@@ -1,0 +1,53 @@
+name: Decide Renderer
+
+# One-shot automatic end of the comic trial (owner, 2026-10-28: "whatever
+# you decide"). Runs after sync-analytics (09:30 UTC daily) has had two
+# days to pull views for the last trial videos (11-03 + 48h). Writes
+# data/renderer_decision.json, which pipeline/visuals_comic.py reads.
+# Does nothing on later runs once a decision exists (cron fires once a
+# year anyway). See pipeline/renderer_decision.py.
+
+on:
+  schedule:
+    - cron: "25 10 6 11 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: faceless-shorts-state-writer
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Decide
+        run: python -m pipeline.renderer_decision
+
+      - name: Commit decision
+        run: |
+          git config user.name "faceless-shorts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/renderer_decision.json
+          if git diff --cached --quiet; then
+            echo "no decision change"
+            exit 0
+          fi
+          git commit -m "Renderer decision [skip ci]"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            git pull --rebase || git rebase --abort
+          done
+          exit 1

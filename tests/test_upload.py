@@ -278,3 +278,14 @@ class ProgrammingTimingExperimentTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestShapeRotation(unittest.TestCase):
+    def test_avoids_last_three_shapes(self):
+        from pipeline.upload import _pick_shape
+        for vid in ["a", "bb", "video-123", "zz9"]:
+            self.assertNotIn(_pick_shape(vid, ["opinion", "pick_one", "challenge"]), {"opinion", "pick_one", "challenge"})
+
+    def test_stable_per_video(self):
+        from pipeline.upload import _pick_shape
+        self.assertEqual(_pick_shape("v1", []), _pick_shape("v1", []))

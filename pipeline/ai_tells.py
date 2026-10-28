@@ -149,6 +149,29 @@ def repeats_recent(text: str, recent: list[str], min_overlap: int = 4) -> str | 
     return None
 
 
+def same_start(text: str, recent: list[str], words: int = 2, window: int = 6) -> str | None:
+    """Recent comment (last `window`) sharing the first `words` words.
+
+    repeats_recent() needs 4 of 5 opener words, so "Did anyone try adding"
+    and "Did anyone try slicing" both passed, and a whole week of comments
+    read as one template. Two shared first words is already the pattern a
+    viewer scrolling the channel notices."""
+    mine = opener(text, words)
+    if len(mine) < words:
+        return None
+    for old in recent[-window:]:
+        if opener(old, words) == mine:
+            return old
+    return None
+
+
+def overused_word(text: str, recent: list[str], word: str = "anyone", window: int = 3) -> bool:
+    """True if `word` is in this comment and in any of the last `window`."""
+    if word not in _WORD.findall((text or "").lower()):
+        return False
+    return any(word in _WORD.findall(o.lower()) for o in recent[-window:])
+
+
 if __name__ == "__main__":
     sample = (
         "Here's the thing: this isn't just a bug -- it's a testament to how "

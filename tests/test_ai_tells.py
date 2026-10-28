@@ -130,3 +130,25 @@ class DoctorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCommentVariety(unittest.TestCase):
+    """2026-10-28: comments all opened "Did anyone try..." and passed."""
+
+    RECENT = [
+        "Did anyone try adding a pinch of sea salt to the sauce?",
+        "Anyone else seen lenticular clouds over a ridge?",
+    ]
+
+    def test_same_first_two_words_caught(self):
+        from pipeline import ai_tells
+        self.assertIsNotNone(ai_tells.same_start("Did anyone try slicing garlic thin?", self.RECENT))
+
+    def test_different_start_passes(self):
+        from pipeline import ai_tells
+        self.assertIsNone(ai_tells.same_start("Thin garlic beats minced here, no contest.", self.RECENT))
+
+    def test_anyone_overuse(self):
+        from pipeline import ai_tells
+        self.assertTrue(ai_tells.overused_word("So has anyone tried this?", self.RECENT))
+        self.assertFalse(ai_tells.overused_word("Would you pick A or B?", self.RECENT))

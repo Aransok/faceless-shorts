@@ -359,6 +359,26 @@ _CTA_COMMENTS = [
 
 _COMMENT_FIELD_PATTERN = re.compile(r"COMMENT:\s*(.*)", re.DOTALL)
 
+# Shape rotation (2026-10-28, owner: auto-comments still repetitive). The
+# exact-duplicate check from 10-18 worked, but every comment still came
+# out as "Did anyone.../Anyone else...?" because "vary the shape" was only
+# a suggestion. Now the code picks the shape and the LLM must follow it.
+_COMMENT_SHAPES: dict[str, str] = {
+    "opinion": "A short, confident opinion or hot take about one specific detail. NOT a question.",
+    "extra_detail": "One small extra fact or tip that builds on the video, stated plainly. NOT a question.",
+    "pick_one": "Ask viewers to pick between two concrete options from the video (A or B?). Do not use the word 'anyone'.",
+    "challenge": "A playful challenge or prediction aimed at viewers (e.g. how many would get this right). Do not use the word 'anyone'.",
+    "open_question": "A direct question to the viewer using 'you' (not 'anyone'), about one specific detail.",
+}
+
+
+def _pick_shape(video_id: str, recent_shapes: list[str]) -> str:
+    """A shape not used in the last 3 comments, chosen stably per video."""
+    blocked = set(recent_shapes[-3:])
+    options = [s for s in _COMMENT_SHAPES if s not in blocked] or list(_COMMENT_SHAPES)
+    idx = sum(ord(c) for c in (video_id or "x")) % len(options)
+    return options[idx]
+
 
 def _generate_cta_comment(video: dict) -> str:
     """A real comment referencing this specific video's actual content —
@@ -376,12 +396,14 @@ def _generate_cta_comment(video: dict) -> str:
     """
     prompt_body = CTA_COMMENT_PROMPT_PATH.read_text(encoding="utf-8")
     recent = _recent_comments()
+    shape = _pick_shape(video.get("id", ""), _recent_shapes())
     prompt = (
         prompt_body.replace("{topic}", video["topic"] or "")
         .replace("{hook}", video["hook"] or "")
         .replace("{script_text}", video["script_text"] or "")
         .replace("{recent_comments}", "\n".join(f"- {c}" for c in recent[-10:]) or "(none yet)")
     )
+    prompt += f"\n\nREQUIRED SHAPE for this comment: {_COMMENT_SHAPES[shape]}"
     # One free-check retry (2026-10-18, owner: auto-comments kept
     # repeating). ai_tells catches AI wording and an opener shared with a
     # recent comment; a hit buys exactly one rewrite on the cheap bulk
@@ -395,12 +417,15 @@ def _generate_cta_comment(video: dict) -> str:
         if not comment:
             raise ValueError("LLM produced an empty comment")
         problem = ai_tells.feedback(comment)
-        twin = ai_tells.repeats_recent(comment, recent)
+        twin = ai_tells.repeats_recent(comment, recent) or ai_tells.same_start(comment, recent)
+        if ai_tells.overused_word(comment, recent):
+            problem = (problem + "\n" if problem else "") + "Do not use the word 'anyone'; recent comments overused it."
         if twin:
             problem = (problem + "\n" if problem else "") + (
                 f'It opens almost exactly like an earlier comment ("{twin}"); start differently.'
             )
         if problem is None:
+            video["_comment_shape"] = shape
             return comment
         prompt += f"\n\nYour last attempt was: {comment}\n{problem}\nWrite a different one."
     raise ValueError(f"comment still failed checks after a rewrite: {comment!r}")
@@ -416,7 +441,17 @@ def _recent_comments(limit: int = 30) -> list[str]:
         return []
 
 
-def _log_comment(video_id: str, text: str, limit: int = 200) -> None:
+def _recent_shapes(limit: int = 10) -> list[str]:
+    """Shapes of the last posted comments, oldest first ('' if unknown)."""
+    if not COMMENTS_LOG_PATH.exists():
+        return []
+    try:
+        return [r.get("shape", "") for r in json.loads(COMMENTS_LOG_PATH.read_text(encoding="utf-8"))][-limit:]
+    except (ValueError, TypeError, AttributeError):
+        return []
+
+
+def _log_comment(video_id: str, text: str, limit: int = 200, shape: str = "") -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     records = []
     if COMMENTS_LOG_PATH.exists():
@@ -424,7 +459,9 @@ def _log_comment(video_id: str, text: str, limit: int = 200) -> None:
             records = json.loads(COMMENTS_LOG_PATH.read_text(encoding="utf-8"))
         except ValueError:
             records = []
-    records.append({"video_id": video_id, "text": text, "posted_at": datetime.now(timezone.utc).isoformat()})
+    records.append(
+        {"video_id": video_id, "text": text, "shape": shape, "posted_at": datetime.now(timezone.utc).isoformat()}
+    )
     COMMENTS_LOG_PATH.write_text(json.dumps(records[-limit:], indent=2), encoding="utf-8")
 
 
@@ -432,8 +469,16 @@ def post_cta_comment(video: dict, youtube_video_id: str, youtube) -> None:
     try:
         comment = _generate_cta_comment(video)
     except Exception as exc:
+        recent = set(_recent_comments(limit=60))
+        fresh = [c for c in _CTA_COMMENTS if c not in recent]
+        if not fresh:
+            # Every pool line was used recently: posting one again is the
+            # exact duplicate the owner complained about. No comment beats
+            # a repeated one; the video is still marked done by the caller.
+            print(f"warning: CTA comment generation failed ({exc}) and the fallback pool is used up, skipping")
+            return
         print(f"warning: topic-aware CTA comment generation failed ({exc}) — using fallback pool")
-        comment = random.choice(_CTA_COMMENTS)
+        comment = random.choice(fresh)
 
     body = {
         "snippet": {
@@ -443,7 +488,7 @@ def post_cta_comment(video: dict, youtube_video_id: str, youtube) -> None:
     }
     youtube.commentThreads().insert(part="snippet", body=body).execute()
     try:
-        _log_comment(video.get("id", ""), comment)
+        _log_comment(video.get("id", ""), comment, shape=video.pop("_comment_shape", "pool"))
     except OSError as exc:
         # The comment is already live; a log-write failure only weakens
         # tomorrow's repeat check, it must not fail this call.

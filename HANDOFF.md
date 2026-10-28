@@ -1,5 +1,23 @@
 # Session handoff — game-night track
 
+## Renderer decision is AUTOMATIC now (2026-10-28)
+
+Owner: "fix this, whatever you decide". No more manual renderer calls.
+- Comic vs original: `.github/workflows/decide-renderer.yml` runs once on
+  2026-11-06, compares median views of the two alternating halves
+  (2026-10-28..11-03, facts/sauce_recipe/weird/food) and writes
+  `data/renderer_decision.json`. Comic must beat original by 10%+ with 5+
+  videos per side, else original stays. "comic" makes every eligible video
+  comic with no end date (`VISUAL_STYLE: comic` stays as the off switch).
+- Hyperframes: dropped, stays paused. Owner liked its UI but said it lacked
+  visuals; doodle already lost the same kind of test. Do not restart it.
+- Auto-comments: the code now picks a comment shape (opinion, extra detail,
+  pick one, challenge, "you" question) not used in the last 3, rejects a
+  comment sharing its first two words with any of the last 6, bans
+  "anyone" if one of the last 3 used it, and skips the comment instead of
+  reposting a used fallback line. Root cause: every comment was
+  "Did anyone/Anyone else...?" and the old 4-of-5-words check let it pass.
+
 ## Comic-style visuals + new voice -- one-week trial (to 2026-11-03)
 
 Owner: the videos looked cheap, sounded robotic and felt slow. Picked from

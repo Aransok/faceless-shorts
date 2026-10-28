@@ -82,8 +82,22 @@ def in_comic_half(video_id: str) -> bool:
     return comic_for_position(count_earlier_videos(video_id, TEMPLATES, ALTERNATION_START))
 
 
+def _flag_on(env: dict[str, str] | None = None) -> bool:
+    e = os.environ if env is None else env
+    return (e.get("VISUAL_STYLE") or "").strip().lower() == RENDERER_NAME
+
+
 def applies(template: str, video_id: str, today: date | None = None, env: dict[str, str] | None = None) -> bool:
-    return template in TEMPLATES and in_comic_half(video_id) and trial_active(today, env)
+    if template not in TEMPLATES:
+        return False
+    # After the trial, pipeline/renderer_decision.py's automatic verdict
+    # decides. "comic" = every eligible video, no end date (the
+    # VISUAL_STYLE flag still works as the off switch).
+    from pipeline import renderer_decision
+
+    if renderer_decision.load() == "comic":
+        return _flag_on(env)
+    return in_comic_half(video_id) and trial_active(today, env)
 
 
 def images_for_duration(duration: float) -> int:
