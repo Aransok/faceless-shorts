@@ -113,7 +113,12 @@ def _pad_with_silence(path: Path, seconds: float) -> None:
 # short backoff is the real fix other edge_tts users report working;
 # only retries this specific exception, so a real config problem still
 # fails fast instead of being masked.
-EDGE_TTS_RETRY_DELAYS = (1, 3, 6)
+#
+# Widened 2026-10-28: the first run on the Andrew Multilingual voice lost
+# a video after all 4 attempts (about 10s) failed on one sentence, and
+# the same sentences synthesised fine minutes later. About 90s of patience
+# is cheap next to dropping a whole video.
+EDGE_TTS_RETRY_DELAYS = (2, 5, 10, 20, 45)
 
 
 async def _synth_one_edge_tts_call(text: str, out_path: Path) -> list[dict]:

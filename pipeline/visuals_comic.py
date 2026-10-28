@@ -26,11 +26,12 @@ from datetime import date
 from pathlib import Path
 
 from pipeline.pollinations import download_image
-from pipeline.state import get_video, get_video_steps, list_by_status, update_video
+from pipeline.state import count_earlier_videos, get_video, get_video_steps, list_by_status, update_video
 from pipeline.visuals_facts import FPS, HEIGHT, OUTPUT_DIR, WIDTH, _concat_segments, _parse_beat_visual_plan
 
 TRIAL_END = date(2026, 11, 4)  # flag auto-offs on this day (last trial day is 11-03)
 TEMPLATES = ("facts", "sauce_recipe", "food")
+ALTERNATION_START = "2026-10-28"  # first eligible video from here on goes comic
 RENDERER_NAME = "comic"
 
 STYLE_SUFFIX = (
@@ -66,13 +67,19 @@ def trial_active(today: date | None = None, env: dict[str, str] | None = None) -
     return (today or date.today()) < TRIAL_END
 
 
+def comic_for_position(position: int) -> bool:
+    return position % 2 == 0
+
+
 def in_comic_half(video_id: str) -> bool:
     """The owner wants old-style videos to keep coming during the trial,
-    so only about half the eligible videos go comic. Decided from the id,
-    not at random, so voice() (which sets the beat gap) and the visuals
-    stage agree, even across a resumed run. The other half are the old
-    stock footage control group for the weekly report."""
-    return int(hashlib.sha256(video_id.encode()).hexdigest(), 16) % 2 == 0
+    so eligible videos strictly alternate: comic, old, comic, old...
+    (counted from ALTERNATION_START). A hash of the id was tried first, and
+    the first real run sent only 1 of 5 eligible videos to comic. The
+    position comes from earlier rows only, so voice() (which sets the beat
+    gap) and the visuals stage agree, even across a resumed run. The old
+    half is the control group for the weekly report."""
+    return comic_for_position(count_earlier_videos(video_id, TEMPLATES, ALTERNATION_START))
 
 
 def applies(template: str, video_id: str, today: date | None = None, env: dict[str, str] | None = None) -> bool:
