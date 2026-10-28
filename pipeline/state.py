@@ -335,6 +335,25 @@ def get_video(video_id: str, db_path: Path = DB_PATH) -> dict | None:
     return dict(row) if row else None
 
 
+def count_earlier_videos(
+    video_id: str, templates: tuple[str, ...], since: str, db_path: Path = DB_PATH
+) -> int:
+    """How many videos of these templates were created at or after `since`
+    (ISO timestamp) but before this one (ties broken by id). Earlier rows
+    never change, so this is stable for the life of the video."""
+    marks = ",".join("?" * len(templates))
+    with _connect(db_path) as conn:
+        row = conn.execute(
+            f"""
+            SELECT COUNT(*) FROM videos v, videos me
+            WHERE me.id = ? AND v.template IN ({marks}) AND v.created_at >= ?
+              AND (v.created_at < me.created_at OR (v.created_at = me.created_at AND v.id < me.id))
+            """,
+            (video_id, *templates, since),
+        ).fetchone()
+    return row[0]
+
+
 def update_video(video_id: str, db_path: Path = DB_PATH, **fields) -> None:
     if not fields:
         return

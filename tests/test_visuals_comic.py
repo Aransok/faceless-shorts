@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import json
 import sys
-import uuid
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -27,8 +28,14 @@ def test_trial_auto_off():
     assert not visuals_comic.trial_active(date(2026, 11, 4), ON)
 
 
-COMIC_ID = next(f"v{i}" for i in range(100) if visuals_comic.in_comic_half(f"v{i}"))
-STOCK_ID = next(f"v{i}" for i in range(100) if not visuals_comic.in_comic_half(f"v{i}"))
+COMIC_ID, STOCK_ID = "comic-video", "stock-video"
+
+
+@pytest.fixture(autouse=True)
+def _fixed_positions():
+    positions = {COMIC_ID: 0, STOCK_ID: 1}
+    with patch.object(visuals_comic, "count_earlier_videos", side_effect=lambda v, *_: positions[v]):
+        yield
 
 
 def test_applies_only_to_stock_footage_shorts():
@@ -39,13 +46,27 @@ def test_applies_only_to_stock_footage_shorts():
         assert not visuals_comic.applies(t, COMIC_ID, day, ON)
 
 
-def test_about_half_the_videos_stay_old_style():
-    day = date(2026, 10, 27)
+def test_eligible_videos_alternate_comic_and_old_style():
+    assert [visuals_comic.comic_for_position(i) for i in range(6)] == [True, False, True, False, True, False]
+    day = date(2026, 10, 28)
+    assert visuals_comic.applies("facts", COMIC_ID, day, ON)
     assert not visuals_comic.applies("facts", STOCK_ID, day, ON)
-    ids = [str(uuid.uuid4()) for _ in range(2000)]
-    share = sum(visuals_comic.in_comic_half(i) for i in ids) / len(ids)
-    assert 0.45 < share < 0.55
-    assert all(visuals_comic.in_comic_half(i) == visuals_comic.in_comic_half(i) for i in ids[:50])
+
+
+def test_count_earlier_videos_only_counts_eligible_since_start(tmp_path):
+    from pipeline import state
+
+    db = tmp_path / "s.db"
+    state.init_db(db)
+    rows = [("a", "facts", "2026-10-27T10"), ("b", "facts", "2026-10-28T10"), ("c", "programming", "2026-10-28T11"),
+            ("d", "food", "2026-10-28T12"), ("e", "sauce_recipe", "2026-10-28T12")]
+    with state._connect(db) as conn:
+        for vid, tpl, ts in rows:
+            conn.execute("INSERT INTO videos (id, template, status, created_at, updated_at) VALUES (?,?,'planned',?,?)",
+                         (vid, tpl, ts, ts))
+    tpls = ("facts", "sauce_recipe", "food")
+    got = {v: state.count_earlier_videos(v, tpls, "2026-10-28", db_path=db) for v in "bde"}
+    assert got == {"b": 0, "d": 1, "e": 2}
 
 
 def test_shot_frames_sum_exactly_to_beat():
