@@ -2412,5 +2412,60 @@
     "approach": "storytelling_hook",
     "renderer": "original",
     "scheduled_publish_at": "2026-10-28T02:00:45.094870+00:00"
+  },
+  {
+    "video_id": "4ca5d4a4-07d0-4501-ac5d-82f9c23083dd",
+    "youtube_video_id": "-GNgixyxhVs",
+    "uploaded_at": "2026-10-28T19:39:08.333617+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-28T20:48:44.781159+00:00"
+  },
+  {
+    "video_id": "cadf95b0-a79e-447f-9184-2a03c2a8e855",
+    "youtube_video_id": "Ejo8VPrZ6bs",
+    "uploaded_at": "2026-10-28T19:45:36.528711+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-28T22:09:40.209673+00:00"
+  },
+  {
+    "video_id": "97e54759-ad76-4836-b27f-960eab0e2de2",
+    "youtube_video_id": "9w1Hv-Ye1ZA",
+    "uploaded_at": "2026-10-28T19:50:13.301648+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-29T15:01:31.228094+00:00",
+    "publish_arm": "morning"
+  },
+  {
+    "video_id": "31bf3f3e-a659-47c9-b30c-77c16f792c5e",
+    "youtube_video_id": "VJOhsq22CF0",
+    "uploaded_at": "2026-10-28T20:00:58.765505+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-28T23:16:49.796196+00:00"
+  },
+  {
+    "video_id": "a4c2fe00-aa7a-48ae-b428-004d35e924c9",
+    "youtube_video_id": "JSCIB3xm7r0",
+    "uploaded_at": "2026-10-28T20:12:57.995689+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-29T00:26:32.634663+00:00"
+  },
+  {
+    "video_id": "84e80e25-e6ee-4df3-b017-1944ea0bf2d2",
+    "youtube_video_id": "JzT86Wv-2cA",
+    "uploaded_at": "2026-10-28T20:24:48.273472+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-29T01:41:18.722503+00:00"
   }
 ]
