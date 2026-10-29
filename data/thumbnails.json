@@ -1275,5 +1275,35 @@
     "method": "card",
     "template": "sauce_recipe",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/84e80e25-e6ee-4df3-b017-1944ea0bf2d2_thumbnail.jpg"
+  },
+  {
+    "video_id": "10e2e5c8-f836-42df-8375-530daa8b53c7",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/10e2e5c8-f836-42df-8375-530daa8b53c7_thumbnail.jpg"
+  },
+  {
+    "video_id": "8cb1c5ff-2441-4168-a735-83292db68982",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/8cb1c5ff-2441-4168-a735-83292db68982_thumbnail.jpg"
+  },
+  {
+    "video_id": "ab15475c-bd9d-429e-8c99-55af4d97baf6",
+    "method": "card",
+    "template": "programming",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/ab15475c-bd9d-429e-8c99-55af4d97baf6_thumbnail.jpg"
+  },
+  {
+    "video_id": "8fae0820-0896-4969-b738-3598d165531e",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/8fae0820-0896-4969-b738-3598d165531e_thumbnail.jpg"
+  },
+  {
+    "video_id": "d25061e6-3ad9-4e48-b19c-239d29db747b",
+    "method": "card",
+    "template": "sauce_recipe",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/d25061e6-3ad9-4e48-b19c-239d29db747b_thumbnail.jpg"
   }
 ]

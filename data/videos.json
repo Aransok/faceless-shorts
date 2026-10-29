@@ -2467,5 +2467,51 @@
     "approach": "storytelling_hook",
     "renderer": "comic",
     "scheduled_publish_at": "2026-10-29T01:41:18.722503+00:00"
+  },
+  {
+    "video_id": "10e2e5c8-f836-42df-8375-530daa8b53c7",
+    "youtube_video_id": "Q3eLEhHYfps",
+    "uploaded_at": "2026-10-29T19:40:03.329862+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-29T21:02:54.103578+00:00"
+  },
+  {
+    "video_id": "8cb1c5ff-2441-4168-a735-83292db68982",
+    "youtube_video_id": "46aHGBdqtaw",
+    "uploaded_at": "2026-10-29T19:52:07.806425+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-29T22:19:49.877873+00:00"
+  },
+  {
+    "video_id": "ab15475c-bd9d-429e-8c99-55af4d97baf6",
+    "youtube_video_id": "cgtwAhmyJso",
+    "uploaded_at": "2026-10-29T19:58:16.702152+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-29T23:43:38.599614+00:00",
+    "publish_arm": "evening"
+  },
+  {
+    "video_id": "8fae0820-0896-4969-b738-3598d165531e",
+    "youtube_video_id": "GFJ2dz82CYg",
+    "uploaded_at": "2026-10-29T20:15:51.736958+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-30T01:03:30.407047+00:00"
+  },
+  {
+    "video_id": "d25061e6-3ad9-4e48-b19c-239d29db747b",
+    "youtube_video_id": "9VsOSXLMOrw",
+    "uploaded_at": "2026-10-29T20:24:54.003563+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-30T02:26:41.370228+00:00"
   }
 ]

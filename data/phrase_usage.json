@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "This isn't the explanation most people settle for:",
-    "Nobody explains why this is actually true, so here goes:",
-    "Most versions of this story skip the actual cause:",
-    "This one holds up, and the reason why is the actual point:",
-    "Most people get the story behind this completely wrong:",
-    "Here's the part of this story most explanations skip:",
     "This is real, and the reason is more specific than most people assume:",
     "There's a real reason this is true, and it's not what you'd guess:",
     "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
@@ -14,15 +8,15 @@
     "What usually gets skipped here is the actual why:",
     "Here's the reasoning behind this that usually gets cut:",
     "Most retellings of this leave out the actual reason it happens:",
-    "The real cause here gets simplified out of most versions of the story:"
+    "The real cause here gets simplified out of most versions of the story:",
+    "This is accurate, and the actual mechanism is worth knowing:",
+    "The reason this happens rarely makes it into the retelling:",
+    "This isn't the explanation most people settle for:",
+    "The full explanation for this rarely makes the cut:",
+    "Most versions of this story skip the actual cause:",
+    "Most people get the story behind this completely wrong:"
   ],
   "script_structures": [
-    "Start in the middle of the action, then rewind to explain.",
-    "Build tension gradually across three beats, then release it in the last line.",
-    "Open with the outcome, then walk backward through the cause.",
-    "Start with the punchline, then explain why it's true.",
-    "Structure it as three escalating moments, biggest last.",
-    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
     "Open with a confession, then explain what led to it.",
     "Contrast what you'd expect against what actually happened.",
     "Walk through it in real time, like you're narrating it as it unfolds.",
@@ -31,15 +25,15 @@
     "Cold open on the surprising moment, then unpack how we got there.",
     "Introduce the normal expectation, then subvert it hard.",
     "Use a slow build with one big reveal near the very end.",
-    "Set expectations early, then flip them in the back half."
+    "Set expectations early, then flip them in the back half.",
+    "Open on a small detail, then zoom out to the bigger picture.",
+    "Start in the middle of the action, then rewind to explain.",
+    "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
+    "Open with the outcome, then walk backward through the cause.",
+    "Start with the punchline, then explain why it's true.",
+    "Lead with a question the story answers by the end."
   ],
   "phrasing_styles": [
-    "Warm humor threaded through, without undercutting the actual point.",
-    "A little breathless, like you can't wait to get to the good part.",
-    "Intimate, like sharing something you don't tell everyone.",
-    "Plainspoken but with real conviction underneath it.",
-    "Building excitement that peaks right at the reveal.",
-    "A little wry, noticing the absurdity without overplaying it.",
     "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
     "Earnest, like you genuinely want the listener to feel what you felt.",
     "Unhurried \u2014 let the details breathe before moving on.",
@@ -48,7 +42,13 @@
     "Direct eye-contact energy \u2014 like you're talking straight to one person.",
     "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
     "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
-    "Conversational, like explaining it to a friend over coffee."
+    "Conversational, like explaining it to a friend over coffee.",
+    "Curious and searching, like you're figuring it out as you go.",
+    "Slightly conspiratorial, like you're letting them in on something.",
+    "Warm humor threaded through, without undercutting the actual point.",
+    "Intimate, like sharing something you don't tell everyone.",
+    "Slightly dramatic \u2014 build a little tension before the reveal.",
+    "Building excitement that peaks right at the reveal."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "save_for_later_early"
+    "center_punch_mid"
   ],
   "code_theme": [
-    "solarized-dark",
-    "nord"
+    "nord",
+    "dracula"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -508,6 +508,12 @@
     "[json] Why is the TypeScript compiler ignoring tsconfig.json?",
     "[typescript] Why use babel-loader with ts-loader?",
     "[typescript] Why does TypeScript infer the 'never' type when reducing an Array with concat?",
-    "[typescript] Why am I getting an error \"Object literal may only specify known properties\"?"
+    "[typescript] Why am I getting an error \"Object literal may only specify known properties\"?",
+    "[python] Why are there no ++ and --\u200b operators in Python?",
+    "[python] Why is the empty dictionary a dangerous default value in Python?",
+    "[python] Python exit commands - why so many and when should each be used?",
+    "[python] Why is the use of len(SEQUENCE) in condition values considered incorrect by Pylint?",
+    "[python] Why is __init__() always called after __new__()?",
+    "[python] Why is IoC / DI not common in Python?"
   ]
 }
