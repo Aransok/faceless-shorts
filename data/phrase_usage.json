@@ -1,11 +1,5 @@
 {
   "hook_openers": [
-    "This is real, and the reason is more specific than most people assume:",
-    "There's a real reason this is true, and it's not what you'd guess:",
-    "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
-    "The explanation for this usually gets left out entirely:",
-    "This is true for a specific, checkable reason, not just 'because':",
-    "What usually gets skipped here is the actual why:",
     "Here's the reasoning behind this that usually gets cut:",
     "Most retellings of this leave out the actual reason it happens:",
     "The real cause here gets simplified out of most versions of the story:",
@@ -14,15 +8,15 @@
     "This isn't the explanation most people settle for:",
     "The full explanation for this rarely makes the cut:",
     "Most versions of this story skip the actual cause:",
-    "Most people get the story behind this completely wrong:"
+    "Most people get the story behind this completely wrong:",
+    "This one holds up, and the reason why is the actual point:",
+    "This is real, and the reason is more specific than most people assume:",
+    "Nobody explains why this is actually true, so here goes:",
+    "There's a real reason this is true, and it's not what you'd guess:",
+    "This fact is real \u2014 the mechanism behind it almost never gets mentioned:",
+    "The explanation for this usually gets left out entirely:"
   ],
   "script_structures": [
-    "Open with a confession, then explain what led to it.",
-    "Contrast what you'd expect against what actually happened.",
-    "Walk through it in real time, like you're narrating it as it unfolds.",
-    "Frame it as a mystery, then solve it by the end.",
-    "Build toward an 'and that's when it got weird' turn.",
-    "Cold open on the surprising moment, then unpack how we got there.",
     "Introduce the normal expectation, then subvert it hard.",
     "Use a slow build with one big reveal near the very end.",
     "Set expectations early, then flip them in the back half.",
@@ -31,15 +25,15 @@
     "Tell it like a story you'd tell a friend at dinner \u2014 setup, complication, punchline.",
     "Open with the outcome, then walk backward through the cause.",
     "Start with the punchline, then explain why it's true.",
-    "Lead with a question the story answers by the end."
+    "Lead with a question the story answers by the end.",
+    "Structure it as three escalating moments, biggest last.",
+    "Set up the ordinary situation, then reveal the twist, then land the payoff.",
+    "Build tension gradually across three beats, then release it in the last line.",
+    "Open with a confession, then explain what led to it.",
+    "Contrast what you'd expect against what actually happened.",
+    "Frame it as a mystery, then solve it by the end."
   ],
   "phrasing_styles": [
-    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
-    "Earnest, like you genuinely want the listener to feel what you felt.",
-    "Unhurried \u2014 let the details breathe before moving on.",
-    "Warm and a little self-deprecating.",
-    "Reflective, like you're still a little surprised by it yourself.",
-    "Direct eye-contact energy \u2014 like you're talking straight to one person.",
     "Grounded and matter-of-fact, letting the story's own weirdness do the work.",
     "Casual but precise \u2014 no filler, but still sounds like a real conversation.",
     "Conversational, like explaining it to a friend over coffee.",
@@ -48,7 +42,13 @@
     "Warm humor threaded through, without undercutting the actual point.",
     "Intimate, like sharing something you don't tell everyone.",
     "Slightly dramatic \u2014 build a little tension before the reveal.",
-    "Building excitement that peaks right at the reveal."
+    "Building excitement that peaks right at the reveal.",
+    "Plainspoken but with real conviction underneath it.",
+    "A little breathless, like you can't wait to get to the good part.",
+    "Earnest, like you genuinely want the listener to feel what you felt.",
+    "Unhurried \u2014 let the details breathe before moving on.",
+    "Confident storyteller voice \u2014 you already know how this ends and you're enjoying the telling.",
+    "A little wry, noticing the absurdity without overplaying it."
   ],
   "game_night_intro": [
     "Welcome back for another round of game night."
@@ -60,11 +60,11 @@
     "lofi_pulse.mp3"
   ],
   "cta_variant": [
-    "center_punch_mid"
+    "save_for_later_early"
   ],
   "code_theme": [
-    "nord",
-    "dracula"
+    "dracula",
+    "solarized-dark"
   ],
   "family_game_episode_theme": [
     "Family Game Night: Can You Beat Everyone?",
@@ -514,6 +514,12 @@
     "[python] Python exit commands - why so many and when should each be used?",
     "[python] Why is the use of len(SEQUENCE) in condition values considered incorrect by Pylint?",
     "[python] Why is __init__() always called after __new__()?",
-    "[python] Why is IoC / DI not common in Python?"
+    "[python] Why is IoC / DI not common in Python?",
+    "[linux] Linux why can't I pipe find result to rm?",
+    "[bash] Why should there be spaces around '[' and ']' in Bash?",
+    "[hadoop] Why do I need to source bash_profile every time",
+    "[bash] Why doesn't my terminal output unicode characters properly?",
+    "[linux] Shell script working fine without shebang line? Why?",
+    "[bash] Why can't I use job control in a bash script?"
   ]
 }

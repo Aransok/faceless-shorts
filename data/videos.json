@@ -2513,5 +2513,60 @@
     "approach": "storytelling_hook",
     "renderer": "comic",
     "scheduled_publish_at": "2026-10-30T02:26:41.370228+00:00"
+  },
+  {
+    "video_id": "24eda731-092c-445d-a0a3-ed46895252fb",
+    "youtube_video_id": "tJjQKJL6trE",
+    "uploaded_at": "2026-10-30T19:18:35.529367+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-30T20:38:09.057618+00:00"
+  },
+  {
+    "video_id": "e7db298b-2a48-43ff-9a53-8ef2861b1a3a",
+    "youtube_video_id": "khKn8xBgt6g",
+    "uploaded_at": "2026-10-30T19:31:29.963479+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-30T22:01:34.189596+00:00"
+  },
+  {
+    "video_id": "fd1bb839-1c52-4c37-b90a-0e8e75d0ea4a",
+    "youtube_video_id": "VjUFOrEvI9w",
+    "uploaded_at": "2026-10-30T19:38:41.173564+00:00",
+    "template": "programming",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-31T14:08:27.676550+00:00",
+    "publish_arm": "morning"
+  },
+  {
+    "video_id": "6689404c-c6bd-4b69-ad7a-81fcbb136e77",
+    "youtube_video_id": "7WpNr_17PWU",
+    "uploaded_at": "2026-10-30T19:49:44.916868+00:00",
+    "template": "food",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-30T23:19:34.775414+00:00"
+  },
+  {
+    "video_id": "bad5c938-a28d-4f7d-b729-57e00ddc31a9",
+    "youtube_video_id": "UJ0qaYdevUs",
+    "uploaded_at": "2026-10-30T20:04:59.761265+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "comic",
+    "scheduled_publish_at": "2026-10-31T00:25:43.780527+00:00"
+  },
+  {
+    "video_id": "47b158d4-18a6-4af5-abfe-8dfe93e4b2b5",
+    "youtube_video_id": "oHDdhtkf1OQ",
+    "uploaded_at": "2026-10-30T20:13:28.086810+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "original",
+    "scheduled_publish_at": "2026-10-31T01:33:48.904391+00:00"
   }
 ]
