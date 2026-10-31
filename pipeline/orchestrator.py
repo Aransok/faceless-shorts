@@ -197,6 +197,24 @@ def _advance_one_stage(video_id: str) -> str:
     return new_status
 
 
+def failure_line(video_id: str | None, template: str, stage: str, error_message: str) -> str:
+    """One greppable line per failed video (reliability pass 2026-10-31).
+    Every workflow run shows green because the pipeline fails soft per
+    video, and the stage a failure happened in was only in a traceback.
+    `grep '\\[FAILED\\]'` on the job log now lists them all."""
+    one_line = " ".join(error_message.split())[:300]
+    return f"[FAILED] video={video_id or '-'} template={template} stage={stage} error={one_line}"
+
+
+def summarize_results(results: list[dict]) -> tuple[str, bool]:
+    """(one summary line, True when the run attempted videos and every one
+    failed). Partial failure stays a normal run (fail-soft by design);
+    only a run that produced nothing is worth turning the job red."""
+    failed = sum(1 for r in results if r["status"] == "failed")
+    ok = len(results) - failed
+    return f"[run_daily] RESULT ok={ok} failed={failed} attempted={len(results)}", bool(results) and ok == 0
+
+
 def run_video_to_completion(video_id: str) -> dict:
     """Drives one video forward stage by stage until it hits a terminal
     status (awaiting_review, uploaded, failed) or a real error, which is
@@ -224,6 +242,7 @@ def run_video_to_completion(video_id: str) -> dict:
             error_message = f"{type(exc).__name__}: {exc}"
             update_video(video_id, status="failed", error_message=error_message[:2000])
             traceback.print_exc()
+            print(failure_line(video_id, video["template"], _STAGE_NAMES.get(status, status), error_message))
             elapsed = time.monotonic() - video_start
             print(f"[timing] video={video_id} template={get_video(video_id)['template']} TOTAL {elapsed:.1f}s (FAILED)")
             return {
@@ -336,8 +355,8 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
                 )
         except Exception as exc:
             error_message = f"{type(exc).__name__}: {exc}"
-            print(f"plan() failed for {template}: {error_message}")
             traceback.print_exc()
+            print(failure_line(None, template, "plan", error_message))
             results.append({"video_id": None, "template": template, "status": "failed", "error": error_message})
             continue
         print(f"[timing] video={video_id} template={template} stage=plan (->scripted) {time.monotonic() - plan_start:.1f}s")

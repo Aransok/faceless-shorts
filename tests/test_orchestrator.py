@@ -302,6 +302,42 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.assertEqual(self.mock_plan.call_args_list[0].kwargs.get("topic_hint"), "a hint")
 
 
+class FailureReportingTest(unittest.TestCase):
+    """One greppable [FAILED] line per failed video, and a run summary that
+    can tell 'some videos failed' (normal, fail-soft) from 'nothing was made'."""
+
+    def test_failure_line_has_video_template_stage_and_a_single_line_error(self):
+        line = orchestrator.failure_line("abc-1", "facts", "voice", "NoAudioReceived: No audio\nwas received.   Please verify")
+        self.assertEqual(line, "[FAILED] video=abc-1 template=facts stage=voice error=NoAudioReceived: No audio was received. Please verify")
+        self.assertNotIn("\n", line)
+
+    def test_failure_line_for_a_plan_failure_has_no_video_id_and_caps_the_error(self):
+        line = orchestrator.failure_line(None, "sauce_recipe", "plan", "x" * 1000)
+        self.assertTrue(line.startswith("[FAILED] video=- template=sauce_recipe stage=plan error="))
+        self.assertLessEqual(len(line), 120 + 300)
+
+    def test_a_failing_stage_prints_the_stage_that_was_running(self):
+        video = {"id": "v1", "template": "facts", "status": "voiced", "error_message": None}
+        with patch.object(orchestrator, "get_video", return_value=video), patch.object(
+            orchestrator, "_advance_one_stage", side_effect=RuntimeError("clip pool empty")
+        ), patch.object(orchestrator, "update_video") as upd, patch("builtins.print") as printed, patch.object(
+            orchestrator.traceback, "print_exc"
+        ):
+            result = orchestrator.run_video_to_completion("v1")
+        self.assertEqual(result["status"], "failed")
+        upd.assert_called_once()
+        lines = [c.args[0] for c in printed.call_args_list if c.args]
+        self.assertIn("[FAILED] video=v1 template=facts stage=visuals error=RuntimeError: clip pool empty", lines)
+
+    def test_summary_counts_and_flags_only_a_total_failure(self):
+        ok = {"status": "uploaded"}
+        bad = {"status": "failed"}
+        self.assertEqual(orchestrator.summarize_results([ok, ok, bad]), ("[run_daily] RESULT ok=2 failed=1 attempted=3", False))
+        self.assertEqual(orchestrator.summarize_results([bad, bad, bad]), ("[run_daily] RESULT ok=0 failed=3 attempted=3", True))
+        self.assertEqual(orchestrator.summarize_results([]), ("[run_daily] RESULT ok=0 failed=0 attempted=0", False))  # cap reached: nothing to do is fine
+        self.assertFalse(orchestrator.summarize_results([{"status": "awaiting_review"}])[1])
+
+
 class AdvanceOneStageScriptedDispatchTest(unittest.TestCase):
     """family_game_night's "scripted" stage calls render_family_game_night()
     (does narration+render+split in one stage, see that module's own
