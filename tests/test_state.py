@@ -100,6 +100,32 @@ class StateHelpersTest(unittest.TestCase):
         video = get_video(video_id, db_path=self.db_path)
         self.assertEqual(video["family_game_segments_json"], '[{"kind": "host"}]')
 
+    def test_style_json_is_writable_via_update_video(self):
+        # Same regression class as above, for the Case File column (2026-10-31).
+        video_id = create_video("facts", topic="a topic", db_path=self.db_path)
+        update_video(video_id, db_path=self.db_path, style_json='{"header": "LAKE NYOS"}')
+        self.assertEqual(get_video(video_id, db_path=self.db_path)["style_json"], '{"header": "LAKE NYOS"}')
+
+    def test_an_old_database_without_style_json_is_upgraded_and_keeps_its_rows(self):
+        # CI checks out the committed state.db, which predates style_json:
+        # the first run there must add the column without touching any row.
+        import sqlite3
+
+        video_id = create_video("facts", topic="kept topic", db_path=self.db_path)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("ALTER TABLE videos DROP COLUMN style_json")
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(videos)")]
+        self.assertNotIn("style_json", cols)  # the old schema, for real
+
+        init_db(self.db_path)
+
+        with sqlite3.connect(self.db_path) as conn:
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(videos)")]
+        self.assertIn("style_json", cols)
+        video = get_video(video_id, db_path=self.db_path)
+        self.assertEqual(video["topic"], "kept topic")
+        self.assertIsNone(video["style_json"])
+
     def test_recent_stock_clip_ids_unions_ids_across_facts_and_sauce_recipe(self):
         # Real, confirmed owner report (2026-09-21): "we again sometimes
         # use same stock footage" -- facts and sauce_recipe draw from
