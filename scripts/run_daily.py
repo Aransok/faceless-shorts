@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.orchestrator import run_daily
+from pipeline.orchestrator import run_daily, summarize_results
 
 
 def main() -> None:
@@ -49,6 +49,15 @@ def main() -> None:
     for r in results:
         suffix = f"  ({r['error']})" if r["error"] else ""
         print(f"{r['video_id']}  [{r['template']}]  {r['status']}{suffix}")
+    line, nothing_made = summarize_results(results)
+    print(line)
+    if nothing_made:
+        # Per-video failures stay fail-soft (the job stays green and the
+        # others upload). A run where EVERY video failed made nothing, and
+        # was invisible: the job showed success. Turn it red so GitHub tells
+        # the owner. The workflow's commit step runs `if: always()`, so
+        # state is still saved.
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

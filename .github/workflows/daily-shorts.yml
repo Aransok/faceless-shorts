@@ -64,6 +64,10 @@ concurrency:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    # A normal 3-video run takes well under an hour. Without a limit a hung
+    # run holds the shared state-writer group (blocking Sync Analytics,
+    # comments and the next daily run) for GitHub's 6 h default.
+    timeout-minutes: 120
     steps:
       # ref: main (not the default github.sha) -- real incident 2026-09-22:
       # a run queued behind another state writer checked out the commit
@@ -222,7 +226,11 @@ jobs:
       # committed — the runner's filesystem is thrown away after the job
       # ends regardless). Only state.db and the upload-tracking log are
       # small enough, and worth persisting, to commit back.
+      # always(): this must also run when the pipeline step fails or the job
+      # times out. Uploads made before that point exist on YouTube, and their
+      # state.db records are lost if this step is skipped.
       - name: Commit updated state
+        if: always()
         run: |
           git config user.name "faceless-shorts-bot"
           git config user.email "actions@users.noreply.github.com"
