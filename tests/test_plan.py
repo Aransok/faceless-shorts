@@ -40,18 +40,25 @@ class ExtractNarrationTest(unittest.TestCase):
         self.assertIn("Every call shares the same list.", narration)
         self.assertNotIn("def f", narration)  # code must not leak into the reviewed text
 
-    def test_facts_joins_hook_and_fact_scripts_only(self):
-        parsed = {
-            "hook": "Bananas are berries, strawberries aren't.",
-            "facts": [
-                {"script_text": "Octopuses have three hearts.", "keywords": "octopus swimming"},
-                {"script_text": "Honey never spoils.", "keywords": "honey jar"},
-            ],
-        }
-        narration = _extract_narration("facts", parsed)
+    _PARSED = {
+        "hook": "Bananas are berries, strawberries aren't.",
+        "facts": [
+            {"script_text": "Octopuses have three hearts.", "keywords": "octopus swimming"},
+            {"script_text": "Honey never spoils.", "keywords": "honey jar"},
+        ],
+    }
+
+    def test_loop_templates_review_only_the_spoken_beats(self):
+        # 2026-10-31 reset: facts/sauce_recipe hooks are the (unspoken)
+        # title and restate beat 1, so they stay out of the review text.
+        for template in ("facts", "sauce_recipe"):
+            narration = _extract_narration(template, self._PARSED)
+            self.assertEqual(narration, "Octopuses have three hearts.\nHoney never spoils.")
+
+    def test_other_fact_shaped_templates_still_include_the_hook(self):
+        narration = _extract_narration("food", self._PARSED)
         self.assertIn("Bananas are berries, strawberries aren't.", narration)
         self.assertIn("Octopuses have three hearts.", narration)
-        self.assertIn("Honey never spoils.", narration)
         self.assertNotIn("octopus swimming", narration)  # keywords must not leak in
 
 

@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 from pipeline import ai_tells
 from pipeline.approaches import pick_style, style_guidance_block
-from pipeline.cta import cta_guidance_block, pick_cta_angle
+from pipeline.cta import CTA_TYPES, cta_guidance_block, pick_cta_angle
 from pipeline.milestones import format_milestone_line, get_pending_announcement, mark_milestone_announced
 from pipeline.persona import persona_guidance_block
 from pipeline.review_script import review_script
@@ -658,6 +658,14 @@ def _clean_narration(template: str, parsed: dict) -> dict:
     return parsed
 
 
+# Channel reset (2026-10-31): these templates are ~25s single-subject
+# Shorts whose last line runs back into the first when the Short loops.
+# A spoken "comment/subscribe" line at the end would break that loop, so
+# they get no spoken CTA (the on-screen CTA overlay and the pinned comment
+# still run). A real pending milestone announcement still wins.
+LOOP_TEMPLATES = {"facts", "sauce_recipe"}
+
+
 def _extract_narration(template: str, parsed: dict) -> str:
     """Plain spoken-narration text for the review pass -- hook + each
     beat's script_text only, no field labels/code/keywords, since those
@@ -665,6 +673,13 @@ def _extract_narration(template: str, parsed: dict) -> str:
     authentic."""
     if template == "programming":
         lines = [parsed["hook"]] + [step["script_text"] for step in parsed["steps"]]
+    elif template in LOOP_TEMPLATES:
+        # The hook is only the title (never spoken). In a one-subject
+        # Short it naturally restates beat 1, and the reviewer flagged
+        # that as repetition on every real draft (2026-10-31), and it
+        # also put a non-spoken line where the loop check expects the
+        # first spoken words. Review only what is actually said.
+        lines = [fact["script_text"] for fact in parsed["facts"]]
     else:
         lines = [parsed["hook"]] + [fact["script_text"] for fact in parsed["facts"]]
     return "\n".join(lines)
@@ -890,6 +905,8 @@ def plan(
     milestone_line = format_milestone_line(*pending) if pending else None
     last_cta_type = next(iter(recent_cta_types(limit=1)), None)
     cta_angle = pick_cta_angle(milestone_line, last_cta_type=last_cta_type)
+    if template in LOOP_TEMPLATES and not milestone_line:
+        cta_angle = {"name": "none", **CTA_TYPES["none"]}
     prompt += cta_guidance_block(cta_angle, template, milestone_line)
     prompt += _SCREEN_HOOK_BLOCK
 

@@ -121,14 +121,12 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.mock_plan.assert_not_called()
 
     def test_daily_rotation_is_the_owner_chosen_mix(self):
-        # Owner decision (2026-10-03, real per-template view data): 2
-        # facts, 2 sauce_recipe, 1 programming, 1 food -- `weird` dropped
-        # from the daily rotation (it had the weakest real views of the
-        # five, see orchestrator.py's TEMPLATES comment).
+        # Owner decision (2026-10-31 channel reset): 3/day, 2 facts + 1
+        # sauce_recipe -- the two niches the real winners came from.
         from collections import Counter
         self.assertEqual(
             Counter(orchestrator.TEMPLATES),
-            Counter({"facts": 2, "sauce_recipe": 2, "food": 1, "programming": 1}),
+            Counter({"facts": 2, "sauce_recipe": 1}),
         )
 
     def test_similar_formats_are_never_back_to_back(self):
@@ -185,6 +183,11 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.assertIsNone(call.kwargs.get("research_seed"))
         self.mock_research.assert_not_called()
 
+    # The two seasonal tests below pin the pre-reset 6/day rotation: the
+    # seasonal machinery is switched off in the workflow since 2026-10-31
+    # (ENABLE_SEASONAL_TOPICS=0) but kept working for when it's back on.
+    @patch.object(orchestrator, "DAILY_UPLOAD_CAP", 6)
+    @patch.object(orchestrator, "TEMPLATES", ("facts", "sauce_recipe", "programming", "food", "facts", "sauce_recipe"))
     def test_seasonal_theme_goes_to_first_eligible_video_of_each_template(self):
         from pipeline.seasonal import get_event
         self.mock_active_event.return_value = get_event("halloween")
@@ -204,6 +207,8 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         facts_seasons = [s for t, s, _ in calls if t == "facts"]
         self.assertEqual(facts_seasons, ["halloween", None])
 
+    @patch.object(orchestrator, "DAILY_UPLOAD_CAP", 6)
+    @patch.object(orchestrator, "TEMPLATES", ("facts", "sauce_recipe", "programming", "food", "facts", "sauce_recipe"))
     def test_peak_makes_every_eligible_video_seasonal(self):
         from pipeline.seasonal import get_event
         self.mock_active_event.return_value = get_event("halloween")
@@ -239,9 +244,9 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
     def test_second_run_same_day_only_makes_up_the_difference(self):
         # Real incident 2026-09-22: manual + scheduled run both uploaded a
         # full batch and hit YouTube's daily upload limit.
-        self.mock_uploads_today.return_value = 4
+        self.mock_uploads_today.return_value = 2
         orchestrator.run_daily(count=6)
-        self.assertEqual(self.mock_plan.call_count, orchestrator.DAILY_UPLOAD_CAP - 4)
+        self.assertEqual(self.mock_plan.call_count, orchestrator.DAILY_UPLOAD_CAP - 2)
 
     def test_cap_reached_starts_no_new_videos(self):
         self.mock_uploads_today.return_value = orchestrator.DAILY_UPLOAD_CAP

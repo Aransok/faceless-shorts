@@ -46,6 +46,16 @@ small-channel observation, not an invented statistic about this
 specific video's actual audience — don't flag it under criterion 2 for
 that reason alone.
 
+Note on loop endings: some Shorts are written to loop, so the last
+sentence deliberately stops mid-thought and finishes with the script's
+FIRST words when the video restarts (e.g. last words "...and that's
+exactly why", first words "this bell has rung over 10 billion times"). Read the
+last sentence joined to the start of the first one: if together they
+make a complete, sensible sentence, that ending is intentional -- do not
+flag it as incomplete or as an empty conclusion. Flag it only if the
+joined version still doesn't make sense. A script with no CTA line at
+all is also fine.
+
 Do not invent replacement facts or rewrite the script yourself — only
 identify problems.
 

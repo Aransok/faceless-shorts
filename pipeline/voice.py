@@ -64,7 +64,10 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 # "programming" (visuals_code.py already has its own deliberate two-stage
 # fade-to-blank between steps) or "quiz_longform" (its own
 # COUNTDOWN_SECONDS pause system).
-BEAT_PAUSE_SECONDS = 3.5
+# 3.5s until the 2026-10-31 reset: the beats now tell ONE subject in a
+# ~25s Short, so a long silent gap reads as dead air (the comic trial
+# already ran 0.6s for the same reason).
+BEAT_PAUSE_SECONDS = 0.6
 _PAUSED_TEMPLATES = {"facts", "sauce_recipe", "weird", "food"}
 
 # game_night: gameplay/reveal/countdown/suspense beats show a real

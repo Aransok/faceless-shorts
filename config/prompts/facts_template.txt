@@ -1,7 +1,14 @@
-You are writing the script for a 45-second YouTube Short delivering
-THREE quick, distinct facts in rapid succession — not one fact explored
-for the full runtime. Think "rapid-fire wild facts," not a single deep
-dive.
+You are writing the script for a 20-30 second YouTube Short about ONE
+jaw-dropping real subject from nature, science or history, told in three
+quick beats. Not a list, not three facts: one thing, explained so well
+that the viewer watches to the end and lets it loop.
+
+Why this format (2026-10-31 channel reset): this channel's best Shorts
+were all ONE wild subject ("extinct for 66 million years, then found
+alive", worms with no mouth or gut, a caterpillar that wears its victims,
+the kilogram that was a chunk of metal until 2019) and viewers watched
+60-70% of them. Three-item lists and seasonal tie-ins got watched ~20%
+and died.
 
 Avoid these topics (already covered recently): {avoid_topics}
 
@@ -9,69 +16,41 @@ Avoid these specific facts too (already used, even if under a different
 theme): {avoid_facts}
 
 Requirements:
-- Pick THREE specific, narrow facts that share a real connecting theme or
-  angle — not a random grab-bag of unrelated trivia. The connection can be
-  loose (a category, a place, a mechanism, a "things that break your
-  intuition about X" angle) but it must be real and stated or implied
-  clearly enough that a viewer feels it, not three facts that just happen
-  to be in the same video.
-  - BAD (zero connection, feels like three separate videos stitched
-    together): a mantis shrimp fact, a Finland traffic-fine fact, an
-    English-dictionary fact.
-  - GOOD (loose but real connecting angle — "things that sound made up
-    but check out"): three facts all under a "this shouldn't be legal /
-    real / possible, but it is" framing, each landing that same feeling.
-- Each fact gets roughly 30-40 words — short, punchy, one clear idea,
-  not a mini-essay. Move fast.
-- At least ONE of the three facts MUST include a genuine hook or opinion
-  that goes beyond restating the fact — this is non-negotiable, the same
-  requirement as before, just now scoped to one beat instead of the
-  whole script. The other two can be tighter, more matter-of-fact "wait,
-  what?" deliveries — but don't let all three flatten into plain trivia
-  lines. A rapid-fire format is not an excuse to drop the point of view
-  entirely.
-  - BAD (all three flat, no POV anywhere): "Octopuses have three hearts.
-    Bananas are berries but strawberries aren't. Honey never spoils."
-  - GOOD (fact 2 carries a real opinion, others still punchy): "Octopuses
-    have three hearts. Bananas are botanically berries, but strawberries
-    aren't — which means the produce aisle has been lying to you your
-    whole life. Honey found in Egyptian tombs is still edible after
-    3,000 years; nothing else on earth just refuses to rot."
-- Total SCRIPT length across all three facts combined: 110-145 words,
-  spoken in 40-55 seconds total. edge_tts paces close to ~2.6 words/sec,
-  so aim for the lower half (closer to 110-125 total) if you want to
-  land comfortably under 55 seconds. Conversational pace, no filler, no
-  "did you know" openers, no numbering out loud ("fact one...").
-- The very first line must lead with the PAYOFF, not build up to it —
-  the single most concrete, surprising, specific detail of the fact (a
-  real number, name, or outcome), stated directly. Two ways this still
-  goes wrong even beyond the "no scene-setting" rule:
-  1. A flat description that gives the whole fact away with nothing left
-     to explain — still banned, same as before.
-  2. A generic tease that could be pasted onto almost any fact ("nobody
-     knows why", "scientists are still stumped", "you won't believe
-     what happens next") — this spends the first couple seconds asking
-     the viewer to trust you instead of giving them something real. If
-     your first line would still basically work on a completely
-     different fact, it's too generic — rewrite it around the specific
-     number/name/detail that makes THIS fact the one worth watching.
-  The first line should be the actual payoff — the surprising claim
-  itself, concretely stated. What keeps the viewer watching past it is
-  wanting to know WHY or HOW, which the rest of the beat then explains.
-    - BAD (flat description, answer already given, nothing left to
-      explain): "Oxford has an electric bell that's been ringing since
-      1840."
-    - BAD (generic tease, no concrete payoff — could be about anything):
-      "This bell has a secret that scientists still can't figure out."
-    - GOOD (payoff-first — the actual concrete claim, stated plainly):
-      "This bell has rung over 10 billion times on the same two
-      batteries, and no one's allowed to open it to find out why."
-    - BAD (flat description): "The guillotine is named after a doctor
-      who opposed the death penalty."
-    - GOOD (payoff-first — the specific twist, stated as fact): "The
-      doctor the guillotine is named after spent his final years
-      begging France to take his name off it."
-- For each fact, act as the visual director, not just a keyword
+- Pick the subject first. Silently brainstorm five candidates and keep
+  the one that would make a stranger say "wait, WHAT?" out loud. Best
+  lanes: bizarre animals and biology, "this shouldn't exist but does",
+  objects and places with an unbelievable real story, history that
+  sounds made up. Avoid the famous ones everyone has already seen
+  (honey never spoils, octopus three hearts, bananas are berries,
+  Cleopatra and the pyramids, immortal jellyfish). No holidays or
+  seasonal angles.
+- Three beats, all about the SAME subject:
+  1. FACT_1 = the payoff claim, the single most concrete, surprising
+     detail (a real number, name or outcome), stated in the very first
+     words. No setup, no "did you know", no "imagine", no generic tease
+     like "scientists can't explain this". If the first line would still
+     work for a different subject, rewrite it.
+       BAD: "Oxford has an electric bell that's been ringing since 1840."
+       GOOD: "This bell has rung over 10 billion times on the same two
+       batteries, and no one's allowed to open it to find out why."
+  2. FACT_2 = the real why or how, with one concrete detail that makes
+     it believable. This is where the genuine point of view goes: one
+     honest opinion or gotcha about what it means, not just a restated
+     fact.
+  3. FACT_3 = a twist that makes it even stranger, ending on a line that
+     flows straight back into the first sentence when the Short loops
+     (for example ending on "...and that's exactly why" so it runs into
+     the first line, "this bell has rung over 10 billion times"). The
+     last words must NOT repeat the first words, or the loop doubles
+     them ("why this bell This bell"). Don't restate the first line's
+     claim anywhere else either. No "follow for more", no question to
+     the comments, no wrap-up summary.
+- Each beat is 18-26 words. Total SCRIPT 55-75 words, spoken in about
+  20-28 seconds (edge_tts reads ~2.6 words/sec). Shorter is better.
+  Conversational, no filler, never number the beats out loud.
+- Facts must be real and checkable. If you are not sure a number is
+  right, use a different subject.
+- For each beat, act as the visual director, not just a keyword
   extractor. The viewer wants to see the actual interesting thing being
   described, not generic footage that merely relates to the topic. For
   each fact, give:
@@ -112,19 +91,19 @@ Requirements:
 
 Output EXACTLY in this format, with no extra commentary before or after:
 
-TOPIC: <5-8 word label covering the set, distinct from the avoid list>
-HOOK: <one sentence — the strongest opinion/gotcha across the three, used later as the video title>
-FACT_1_SCRIPT: <~30-40 word narration for fact 1>
+TOPIC: <5-8 word label for the one subject, distinct from the avoid list>
+HOOK: <one sentence, the most surprising claim about the subject, used later as the video title>
+FACT_1_SCRIPT: <18-26 word narration: the payoff claim>
 FACT_1_SUBJECT: <exact primary subject, 2-5 words>
 FACT_1_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
 FACT_1_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
 FACT_1_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">
-FACT_2_SCRIPT: <~30-40 word narration for fact 2>
+FACT_2_SCRIPT: <18-26 word narration: the real why/how plus one opinion>
 FACT_2_SUBJECT: <exact primary subject, 2-5 words>
 FACT_2_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
 FACT_2_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
 FACT_2_CONCEPT_QUERIES: <0-2 comma-separated queries for a mechanism/process visual, or "none">
-FACT_3_SCRIPT: <~30-40 word narration for fact 3>
+FACT_3_SCRIPT: <18-26 word narration: the twist, ending on a line that loops into beat 1>
 FACT_3_SUBJECT: <exact primary subject, 2-5 words>
 FACT_3_EXACT_QUERIES: <2-3 comma-separated queries for the subject itself>
 FACT_3_REPRESENTATION_QUERIES: <2-3 comma-separated queries for an accurate stand-in>
