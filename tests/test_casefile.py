@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -234,6 +236,69 @@ class LayerDrawSmokeTest(unittest.TestCase):
         layer.draw(seam, 14.8)
         cap_box = np.asarray(seam.crop((90, casefile.CAPTION_Y - 70, 990, casefile.CAPTION_Y + 70)).convert("RGB")).astype(int)
         self.assertLess(int(cap_box.max() - cap_box.min()), 40)  # only gradient shading: no caption in the loop seam
+
+
+class RenderFinalCleanupTest(unittest.TestCase):
+    """A failed final pass must not leave ffmpeg processes or a half-written
+    file behind (found 2026-10-31 by forcing a failure for real). The two
+    ffmpeg processes are mocked; no ffmpeg runs."""
+
+    VID = "vid-1"
+
+    def setUp(self):
+        self.out_dir = Path(tempfile.mkdtemp())
+        self.tmp_file = self.out_dir / f"{self.VID}_final.tmp.mp4"
+        self.tmp_file.write_bytes(b"partial")
+        self.dec, self.enc = MagicMock(), MagicMock()
+        self.dec.wait.return_value = 0
+        self.enc.wait.return_value = 0
+        frame = bytes(casefile.W * casefile.H * 3)
+        self.dec.stdout.read.side_effect = [frame, frame, b""]
+        self.layer = MagicMock(beat_starts=[0.0], t_stamp=None)
+        self.layer.shake.return_value = (0.0, 0.0)
+        patches = [
+            patch.object(casefile, "OUTPUT_DIR", self.out_dir),
+            patch.object(casefile, "get_video", return_value={"video_path": "in.mp4", "template": "facts", "style_json": "{}"}),
+            patch.object(casefile, "get_video_steps", return_value=[]),
+            patch.object(casefile, "_probe_duration", return_value=2.0),
+            patch.object(casefile, "_Layer", return_value=self.layer),
+            patch.object(casefile, "update_video"),
+            patch.object(casefile.shutil, "which", return_value="/usr/bin/ffmpeg"),
+            patch.object(casefile.subprocess, "Popen", side_effect=[self.dec, self.enc]),
+        ]
+        for pt in patches:
+            pt.start()
+            self.addCleanup(pt.stop)
+
+    def test_a_failure_while_drawing_kills_both_processes_and_removes_the_partial_file(self):
+        self.layer.draw.side_effect = RuntimeError("drawing broke")
+        with self.assertRaisesRegex(RuntimeError, "drawing broke"):
+            casefile.render_final(self.VID, words=[])
+        self.dec.kill.assert_called_once()
+        self.enc.kill.assert_called_once()
+        self.dec.wait.assert_called()
+        self.enc.wait.assert_called()
+        self.assertFalse(self.tmp_file.exists())
+
+    def test_an_encoder_that_died_does_not_mask_the_real_error(self):
+        self.layer.draw.side_effect = RuntimeError("drawing broke")
+        self.enc.stdin.close.side_effect = BrokenPipeError()
+        with self.assertRaisesRegex(RuntimeError, "drawing broke"):
+            casefile.render_final(self.VID, words=[])
+
+    def test_zero_frames_fails_clearly_and_removes_the_partial_file(self):
+        self.dec.stdout.read.side_effect = [b""]
+        with self.assertRaisesRegex(RuntimeError, "failed for vid-1 after 0 frames"):
+            casefile.render_final(self.VID, words=[])
+        self.assertFalse(self.tmp_file.exists())
+
+    def test_success_keeps_the_processes_alive_to_finish_and_moves_the_file(self):
+        out = casefile.render_final(self.VID, words=[])
+        self.dec.kill.assert_not_called()
+        self.enc.kill.assert_not_called()
+        self.assertEqual(Path(out), self.out_dir / f"{self.VID}_final.mp4")
+        self.assertTrue(Path(out).exists())
+        self.assertFalse(self.tmp_file.exists())
 
 
 if __name__ == "__main__":
