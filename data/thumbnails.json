@@ -1353,5 +1353,11 @@
     "method": "card",
     "template": "sauce_recipe",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/88c36ced-2407-4800-b481-ebd89b4310e3_thumbnail.jpg"
+  },
+  {
+    "video_id": "b5a896a9-0d0b-4a98-89a9-4b294d8aca93",
+    "method": "card",
+    "template": "facts",
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/b5a896a9-0d0b-4a98-89a9-4b294d8aca93_thumbnail.jpg"
   }
 ]

@@ -2586,5 +2586,14 @@
     "approach": "storytelling_hook",
     "renderer": "casefile",
     "scheduled_publish_at": "2026-10-31T21:29:33.611874+00:00"
+  },
+  {
+    "video_id": "b5a896a9-0d0b-4a98-89a9-4b294d8aca93",
+    "youtube_video_id": "aMOEHnLgCig",
+    "uploaded_at": "2026-10-31T18:33:21.441545+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "casefile",
+    "scheduled_publish_at": "2026-10-31T22:43:10.509214+00:00"
   }
 ]
