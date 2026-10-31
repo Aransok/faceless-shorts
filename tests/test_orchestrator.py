@@ -241,6 +241,36 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.assertEqual(call.kwargs.get("topic_hint"), "owner's pick")
         self.assertIsNone(call.kwargs.get("seasonal_event"))
 
+    def test_a_plan_that_fails_review_once_is_retried_on_a_fresh_draft(self):
+        # Real loss, first Case File run 2026-10-31: the script reviewer
+        # rejected a facts draft twice and the slot was simply dropped.
+        self.mock_plan.side_effect = [RuntimeError("failed authenticity review"), "video-ok"]
+        self.mock_run_video.side_effect = lambda vid: {"video_id": vid, "template": "facts", "status": "uploaded", "error": None}
+        results = orchestrator.run_daily(count=1, templates=["facts"])
+        self.assertEqual(self.mock_plan.call_count, 2)
+        self.assertEqual([r["status"] for r in results], ["uploaded"])
+        self.assertEqual(results[0]["video_id"], "video-ok")
+
+    def test_two_failed_plans_cost_one_slot_and_the_batch_carries_on(self):
+        self.mock_plan.side_effect = [RuntimeError("review 1"), RuntimeError("review 2"), "video-2"]
+        self.mock_run_video.side_effect = lambda vid: {"video_id": vid, "template": "sauce_recipe", "status": "uploaded", "error": None}
+        results = orchestrator.run_daily(count=2, templates=["facts", "sauce_recipe"])
+        self.assertEqual(self.mock_plan.call_count, 3)  # 2 tries for facts, 1 for the sauce
+        self.assertEqual([(r["template"], r["status"]) for r in results], [("facts", "failed"), ("sauce_recipe", "uploaded")])
+        self.assertIsNone(results[0]["video_id"])
+        self.assertIn("review 2", results[0]["error"])  # the last error is the one reported
+
+    def test_a_first_try_that_works_plans_only_once(self):
+        self.mock_plan.return_value = "video-1"
+        orchestrator.run_daily(count=1, templates=["facts"])
+        self.assertEqual(self.mock_plan.call_count, 1)
+
+    def test_specialist_planners_are_not_retried(self):
+        self.mock_plan_game_night.side_effect = RuntimeError("no rounds")
+        results = orchestrator.run_daily(count=1, templates=["game_night"])
+        self.assertEqual(self.mock_plan_game_night.call_count, 1)
+        self.assertEqual(results[0]["status"], "failed")
+
     def test_second_run_same_day_only_makes_up_the_difference(self):
         # Real incident 2026-09-22: manual + scheduled run both uploaded a
         # full batch and hit YouTube's daily upload limit.
