@@ -35,7 +35,7 @@ def voice_for_template(template: str) -> str:
 
 # 1.08x -- middle of the requested 1.05-1.1x range. edge_tts's Communicate
 # takes a percentage-string rate, not a multiplier.
-EDGE_TTS_RATE = "+8%"
+EDGE_TTS_RATE = "+10%"  # STYLE.md section 5 (owner-approved test D, 2026-10-31)
 
 # edge_tts's Communicate() always treats `text` as plain text to be
 # escaped into its own SSML envelope -- confirmed directly: a literal
@@ -67,7 +67,7 @@ _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 # 3.5s until the 2026-10-31 reset: the beats now tell ONE subject in a
 # ~25s Short, so a long silent gap reads as dead air (the comic trial
 # already ran 0.6s for the same reason).
-BEAT_PAUSE_SECONDS = 0.6
+BEAT_PAUSE_SECONDS = 0.3  # STYLE.md section 5; was 0.6 after the reset, 3.5 before it
 _PAUSED_TEMPLATES = {"facts", "sauce_recipe", "weird", "food"}
 
 # game_night: gameplay/reveal/countdown/suspense beats show a real

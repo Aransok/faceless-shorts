@@ -15,7 +15,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-from pipeline import ai_tells
+from pipeline import ai_tells, casefile
 from pipeline.approaches import pick_style, style_guidance_block
 from pipeline.cta import CTA_TYPES, cta_guidance_block, pick_cta_angle
 from pipeline.milestones import format_milestone_line, get_pending_announcement, mark_milestone_announced
@@ -642,9 +642,24 @@ def _parse_response(template: str, raw: str) -> dict:
     if template == "programming":
         parsed = _parse_programming_response(raw)
     else:
+        # Case-file on-screen text (pipeline/casefile.py) rides along as
+        # extra trailing lines, split off first so the strict field
+        # parser below never sees them. Never raises.
+        raw, casefile_fields = casefile.extract_fields(raw)
         parsed = _parse_facts_response(raw)
+        parsed["casefile"] = casefile_fields
     parsed["screen_hook"] = screen_hook
     return parsed
+
+
+def _apply_casefile_tags(parsed: dict) -> None:
+    """Each beat's TAG / TAG_LABEL go into its keywords JSON next to the
+    visual plan (no schema change; visuals_facts ignores the extra keys)."""
+    tags = (parsed.get("casefile") or {}).get("tags") or []
+    for fact, (tag, label) in zip(parsed["facts"], tags):
+        plan = json.loads(fact["keywords"])
+        plan["tag"], plan["tag_label"] = tag, label
+        fact["keywords"] = json.dumps(plan)
 
 
 def _clean_narration(template: str, parsed: dict) -> dict:
@@ -909,6 +924,9 @@ def plan(
         cta_angle = {"name": "none", **CTA_TYPES["none"]}
     prompt += cta_guidance_block(cta_angle, template, milestone_line)
     prompt += _SCREEN_HOOK_BLOCK
+    use_casefile = casefile.applies(template)
+    if use_casefile:
+        prompt += casefile.prompt_block(template)
 
     parsed = _generate_reviewed(template, prompt)
 
@@ -943,6 +961,10 @@ def plan(
             hook_opener_used=style["hook_opener"],
             seasonal_event=seasonal_event,
         )
+        if use_casefile:
+            _apply_casefile_tags(parsed)
+            cf = parsed.get("casefile") or {}
+            update_video(video_id, style_json=json.dumps({k: cf.get(k) for k in ("header", "date", "stamp")}))
         create_video_steps(video_id, parsed["facts"])
 
     if pending:

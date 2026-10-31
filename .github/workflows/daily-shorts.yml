@@ -193,6 +193,9 @@ jobs:
           # didn't even work"; comic Shorts got 17-34 views vs 45-1125 for the
           # old look the same days). Left OFF on purpose.
           # VISUAL_STYLE: comic
+          # "Case File" look for facts + sauce_recipe (owner-approved
+          # 2026-10-31, spec in STYLE.md, code in pipeline/casefile.py).
+          VISUAL_STYLE: casefile
           # Seasonal themes OFF since the 2026-10-31 reset: Halloween videos
           # had a median of 78 views. pipeline/seasonal.py kill switch.
           ENABLE_SEASONAL_TOPICS: "0"

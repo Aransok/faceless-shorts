@@ -13,6 +13,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from pipeline import casefile
 from pipeline.brand import INDIGO as BRAND_INDIGO, TEAL as BRAND_TEAL, paste_gradient_rounded_rect
 from pipeline.rotation import pick_rotating
 from pipeline.state import get_video, list_by_status, update_video
@@ -298,6 +299,48 @@ def render_hook_overlay(out_path: Path, text: str, frame_width: int) -> tuple[in
     return band_w, band_h
 
 
+def _assemble_casefile(video_id: str, video: dict, duration: float, ffmpeg_path: str, music_track: Path | None) -> str:
+    """Case-file style (STYLE.md section 5): voice + music only. No CTA
+    overlay here (casefile.render_final draws the subscribe strip above
+    the footage effects) and no sound effects. Video is stream-copied."""
+    offset, credit = 0.0, None
+    if music_track is None:
+        picked = casefile.pick_music(video["template"], video_id, duration)
+        if picked is not None:
+            music_track, offset, credit = picked["path"], picked["offset"], picked["credit"]
+        else:
+            music_track = _pick_music_track()
+    music_gain = _music_gain(music_track, Path(video["audio_path"]))
+    output_path = OUTPUT_DIR / f"{video_id}_assembled.mp4"
+    with tempfile.TemporaryDirectory(prefix="assemble_") as tmp:
+        scratch_path = Path(tmp) / "assembled_out.mp4"
+        cmd = [
+            ffmpeg_path, "-y",
+            "-i", str(video["video_path"]),
+            "-i", str(video["audio_path"]),
+            "-ss", f"{offset:.2f}", "-stream_loop", "-1", "-i", str(music_track),
+            "-filter_complex",
+            # loudnorm: STYLE.md 5 (Shorts play loud videos down but never
+            # quiet ones up; the e2e test came out at -21.8 LUFS without it).
+            (
+                f"[2:a]volume={music_gain:.4f}[music];[1:a][music]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,"
+                f"loudnorm=I={casefile.LOUDNESS_LUFS}:TP=-1.5:LRA=11,aresample=48000[aout]"
+            ),
+            "-map", "0:v", "-map", "[aout]",
+            "-t", f"{duration:.3f}",
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+            str(scratch_path),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"ffmpeg failed (exit {result.returncode}): {result.stderr}")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(scratch_path), str(output_path))
+    casefile.merge_style(video_id, music_track=Path(music_track).name, music_offset=offset, music_credit=credit)
+    update_video(video_id, status="assembled", video_path=str(output_path))
+    return str(output_path)
+
+
 def assemble(video_id: str, music_track: Path | None = None) -> str:
     video = get_video(video_id)
     if video is None:
@@ -314,6 +357,8 @@ def assemble(video_id: str, music_track: Path | None = None) -> str:
         raise RuntimeError("ffmpeg not found on PATH")
 
     duration = audio_duration_seconds(Path(video["audio_path"]))
+    if video.get("renderer") == casefile.RENDERER_NAME:
+        return _assemble_casefile(video_id, video, duration, ffmpeg_path, music_track)
     width, height = _probe_dimensions(Path(video["video_path"]))
     use_music = video["template"] in MUSIC_TEMPLATES
     if use_music:

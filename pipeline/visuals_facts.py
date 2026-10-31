@@ -16,6 +16,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
+from pipeline import casefile
 from pipeline.state import (
     get_video,
     get_video_steps,
@@ -382,20 +383,26 @@ def _download_clip(video: dict, out_path: Path) -> None:
     out_path.write_bytes(response.content)
 
 
-def _plan_segment_frames(target_duration: float) -> list[int]:
-    """Split a duration's frame count into ~SEGMENT_TARGET_SECONDS chunks,
+def _plan_segment_frames(target_duration: float, segment_seconds: float = SEGMENT_TARGET_SECONDS) -> list[int]:
+    """Split a duration's frame count into ~segment_seconds chunks,
     exact to the frame — remainder frames go to the earliest segments so
     the sum always equals the real target exactly, same discipline as
     visuals_code.py's per-step frame accounting.
     """
     total_frames = round(target_duration * FPS)
-    num_segments = max(1, round(target_duration / SEGMENT_TARGET_SECONDS))
+    num_segments = max(1, round(target_duration / segment_seconds))
     base = total_frames // num_segments
     remainder = total_frames % num_segments
     return [base + (1 if i < remainder else 0) for i in range(num_segments)]
 
 
-def _plan_beat_segments(clip_duration: float, use_image: bool) -> list[dict]:
+def _plan_beat_segments(
+    clip_duration: float,
+    use_image: bool,
+    segment_seconds: float = SEGMENT_TARGET_SECONDS,
+    image_seconds: float = IMAGE_BEAT_SECONDS,
+    image_last: bool = False,
+) -> list[dict]:
     """Ordered list of {"kind": "video"|"image", "frames": int} for one
     beat. When use_image is True and there's enough real duration left
     over, the FIRST segment becomes a brief (IMAGE_BEAT_SECONDS) real-photo
@@ -403,21 +410,25 @@ def _plan_beat_segments(clip_duration: float, use_image: bool) -> list[dict]:
     segments -- never the whole beat (see IMAGE_BEAT_SECONDS's docstring
     for why). Falls back to all-video if the beat is too short to spare
     _MIN_VIDEO_SEGMENT_FRAMES of real footage after the insert.
+
+    image_last puts the photo at the END of the beat instead (the case-file
+    style, pipeline/casefile.py: frame 0 must be moving footage under the
+    hook text, and beat 1's evidence card lands on its last word, where
+    the stamp goes).
     """
-    video_frames = _plan_segment_frames(clip_duration)
+    video_frames = _plan_segment_frames(clip_duration, segment_seconds)
     if not use_image:
         return [{"kind": "video", "frames": f} for f in video_frames]
 
     total_frames = sum(video_frames)
-    image_frames = round(IMAGE_BEAT_SECONDS * FPS)
+    image_frames = round(image_seconds * FPS)
     remaining = total_frames - image_frames
     if remaining < _MIN_VIDEO_SEGMENT_FRAMES:
         return [{"kind": "video", "frames": f} for f in video_frames]
 
-    remaining_video_frames = _plan_segment_frames(remaining / FPS)
-    return [{"kind": "image", "frames": image_frames}] + [
-        {"kind": "video", "frames": f} for f in remaining_video_frames
-    ]
+    remaining_video_frames = [{"kind": "video", "frames": f} for f in _plan_segment_frames(remaining / FPS, segment_seconds)]
+    image = [{"kind": "image", "frames": image_frames}]
+    return remaining_video_frames + image if image_last else image + remaining_video_frames
 
 
 def _build_image_segment_clip(image_path: Path, frame_count: int, output_path: Path) -> None:
@@ -586,6 +597,19 @@ def visuals_facts(video_id: str) -> str:
     visual_log: list[dict] = []
     image_beats_used = 0
     real_image_beats_enabled = os.environ.get("ENABLE_REAL_IMAGE_BEATS", "1") != "0"
+    # Case-file style (STYLE.md section 4): faster cuts, real photos as
+    # evidence Polaroids for any beat with a subject (up to 3), placed at
+    # the end of the beat, and the segment plan saved for the final pass.
+    use_casefile = casefile.applies(video["template"])
+    segment_seconds = casefile.SEGMENT_SECONDS if use_casefile else SEGMENT_TARGET_SECONDS
+    max_image_beats = casefile.MAX_CARDS_PER_VIDEO if use_casefile else MAX_IMAGE_BEATS_PER_VIDEO
+    segments_log: list[dict] = []
+    frame_cursor = 0
+    # A beat's subject can be too specific for Commons ("sea cucumber anal
+    # teeth"); in the case-file style, fall back ONCE per video to the
+    # video's broader subject (its CASE_HEADER).
+    header_query = (casefile.load_style(video).get("header") or "").lower() if use_casefile else ""
+    header_fallback_used = False
     # Cross-video reuse penalty (see RECENT_REUSE_PENALTY/recent_stock_
     # clip_ids() docstrings) -- read once per video, not once per beat:
     # this video's own earlier beats persist their clip IDs via
@@ -607,7 +631,7 @@ def visuals_facts(video_id: str) -> str:
 
             visual_plan = _parse_beat_visual_plan(beat["keywords"])
             subject = visual_plan.get("subject")
-            beat_frames = _plan_segment_frames(clip_duration)
+            beat_frames = _plan_segment_frames(clip_duration, segment_seconds)
             pool, pool_log = _build_clip_pool(
                 visual_plan, api_key, min_count=len(beat_frames),
                 beat_label=f"beat {beat['step_index']}: ", recent_clip_ids=recent_clip_ids,
@@ -635,14 +659,17 @@ def visuals_facts(video_id: str) -> str:
             commons_image_path = None
             wants_image = (
                 real_image_beats_enabled
-                and image_beats_used < MAX_IMAGE_BEATS_PER_VIDEO
+                and image_beats_used < max_image_beats
                 and subject
                 and pool_log
-                and pool_log[0]["match_type"] == "exact_subject"
+                and (use_casefile or pool_log[0]["match_type"] == "exact_subject")
             )
             if wants_image:
                 try:
                     commons_image = search_commons_image(subject)
+                    if commons_image is None and header_query and not header_fallback_used:
+                        header_fallback_used = True
+                        commons_image = search_commons_image(header_query)
                     if commons_image is not None:
                         commons_image_path = tmp_dir / f"beat{beat['step_index']}_commons.jpg"
                         download_commons_image(commons_image["url"], commons_image_path)
@@ -653,10 +680,17 @@ def visuals_facts(video_id: str) -> str:
                     print(f"[real image beat] beat {beat['step_index']}: skipping ({exc})")
                     commons_image, commons_image_path = None, None
 
-            segment_plan = _plan_beat_segments(clip_duration, use_image=commons_image_path is not None)
-            if segment_plan[0]["kind"] == "image":
+            segment_plan = _plan_beat_segments(
+                clip_duration,
+                use_image=commons_image_path is not None,
+                segment_seconds=segment_seconds,
+                image_seconds=casefile.CARD_SECONDS if use_casefile else IMAGE_BEAT_SECONDS,
+                image_last=use_casefile,
+            )
+            image_segs = [seg for seg in segment_plan if seg["kind"] == "image"]
+            if image_segs:
                 image_beats_used += 1
-                print(f"[real image beat] beat {beat['step_index']}: using real photo for {segment_plan[0]['frames']} frames")
+                print(f"[real image beat] beat {beat['step_index']}: using real photo for {image_segs[0]['frames']} frames")
                 visual_log.append({
                     "beat": beat["step_index"], "subject": subject, "method": "wikimedia_image",
                     "title": commons_image["title"], "license": commons_image["license"],
@@ -673,13 +707,20 @@ def visuals_facts(video_id: str) -> str:
             video_index = 0
             for i, seg in enumerate(segment_plan):
                 seg_path = tmp_dir / f"beat{beat['step_index']}_seg_{i:03d}.mp4"
-                if seg["kind"] == "image":
+                if seg["kind"] == "image" and use_casefile:
+                    casefile.render_card_clip(
+                        commons_image_path, seg["frames"], casefile.card_label(subject), seg_path,
+                        rotation=-2.2 if bi % 2 == 0 else 1.8,
+                    )
+                elif seg["kind"] == "image":
                     _build_image_segment_clip(commons_image_path, seg["frames"], seg_path)
                 else:
                     source = source_paths[video_index % len(source_paths)]
                     video_index += 1
                     _build_segment_clip(source, seg["frames"], seg_path)
                 sub_segment_paths.append(seg_path)
+                segments_log.append({"start": frame_cursor, "frames": seg["frames"], "kind": "card" if seg["kind"] == "image" else "video"})
+                frame_cursor += seg["frames"]
 
             beat_clip_path = tmp_dir / f"beat{beat['step_index']}_full.mp4"
             _concat_segments(sub_segment_paths, beat_clip_path)
@@ -691,7 +732,11 @@ def visuals_facts(video_id: str) -> str:
     log_path = OUTPUT_DIR / f"{video_id}_visual_log.json"
     log_path.write_text(json.dumps(visual_log, indent=2), encoding="utf-8")
 
-    update_video(video_id, status="visuals_ready", video_path=str(output_path))
+    if use_casefile:
+        casefile.merge_style(video_id, segments=segments_log)
+        update_video(video_id, status="visuals_ready", video_path=str(output_path), renderer=casefile.RENDERER_NAME)
+    else:
+        update_video(video_id, status="visuals_ready", video_path=str(output_path))
     return str(output_path)
 
 

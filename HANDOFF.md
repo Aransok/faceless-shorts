@@ -1,5 +1,46 @@
 # Session handoff — game-night track
 
+## "Case File" style for facts + sauce_recipe (2026-10-31, live once merged to main)
+
+Owner picked it from the style lab (`scripts/style_lab`, test D = A's
+energy + C's case-file layer). **STYLE.md is the spec; don't change it
+without the owner.** Switched on by `VISUAL_STYLE: casefile` in
+daily-shorts.yml (this also keeps the comic trial off).
+
+How it flows (`pipeline/casefile.py`):
+- plan: the prompt gets a case-file block; `extract_fields()` splits
+  CASE_HEADER/CASE_DATE/STAMP/TAG_n/TAG_LABEL_n off the output (bad or
+  missing lines just hide that element). Tags live in each beat's
+  keywords JSON; header/date/stamp in the new `videos.style_json` column.
+- visuals_facts: cuts every ~2.5 s; real Commons photos (PD/CC0 only)
+  become evidence Polaroids at the END of a beat (max 3, 2 s); a beat
+  subject with no photo falls back once to the header. Saves the segment
+  plan to style_json; renderer = "casefile".
+- assemble: voice + music only, loudnorm to -14 LUFS. facts use
+  `assets/music/casefile/darkest_child.mp3` (Kevin MacLeod, CC BY) at a
+  per-video offset; metadata appends the credit line automatically.
+  No CTA overlay and no sound effects (owner: no noise at all).
+- captions: `render_final()` draws snap zooms, punch-ins, flashes, shake,
+  header, tags, stamp, the big yellow captions and the "SUBSCRIBE FOR
+  MORE CASES" strip in one pass. Any failure falls back to normal ASS
+  captions.
+- voice: Andrew +10%, 0.3 s between beats (STYLE.md 5).
+
+Verified: 571 tests pass (23 new in tests/test_casefile.py), no new lint
+findings. A real end-to-end run (real script/LLM, edge-tts, Commons
+search, assemble, final pass) produced a 27.8 s, -14.8 LUFS Short; only
+Pexels was stood in (no key in the sandbox), so the first CI run is the
+first time the style meets real stock footage. `state.db` gains the
+`style_json` column on CI's first run (migration in state.py).
+
+Known gaps, not fixed:
+- Commons PD/CC0 photos are rare for specific subjects (0 of 3 found in
+  the e2e run), so many videos will have no Polaroid. Allowing CC BY /
+  CC BY-SA with a description credit would raise the hit rate, but
+  that's a licensing decision for the owner.
+- Pre-existing unused imports in family_game/, plan_quiz.py,
+  visuals_game.py, visuals_quiz.py (ruff F401/F541, not from this change).
+
 ## Channel reset (2026-10-31): fewer, shorter, single-subject Shorts
 
 Owner: "we just died like a channel ... do smth". Owner picked "reset
