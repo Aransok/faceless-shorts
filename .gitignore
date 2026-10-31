@@ -18,3 +18,6 @@ assets/mm_work/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
 assets/hf_work/
+# Style-lab test renders (scripts/style_lab): big MP4s/WAVs, sent to the
+# owner directly, never committed.
+output/
