@@ -1,5 +1,49 @@
 # Session handoff — game-night track
 
+## Reliability pass after the first real Case File run (2026-10-31)
+
+Run #105 (first run of the style on a real runner) made 2 of 3 videos and
+both worked end to end, but exposed these. All fixed on the branch unless
+noted; each has its own commit and tests (611 pass, no new lint findings).
+
+- **Wrong "evidence" photos.** Commons returned `.djvu` book scans and an
+  unrelated street photo; they were shown as EXHIBIT Polaroids. Now only
+  jpeg/png/webp pass, AND (owner's choice) the file name must share a
+  meaningful word with the beat's subject (`wikimedia.title_matches_subject`).
+  No match means no Polaroid; the beat stays full-screen footage.
+  Known weakness: one shared word is enough, so `Oxford Carfax Clock.jpg`
+  would match "Oxford electric bell" if it were public domain. A stricter
+  rule (most words must match) is an easy follow-up if wrong photos recur.
+  Live check: the relevant Commons photos for "glass frog" and "oxford
+  electric bell" are all CC BY / CC BY-SA, which this pipeline rejects
+  (only public domain / CC0), so expect few or no Polaroids. Allowing
+  CC BY with a credit line in the description is the owner's licensing call.
+- **The 2 videos run #105 uploaded already contain the wrong photos**
+  (publish 2026-10-31 20:08 and 21:29 UTC). The pipeline cannot edit or
+  delete them; that's YouTube Studio.
+- **Lost slot:** the script reviewer rejected a facts draft twice and the
+  slot was dropped (a failed `plan()` leaves no row in state.db). Planning
+  is now tried twice per slot (`orchestrator.PLAN_ATTEMPTS`). Reviewer and
+  content rules untouched.
+- edge-tts: 403/429/5xx handshake errors and dropped connections are
+  retried like `NoAudioReceived` (certificate errors still fail fast).
+- Stock clips: downloads retry; a dead clip is skipped if others arrived.
+- `casefile.render_final`: a failed pass now kills both ffmpeg processes and
+  deletes the half-written file (found by forcing a failure).
+- Logs/alerts: one `[FAILED] video=... stage=... error=...` line per failure
+  and a `[run_daily] RESULT ok=N failed=M attempted=K` line. The job exits 1
+  only when every attempted video failed. The workflow's commit step now runs
+  `if: always()` and the job has `timeout-minutes: 120`. **Not yet run on a
+  real runner**; the next scheduled run is the first test.
+- Checked, no change needed: motionmaxxing/comic/hyperframes are inactive
+  with the workflow env (also after the 11-06 renderer decision); 55 of 61
+  uploads since 10-15 landed in the 20:00-04:00 UTC window (the other 6 were
+  the paused programming timing experiment).
+- Not changed, for the owner: STYLE.md doesn't mention the title rule;
+  the cron's nominal 14:07 UTC really starts about 19:00 (handled by the
+  publish-window logic); the workflow still downloads Chromium and installs
+  node deps for the dead motionmaxxing/Hyperframes trials.
+
 ## "Case File" style for facts + sauce_recipe (2026-10-31, live once merged to main)
 
 Owner picked it from the style lab (`scripts/style_lab`, test D = A's
