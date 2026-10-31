@@ -23,6 +23,14 @@ USER_AGENT = "faceless-shorts/1.0 (https://github.com/aransok/faceless-shorts; a
 # attribution-card system nothing else in this pipeline has.
 ACCEPTED_LICENSES = {"Public domain", "CC0", "CC0 1.0", "Public Domain Mark"}
 
+# Only real photo formats. The old test was `mime.startswith("image/")`,
+# which let book scans through: a `.djvu` file has the type
+# image/vnd.djvu, and its "thumbnail" is a rendered page. The first real
+# Case File run (2026-10-31) put three djvu magazine/book pages on screen
+# labelled as evidence photos. TIFF is excluded too: Commons holds a lot of
+# multi-page archive scans in it.
+PHOTO_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
 
 def search_commons_image(subject: str) -> dict | None:
     """Best licensed real photo of `subject`, or None if nothing qualifies.
@@ -63,9 +71,8 @@ def _best_licensed_image(pages: dict) -> dict | None:
         if not info_list:
             continue
         info = info_list[0]
-        mime = info.get("mime", "")
-        if not mime.startswith("image/") or mime == "image/svg+xml":
-            continue  # SVG diagrams/icons aren't "the real thing" photos
+        if info.get("mime", "") not in PHOTO_MIME_TYPES:
+            continue  # SVG icons, djvu/tiff scans and the like aren't photos of "the real thing"
         license_name = info.get("extmetadata", {}).get("LicenseShortName", {}).get("value", "")
         if license_name not in ACCEPTED_LICENSES:
             continue

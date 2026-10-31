@@ -50,6 +50,28 @@ class TestBestLicensedImage(unittest.TestCase):
         result = wikimedia._best_licensed_image(pages)
         self.assertIsNone(result)
 
+    def test_book_scans_are_not_photos(self):
+        """Real failure, first Case File run 2026-10-31: `.djvu` magazine and
+        book scans (mime image/vnd.djvu) were used as evidence photos."""
+        for title, mime in (
+            ("File:Popular Science Monthly Volume 91.djvu", "image/vnd.djvu"),
+            ("File:Du Faur - The Conquest of Mount Cook.djvu", "image/vnd.djvu"),
+            ("File:Archive page.tiff", "image/tiff"),
+            ("File:Anim.gif", "image/gif"),
+        ):
+            self.assertIsNone(wikimedia._best_licensed_image({"1": _page(title, mime, "Public domain")}), title)
+
+    def test_jpeg_png_and_webp_photos_are_accepted(self):
+        for mime in ("image/jpeg", "image/png", "image/webp"):
+            self.assertIsNotNone(wikimedia._best_licensed_image({"1": _page("File:P.jpg", mime, "CC0")}), mime)
+
+    def test_skips_a_book_scan_and_uses_the_real_photo_after_it(self):
+        pages = {
+            "1": _page("File:Harper's New Monthly Magazine - v109.djvu", "image/vnd.djvu", "Public domain"),
+            "2": _page("File:Glass frog.jpg", "image/jpeg", "Public domain"),
+        }
+        self.assertEqual(wikimedia._best_licensed_image(pages)["title"], "File:Glass frog.jpg")
+
     def test_falls_through_to_a_later_page_with_an_accepted_license(self):
         pages = {
             "1": _page("File:Restricted.jpg", "image/jpeg", "CC BY-SA 4.0"),
