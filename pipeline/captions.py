@@ -15,6 +15,7 @@ from pathlib import Path
 
 from faster_whisper import WhisperModel
 
+from pipeline import casefile
 from pipeline.brand import CAPTION_MARGIN_V_RATIO_PORTRAIT
 from pipeline.state import get_video, get_video_steps, list_by_status, update_video
 
@@ -317,6 +318,16 @@ def captions(video_id: str) -> str:
         words = _align_script_to_timed_words(script_words, whisper_words)
         if not words:
             raise RuntimeError(f"could not align script text to whisper output for {video_id}")
+
+    if video.get("renderer") == casefile.RENDERER_NAME:
+        # Case-file style (STYLE.md): one pass draws the footage effects,
+        # the case-file layer, these captions and the subscribe strip.
+        # Fail soft: any error falls through to the normal captions below,
+        # so a style bug never costs the video.
+        try:
+            return casefile.render_final(video_id, words)
+        except Exception as exc:  # noqa: BLE001 -- fail soft by design (CLAUDE.md), logged below
+            print(f"[casefile] final pass FAILED for {video_id}, using normal captions: {exc}", file=sys.stderr)
 
     ass_path = OUTPUT_DIR / f"{video_id}_captions.ass"
     width, height = _probe_dimensions(Path(video["video_path"]))

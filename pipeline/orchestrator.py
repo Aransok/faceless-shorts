@@ -80,7 +80,14 @@ from pipeline.voice import voice
 # into rotation later. 6/day stays under the ~8/day channel upload cap
 # hit for real on 2026-09-22 -- but a manual trigger on top of a normal
 # daily run can still exceed it.
-TEMPLATES = ("facts", "sauce_recipe", "programming", "food", "facts", "sauce_recipe")
+#
+# Channel reset (2026-10-31, owner-approved): views slid from a ~600-1000
+# median (Sept 18-23) to ~40-80. Most of the top 15 were single wild
+# facts or one-sauce videos watched 60-70% through; recent 3-item lists
+# were watched ~20%. Fewer, better videos in the two niches that won:
+# 3/day, facts twice, sauce_recipe once. programming and food paused
+# (still runnable by hand via --templates).
+TEMPLATES = ("facts", "sauce_recipe", "facts")
 
 # Daily upload cap (2026-09-24). Real incident 2026-09-22: a manual
 # trigger plus the (4h-late) scheduled run each uploaded a full batch the
@@ -89,7 +96,7 @@ TEMPLATES = ("facts", "sauce_recipe", "programming", "food", "facts", "sauce_rec
 # counting what's already in data/videos.json, so a second run the same
 # day only makes up the difference (usually zero). DAILY_UPLOAD_CAP
 # overrides it.
-DAILY_UPLOAD_CAP = 6
+DAILY_UPLOAD_CAP = 3  # 6 until the 2026-10-31 reset (see TEMPLATES)
 VIDEOS_LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "videos.json"
 
 

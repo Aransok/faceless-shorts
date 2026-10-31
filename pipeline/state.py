@@ -66,6 +66,7 @@ _COLUMNS = (
     "family_game_segments_json",
     "screen_hook",
     "seasonal_event",
+    "style_json",
     "created_at",
     "updated_at",
 )
@@ -186,6 +187,12 @@ def init_db(db_path: Path = DB_PATH) -> None:
         # planned with a seasonal theme; NULL for normal ones.
         if "seasonal_event" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN seasonal_event TEXT")
+        # Per-renderer data (2026-10-31, pipeline/casefile.py): the
+        # case-file header/date/stamp from plan, the segment plan from
+        # visuals, the music credit from assemble. One JSON column so a
+        # style can evolve without another migration.
+        if "style_json" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN style_json TEXT")
         if "avg_view_percentage" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN avg_view_percentage REAL")
         if "avg_view_duration_seconds" not in existing_cols:

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from pipeline import casefile
 from pipeline.plan import call_bulk_llm, call_llm
 from pipeline.seasonal import get_event, metadata_block
 from pipeline.state import get_video, get_video_steps, list_by_status, update_video
@@ -162,6 +163,25 @@ def _enforce_limits(title: str, description: str, tags: str) -> tuple[str, str, 
     return title, description, tags
 
 
+def _append_music_credit(description: str, credit: str) -> str:
+    """CC BY music needs its credit line in the description (see
+    pipeline/casefile.py MUSIC_TRACKS). Goes just above the trailing
+    hashtag line when there is one, so the hashtags stay last; the body
+    is trimmed, never the credit, if that would pass YouTube's limit."""
+    if not credit or credit in description:
+        return description
+    lines = description.rstrip().split("\n")
+    if lines and lines[-1].lstrip().startswith("#"):
+        body, tail = "\n".join(lines[:-1]).rstrip(), lines[-1]
+    else:
+        body, tail = description.rstrip(), ""
+    extra = len(credit) + 2 + (len(tail) + 2 if tail else 0)
+    if len(body) + extra > DESCRIPTION_MAX_CHARS:
+        body = body[: DESCRIPTION_MAX_CHARS - extra].rstrip()
+    out = f"{body}\n\n{credit}"
+    return f"{out}\n\n{tail}" if tail else out
+
+
 def _format_sauce_scripts(video_id: str) -> str:
     steps = get_video_steps(video_id)
     return "\n".join(f"Sauce {step['step_index']}: {step['script_text']}" for step in steps)
@@ -233,6 +253,9 @@ def generate_metadata(video_id: str) -> dict:
     )
     if is_veylorn:
         description = _append_full_story(description, video["script_text"] or "")
+    music_credit = casefile.load_style(video).get("music_credit")
+    if music_credit:
+        description = _append_music_credit(description, music_credit)
 
     require_review = os.environ.get("REQUIRE_REVIEW", "true").lower() == "true"
     next_status = "awaiting_review" if require_review else "approved"

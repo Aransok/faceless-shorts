@@ -28,7 +28,7 @@ on:
       count:
         description: "Number of new videos to generate (ignored if templates is set)"
         required: false
-        default: "6"
+        default: "3"
       templates:
         description: "Optional: exact comma-separated template sequence to run instead of count (e.g. 'sauce_recipe,sauce_recipe')"
         required: false
@@ -189,10 +189,16 @@ jobs:
           # vs ~226 on the original renderer, and every programming video
           # failed its lint gate. Left OFF on purpose. See HANDOFF.md.
           # RENDERER: motionmaxxing
-          # Comic-style visuals one-week trial for facts/sauce_recipe/food
-          # (about half of them; auto-off 2026-11-04, see pipeline/visuals_comic.py). Any failure
-          # falls back to stock footage.
-          VISUAL_STYLE: comic
+          # Comic-style visuals trial ENDED early 2026-10-31 (owner: "the comic
+          # didn't even work"; comic Shorts got 17-34 views vs 45-1125 for the
+          # old look the same days). Left OFF on purpose.
+          # VISUAL_STYLE: comic
+          # "Case File" look for facts + sauce_recipe (owner-approved
+          # 2026-10-31, spec in STYLE.md, code in pipeline/casefile.py).
+          VISUAL_STYLE: casefile
+          # Seasonal themes OFF since the 2026-10-31 reset: Halloween videos
+          # had a median of 78 views. pipeline/seasonal.py kill switch.
+          ENABLE_SEASONAL_TOPICS: "0"
           # Hyperframes hybrid trial (pipeline/hf_render.py) PAUSED 2026-10-27 by
           # the owner so it doesn't overlap the comic trial (half comic, half
           # plain old style). Run it after the comic trial ends: uncomment and
@@ -209,7 +215,7 @@ jobs:
           TOPIC_HINTS_JSON: ${{ github.event.inputs.topic_hints || '' }}
         run: >
           python scripts/run_daily.py
-          --count "${{ github.event.inputs.count || '6' }}"
+          --count "${{ github.event.inputs.count || '3' }}"
           --templates "${{ github.event.inputs.templates || '' }}"
 
       # assets/output/* is gitignored (rendered audio/video never gets

@@ -3688,3 +3688,93 @@ Hyperframes hybrid week, 10-27..11-02 (`pipeline/hf_render.py`, flag
   setup first (Meta app, Page/IG linking, long-lived Page token) before
   any pipeline code gets written; see the owner's own notes for the full
   checklist and API flow when ready.
+
+## Channel reset (2026-10-31): fewer, shorter, single-subject Shorts
+
+Owner: "we just died like a channel ... do smth". Owner picked "reset
+today" (the comic trial "didn't even work").
+
+What the data said (state.db, 303 uploads):
+- Median views per short: ~600-1000 around Sept 18-23, ~40-80 since mid
+  October, near 0 for the newest. Videos watched 60%+ had a median of
+  466 views; under 25% watched, 68.
+- Most of the top 15 were ONE wild subject (coelacanth, zombie worms,
+  bone-collector caterpillar, the kilogram) watched 60-70% through.
+  Recent videos were 3-item lists watched ~20%.
+- Halloween-themed facts/food since Oct 8: median 78 views (24 videos).
+- Comic trial: 17-34 views vs 45-1125 for the old look on the same days.
+- Outside research: YouTube's "inauthentic content" rule (July 2025)
+  names templated, mass-produced, repetitive videos; it governs
+  monetization, and AI-slop channels have been removed since Jan 2026.
+  Big faceless Shorts channels (Zack D. Films etc.) post one claim per
+  video, in one niche, in one recognisable style.
+
+What changed:
+- Rotation 6/day -> 3/day: facts, sauce_recipe, facts
+  (`orchestrator.TEMPLATES`, `DAILY_UPLOAD_CAP` 3, workflow count 3).
+  programming and food paused, still runnable with --templates.
+- facts and sauce_recipe prompts: ONE subject in three beats (payoff,
+  why/method, twist), 55-75 words (~20-28s), last line runs back into
+  the first so the Short loops. Same FACT_N fields, so nothing
+  downstream changed. Sauce metadata now writes one recipe block.
+- No spoken CTA for facts/sauce_recipe (`plan.LOOP_TEMPLATES`): it
+  would break the loop. The on-screen overlay and pinned comment stay.
+- Script reviewer: knows about loop endings, and for the loop templates
+  only reviews the spoken beats (the hook is the unspoken title and was
+  flagged as repetition on every draft).
+- Beat pause 3.5s -> 0.6s. Comic trial off (VISUAL_STYLE commented
+  out). Seasonal themes off (ENABLE_SEASONAL_TOPICS: "0").
+- decide-renderer.yml still fires once on 11-06; with the comic flag off
+  its verdict changes nothing.
+
+Verified: 548 tests pass, no new lint findings, 3/3 real facts scripts
+and 1 sauce script generated through the real prompt + reviewer
+(72-75 words each). NOT verified here: a full render/upload (no Pexels
+or YouTube keys in this sandbox); the first CI run will show it.
+
+How to judge: leave it unchanged for 10 days (to ~2026-11-10). Look at
+% viewed (target 60%+) and whether any video gets past ~1,400 views.
+Owner-only checks in YouTube Studio: any inauthentic-content notice
+under Monetization, and "viewed vs swiped away" per Short.
+
+## "Case File" style for facts + sauce_recipe (2026-10-31, live once merged to main)
+
+Owner picked it from the style lab (`scripts/style_lab`, test D = A's
+energy + C's case-file layer). **STYLE.md is the spec; don't change it
+without the owner.** Switched on by `VISUAL_STYLE: casefile` in
+daily-shorts.yml (this also keeps the comic trial off).
+
+How it flows (`pipeline/casefile.py`):
+- plan: the prompt gets a case-file block; `extract_fields()` splits
+  CASE_HEADER/CASE_DATE/STAMP/TAG_n/TAG_LABEL_n off the output (bad or
+  missing lines just hide that element). Tags live in each beat's
+  keywords JSON; header/date/stamp in the new `videos.style_json` column.
+- visuals_facts: cuts every ~2.5 s; real Commons photos (PD/CC0 only)
+  become evidence Polaroids at the END of a beat (max 3, 2 s); a beat
+  subject with no photo falls back once to the header. Saves the segment
+  plan to style_json; renderer = "casefile".
+- assemble: voice + music only, loudnorm to -14 LUFS. facts use
+  `assets/music/casefile/darkest_child.mp3` (Kevin MacLeod, CC BY) at a
+  per-video offset; metadata appends the credit line automatically.
+  No CTA overlay and no sound effects (owner: no noise at all).
+- captions: `render_final()` draws snap zooms, punch-ins, flashes, shake,
+  header, tags, stamp, the big yellow captions and the "SUBSCRIBE FOR
+  MORE CASES" strip in one pass. Any failure falls back to normal ASS
+  captions.
+- voice: Andrew +10%, 0.3 s between beats (STYLE.md 5).
+
+Verified: 571 tests pass (23 new in tests/test_casefile.py), no new lint
+findings. A real end-to-end run (real script/LLM, edge-tts, Commons
+search, assemble, final pass) produced a 27.8 s, -14.8 LUFS Short; only
+Pexels was stood in (no key in the sandbox), so the first CI run is the
+first time the style meets real stock footage. `state.db` gains the
+`style_json` column on CI's first run (migration in state.py).
+
+Known gaps, not fixed:
+- Commons PD/CC0 photos are rare for specific subjects (0 of 3 found in
+  the e2e run), so many videos will have no Polaroid. Allowing CC BY /
+  CC BY-SA with a description credit would raise the hit rate, but
+  that's a licensing decision for the owner.
+- Pre-existing unused imports in family_game/, plan_quiz.py,
+  visuals_game.py, visuals_quiz.py (ruff F401/F541, not from this change).
+
