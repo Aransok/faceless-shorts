@@ -1073,25 +1073,17 @@ class StyleD(StyleC):
         self.t_drown = S(0, "drowned")
         self.t_s1 = w.sentence_start(1)
         self.t_why = S(4, "why")
-        # sound: A's hits + C's paper sounds
+        # Sound. Owner (2026-10-31): no sound on cuts ("that bouncy noise ...
+        # when switching between frames, it's annoying"). So no whoosh, no
+        # flash boom, no shutter on a cut, and no pop on big words. What is
+        # left is tied to a moment, not a cut: one low boom on frame 0, the
+        # stamp thud, and soft typewriter ticks while a label types out. (The
+        # riser went too: it peaked on the "In 1986" cut.)
         self.events.append((0.0, sfx.boom(), 0.85))
-        for sh in self.shots[1:]:
-            if sh.get("loop"):
-                continue
-            if sh.get("card"):
-                self.events.append((sh["t"], sfx.shutter(int(sh["t"] * 7)), 0.6))
-            else:
-                self.events.append((sh["t"] - 0.08, sfx.whoosh(0.32, seed=int(sh["t"] * 10)), 0.3))
-            if sh.get("flash"):
-                self.events.append((sh["t"], sfx.boom(0.9), 0.3))
         self.events.append((self.t_drown, sfx.stamp(), 0.9))
-        self.events.append((S(1, "volcanic"), sfx.riser(S(2, "in") - S(1, "volcanic")), 0.35))
         for t0, _, _, sub in self.tag_imgs[1:]:
             for j in range(0, min(len(sub), 18), 2):
                 self.events.append((t0 + j * 0.022, sfx.type_key(j + int(t0 * 10)), 0.3))
-        for c in self.chunks:
-            if c[0]["word"].lower() in self.solo:
-                self.events.append((c[0]["start"], sfx.pop(), 0.3))
 
     def caption(self, idx: int, chunk: list[dict], t: float) -> Image.Image:
         active = max([k for k, x in enumerate(chunk) if x["start"] <= t + 0.03] or [0])
