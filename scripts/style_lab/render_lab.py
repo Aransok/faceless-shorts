@@ -1008,7 +1008,169 @@ class StyleC(Style):
         return fr.convert("RGB")
 
 
-STYLES = {"A": StyleA, "B": StyleB, "C": StyleC}
+# ================================================================ D: A + C MIX
+class StyleD(StyleC):
+    """Owner's mix (2026-10-31): A's full-bleed fast cuts, pop captions,
+    hits and voice + C's case-file layer (number tags, typed labels,
+    evidence Polaroids for the low-res photos, stamp, satellite ring)."""
+
+    key = "D"
+    music = ("Darkest_Child.mp3", 6.0, 12.0)
+    CAP_Y = 1460
+    CARD_Y = 1005
+    PHOTO = (700, 540)
+    CAP_YELLOW = (255, 225, 77, 255)
+    WHITE = (255, 255, 255)
+
+    def setup(self) -> None:
+        w = self.wd
+        S = w.at
+        self.shots = [
+            {"t": 0.0, "img": "lake1986", "z0": 1.0, "z1": 1.07, "fx": 0.55, "fy": 0.5, "look": "punch"},
+            {"t": S(0, "single"), "img": "nyoslake", "z0": 1.2, "z1": 1.08, "fx": 0.6, "fy": 0.55, "look": "punchbright", "snap": True},
+            {"t": S(0, "not"), "img": "cow", "card": True, "label": "EXHIBIT A  ·  CATTLE, AUG 1986", "rot": -2.5,
+                 "z0": 1.0, "z1": 1.08, "fx": 0.5, "fy": 0.55, "flash": True},
+            {"t": S(1, "its"), "img": "@loaded", "z0": 1.0, "z1": 1.08, "fx": 0.5, "fy": 0.5, "snap": True},
+            {"t": S(1, "carbon"), "img": "@loaded", "z0": 1.55, "z1": 1.7, "fx": 0.5, "fy": 0.53, "snap": True},
+            {"t": S(2, "in"), "img": "timeline", "z0": 1.0, "z1": 1.12, "fx": 0.45, "fy": 0.55, "look": "punch", "snap": True, "flash": True},
+            {"t": S(2, "shaken"), "img": "@burst", "z0": 1.0, "z1": 1.06, "fx": 0.5, "fy": 0.45, "snap": True},
+            {"t": S(2, "heavier"), "img": "@burst", "z0": 1.45, "z1": 1.55, "fx": 0.8, "fy": 0.55, "snap": True, "age0": S(2, "shaken")},
+            {"t": S(2, "rolled"), "img": "landsat", "card": True, "label": "EXHIBIT B  ·  SATELLITE, LAKE NYOS", "rot": 1.8,
+                 "ring": (0.505, 0.43), "z0": 1.0, "z1": 1.12, "fx": 0.5, "fy": 0.45, "flash": True},
+            {"t": S(2, "sleeping"), "img": "timeline", "card": True, "label": "NYOS  ·  KAM  ·  CHA  ·  SUBUM", "rot": -1.6, "z0": 1.0, "z1": 1.1, "fx": 0.6, "fy": 0.55},
+            {"t": S(3, "creepiest"), "img": "@seeping", "z0": 1.0, "z1": 1.08, "fx": 0.5, "fy": 0.6, "snap": True, "flash": True},
+            {"t": S(3, "still"), "img": "@seeping", "z0": 1.6, "z1": 1.75, "fx": 0.5, "fy": 0.68, "snap": True, "pulse": True},
+            {"t": S(4, "so"), "img": "lake2001", "z0": 1.05, "z1": 1.2, "fx": 0.3, "fy": 0.5, "look": "punch", "snap": True, "flash": True},
+            {"t": S(4, "nonstop"), "img": "vent", "z0": 1.15, "z1": 1.35, "fx": 0.38, "fy": 0.42, "look": "punch", "snap": True},
+            {"t": S(4, "every"), "img": "lake1992", "z0": 1.0, "z1": 1.12, "fx": 0.5, "fy": 0.55, "look": "punch", "snap": True},
+            {"t": S(4, "why"), "img": "lake1986", "z0": 1.0, "z1": 1.0, "fx": 0.55, "fy": 0.5, "look": "punch", "loop": True},
+        ]
+        self.exhibits = self.shots
+        tags = [
+            (0.0, "1,746", "DEAD IN ONE NIGHT", self.RED),
+            (S(1, "its"), "CO2", "DISSOLVED IN THE DEEP WATER", self.CAP_YELLOW[:3]),
+            (S(2, "in"), "1986", "THE LAKE ERUPTED", self.WHITE),
+            (S(2, "rolled"), "25 KM", "HOW FAR THE CLOUD ROLLED", self.CAP_YELLOW[:3]),
+            (S(3, "creepiest"), "STILL", "SEEPING IN TODAY", self.RED),
+            (S(4, "so"), "24/7", "VENTED SINCE 2001", self.WHITE),
+            (S(4, "why"), "1,746", "DEAD IN ONE NIGHT", self.RED),
+        ]
+        big = self.A.font("Anton-400.ttf", 250)
+        small = self.A.font("Montserrat-800.ttf", 44)
+        self.tag_imgs = [
+            (t0, self._big(big, txt, col), text_img(small, sub, (255, 255, 255, 240), tracking=3, shadow=(0, 3, 8, 220)), sub)
+            for t0, txt, sub, col in tags
+        ]
+        hf = self.A.font("SpecialElite-400.ttf", 36)
+        self.header = text_img(hf, "CASE FILE  ·  LAKE NYOS, CAMEROON", self.PAPER + (255,), shadow=(0, 2, 6, 200))
+        self.header_r = text_img(hf, "21.08.1986", self.PAPER + (210,), shadow=(0, 2, 6, 200))
+        self.label_font = self.A.font("SpecialElite-400.ttf", 30)
+        self.stamp = self._stamp("NOT DROWNED")
+        self.diag = LakeDiagram("punch", None, "")
+        self.solo = {"1,746", "drowned", "dioxide", "in 1986", "soda", "still", "nonstop", "fountain", "why"}
+        self.chunks = w.chunks(2, 13, self.solo)
+        self.cap_cache: dict = {}
+        self.t_drown = S(0, "drowned")
+        self.t_s1 = w.sentence_start(1)
+        self.t_why = S(4, "why")
+        # sound: A's hits + C's paper sounds
+        self.events.append((0.0, sfx.boom(), 0.85))
+        for sh in self.shots[1:]:
+            if sh.get("loop"):
+                continue
+            if sh.get("card"):
+                self.events.append((sh["t"], sfx.shutter(int(sh["t"] * 7)), 0.6))
+            else:
+                self.events.append((sh["t"] - 0.08, sfx.whoosh(0.32, seed=int(sh["t"] * 10)), 0.3))
+            if sh.get("flash"):
+                self.events.append((sh["t"], sfx.boom(0.9), 0.3))
+        self.events.append((self.t_drown, sfx.stamp(), 0.9))
+        self.events.append((S(1, "volcanic"), sfx.riser(S(2, "in") - S(1, "volcanic")), 0.35))
+        for t0, _, _, sub in self.tag_imgs[1:]:
+            for j in range(0, min(len(sub), 18), 2):
+                self.events.append((t0 + j * 0.022, sfx.type_key(j + int(t0 * 10)), 0.3))
+        for c in self.chunks:
+            if c[0]["word"].lower() in self.solo:
+                self.events.append((c[0]["start"], sfx.pop(), 0.3))
+
+    def caption(self, idx: int, chunk: list[dict], t: float) -> Image.Image:
+        active = max([k for k, x in enumerate(chunk) if x["start"] <= t + 0.03] or [0])
+        key = (idx, active)
+        if key not in self.cap_cache:
+            emph = len(chunk) == 1 and chunk[0]["word"].lower() in self.solo
+            f = self.A.font("Montserrat-900.ttf", 140 if emph else 112)
+            items = [{"text": x["word"].upper(), "fill": self.CAP_YELLOW if (k == active or emph) else (255, 255, 255, 255)}
+                     for k, x in enumerate(chunk)]
+            self.cap_cache[key] = rich_text(f, items, stroke=12, shadow=(0, 9, 10, 190), max_w=960, line_gap=-22)
+        return self.cap_cache[key]
+
+    def _shake(self, t: float) -> tuple[float, float]:
+        for ts, amp in ((0.0, 24), (self.t_drown, 30)):
+            if ts <= t < ts + 0.35:
+                d = 1 - lin(t, ts, ts + 0.35)
+                return (math.sin(t * 91) * amp * d, math.cos(t * 77) * amp * d)
+        return (0.0, 0.0)
+
+    def frame(self, t: float, i: int) -> Image.Image:
+        _, s, t0, t1 = self.shot_at(t)
+        p = lin(t, t0, t1)
+        jit = self._shake(t)
+        if s.get("card"):
+            fr = self.A.backdrop(s["img"], "doc", 0.36).copy()
+            fr.alpha_composite(vignette(170))
+            enter = lin(t, t0, t0 + 0.2)
+            im = self.polaroid(s, t, t0, t1)
+            im = im.rotate(s["rot"] + (1 - ease_out(enter)) * 6, resample=Image.BICUBIC, expand=True)
+            shadow = Image.new("RGBA", im.size, (0, 0, 0, 0))
+            shadow.putalpha(im.getchannel("A").point(lambda v: int(v * 0.6)))
+            shadow = shadow.filter(ImageFilter.GaussianBlur(16))
+            sc = 1.28 - 0.28 * ease_out_back(enter, 1.3)
+            paste(fr, shadow, W / 2 + 10 + jit[0], self.CARD_Y + 22 + jit[1], scale=sc)
+            paste(fr, im, W / 2 + jit[0], self.CARD_Y + jit[1], scale=sc)
+        else:
+            extra = 1 + 0.14 * (1 - ease_out(lin(t, t0, t0 + 0.2))) if s.get("snap") else 1.0
+            if s["img"].startswith("@"):
+                src = self.diag.render(s["img"][1:], t - s.get("age0", t0))
+            else:
+                src = self.A.prepared(s["img"], W, H, s.get("look", ""))
+            bg, _ = kenburns(src, W, H, p, s["z0"], s["z1"], s["fx"], s["fy"], jitter=jit, extra_zoom=extra)
+            fr = bg.convert("RGBA")
+            fr.alpha_composite(vgradient(760, 0, 200), dest=(0, H - 760))
+            if s.get("fog"):
+                paste(fr, fog_texture(), W / 2, int(-H + (t - t0) * 420) + H, alpha=0.5)
+            if s.get("pulse"):
+                fr.alpha_composite(vignette(int(150 + 90 * (0.5 + 0.5 * math.sin((t - t0) * 12)))))
+            fr.alpha_composite(vignette(120))
+        for sh in self.shots:
+            if sh.get("flash") and sh["t"] <= t < sh["t"] + 0.12:
+                fr.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, int(200 * (1 - lin(t, sh["t"], sh["t"] + 0.12))))))
+        if self.t_drown <= t < self.t_s1 + 0.05:
+            sc = 1 + 0.8 * (1 - ease_out(lin(t, self.t_drown, self.t_drown + 0.12)))
+            paste(fr, self.stamp, W / 2 + 110 + jit[0], self.CARD_Y + 90 + jit[1], alpha=lin(t, self.t_drown, self.t_drown + 0.04), scale=sc)
+        # case-file layer on top
+        fr.alpha_composite(vgradient(780, 235, 0), dest=(0, 0))
+        paste(fr, self.header, 70 + self.header.width / 2, 132)
+        paste(fr, self.header_r, W - 70 - self.header_r.width / 2, 132)
+        dot = 0.5 + 0.5 * math.sin(t * 6)
+        ImageDraw.Draw(fr).ellipse((W - 70 - self.header_r.width - 40, 122, W - 70 - self.header_r.width - 20, 142), fill=self.RED + (int(120 + 135 * dot),))
+        ti = max(j for j, x in enumerate(self.tag_imgs) if x[0] <= t)
+        t0g, big, sub, subtxt = self.tag_imgs[ti]
+        a_in = 1.0 if ti == 0 else ease_out(lin(t, t0g, t0g + 0.15))
+        sc = 1.0 if ti == 0 else 1 + 0.3 * (1 - ease_out_back(lin(t, t0g, t0g + 0.18)))
+        paste(fr, big, W / 2, 400, alpha=a_in, scale=sc)
+        reveal = 1.0 if ti == 0 else lin(t, t0g, t0g + 0.022 * len(subtxt))
+        cw = int(sub.width * reveal)
+        if cw > 0:
+            paste(fr, sub.crop((0, 0, cw, sub.height)), W / 2 - sub.width / 2 + cw / 2, 575)
+        ci, ch = chunk_at(self.chunks, t, hold=0.25)
+        if ch and t < self.t_why:
+            cap = self.caption(ci, ch, t)
+            sc = 0.72 + 0.28 * ease_out_back(lin(t, ch[0]["start"] - 0.02, ch[0]["start"] + 0.13), 2.0)
+            paste(fr, cap, W / 2, self.CAP_Y, scale=sc)
+        return fr.convert("RGB")
+
+
+STYLES = {"A": StyleA, "B": StyleB, "C": StyleC, "D": StyleD}
 
 
 # ---------------------------------------------------------------- audio + encode

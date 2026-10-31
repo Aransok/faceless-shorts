@@ -11,6 +11,7 @@ import asyncio
 import json
 import subprocess
 import sys
+import time
 import wave
 from pathlib import Path
 
@@ -32,6 +33,9 @@ STYLES = {
     "A": ("en-US-AndrewMultilingualNeural", "+14%", "+0Hz", 0.06),
     "B": ("en-US-AvaMultilingualNeural", "-4%", "+0Hz", 0.38),
     "C": ("en-US-ChristopherNeural", "+5%", "-2Hz", 0.20),
+    # D = A+C mix (owner, 2026-10-31): A's voice, a touch slower than A
+    # because Whisper misheard "them drowned" at +14%.
+    "D": ("en-US-AndrewMultilingualNeural", "+10%", "+0Hz", 0.10),
 }
 
 
@@ -63,7 +67,14 @@ def build(style: str, out: Path) -> None:
     t = 0.0
     for i, sentence in enumerate(SCRIPT):
         mp3 = out / f"_s{style}{i}.mp3"
-        words = asyncio.run(_synth(sentence, voice, rate, pitch, mp3))
+        for attempt in range(4):  # edge_tts intermittently raises NoAudioReceived
+            try:
+                words = asyncio.run(_synth(sentence, voice, rate, pitch, mp3))
+                break
+            except edge_tts.exceptions.NoAudioReceived:
+                if attempt == 3:
+                    raise
+                time.sleep(3 * (attempt + 1))
         audio = _decode(mp3)
         lead = words[0]["start"]
         end = words[-1]["end"] + 0.12
