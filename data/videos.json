@@ -2568,5 +2568,23 @@
     "approach": "storytelling_hook",
     "renderer": "original",
     "scheduled_publish_at": "2026-10-31T01:33:48.904391+00:00"
+  },
+  {
+    "video_id": "37f11a09-b6a4-4214-bea2-92805d9f2fe8",
+    "youtube_video_id": "N8tMuMQmwJc",
+    "uploaded_at": "2026-10-31T18:12:13.584114+00:00",
+    "template": "facts",
+    "approach": "storytelling_hook",
+    "renderer": "casefile",
+    "scheduled_publish_at": "2026-10-31T20:08:48.550466+00:00"
+  },
+  {
+    "video_id": "88c36ced-2407-4800-b481-ebd89b4310e3",
+    "youtube_video_id": "TDGGotUKC1g",
+    "uploaded_at": "2026-10-31T18:17:14.602175+00:00",
+    "template": "sauce_recipe",
+    "approach": "storytelling_hook",
+    "renderer": "casefile",
+    "scheduled_publish_at": "2026-10-31T21:29:33.611874+00:00"
   }
 ]
