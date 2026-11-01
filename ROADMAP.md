@@ -3822,3 +3822,21 @@ noted; each has its own commit and tests (611 pass, no new lint findings).
   publish-window logic); the workflow still downloads Chromium and installs
   node deps for the dead motionmaxxing/Hyperframes trials.
 
+## Views push (2026-11-01, owner: "I want more views, do smth")
+
+Two small, reversible experiments on the branch (judge them after ~10 days, not before):
+- Publish window now opens at 21:00 UTC (was 20:00). Per-hour medians over 209
+  real videos: the 20:00 hour had the lowest busy-slot median (63 views, n=27)
+  vs ~175 for 21:00-22:59. Noisy data (3-27 videos per hour), so this only drops
+  the weakest hour. Note: an earlier message overstated "00:00-04:00 beats
+  everything"; by hour that is not clean (00:xx median 82, n=16).
+- ENABLE_TRENDING_TOPICS=0 in daily-shorts.yml: facts/sauce seeds come from
+  "Did you know" / category lists, not Wikipedia trending (people/news/film).
+  The trending feed was the owner's own 10-08 request; delete the one line to
+  restore it. Thin evidence (a handful of videos).
+First look at the new style in Studio, 17-19 h after publish: 99 / 36 / 36 views
+vs 53 / 35 / 32 for the old format at 1 day. Too early to call. The old-format
+"Halloween Treats Taste Flat" short had 1k at 1 day, so single outliers happen.
+Not done / needs the owner: cross-posting to TikTok/Reels, checking Studio for an
+"inauthentic content" notice and "viewed vs swiped away" per short.
+
