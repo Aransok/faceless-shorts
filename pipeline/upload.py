@@ -77,10 +77,19 @@ VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")
 # batch that starts at the window opening fits inside one 8h window. A
 # batch that starts mid-window spills its last video(s) to the next
 # evening rather than into dead hours.
+#
+# Moved 2026-10-31 from 20:00-04:00 to 21:00-04:00 UTC (owner: "I want more
+# views, do smth"). Per-hour medians over 209 real videos (programming
+# excluded, it ran its own morning experiment): the 20:00 hour, where the
+# first video of every batch landed because the window opened there, had
+# the lowest median of the busy slots (63 views, n=27) against about 175
+# for 21:00-22:59. Hour-level numbers are noisy (3-27 videos per hour), so
+# this only drops the weakest hour; it does not try to pick the best one.
+# The daily cap is 3 now: worst case 21:30 + 2 gaps of 1.4 h = ~00:20.
 PUBLISH_GAP_MIN_HOURS = 1.1
 PUBLISH_GAP_MAX_HOURS = 1.4
-PUBLISH_WINDOW_START_HOUR_UTC = 20
-PUBLISH_WINDOW_HOURS = 8
+PUBLISH_WINDOW_START_HOUR_UTC = 21
+PUBLISH_WINDOW_HOURS = 7
 
 # Real feedback (2026-09-13, owner reviewing the actual channel's
 # comment feed): a bot comment on literally EVERY upload read as

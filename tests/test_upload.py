@@ -159,16 +159,17 @@ def _utc(day: int, hour: int, minute: int = 0) -> datetime:
 class PublishWindowTest(unittest.TestCase):
     """Real channel data (2026-09-24): Shorts going public 00:00-04:00 UTC
     had ~5x the median views of ones going public 04:00-12:00 UTC --
-    every publish time now lands inside 20:00-04:00 UTC."""
+    every publish time lands inside the window. The window opens at 21:00
+    UTC since 2026-10-31 (the 20:00 hour was the weakest busy slot)."""
 
     def test_window_spans_midnight(self):
-        self.assertTrue(_in_publish_window(_utc(24, 20, 0)))
+        self.assertTrue(_in_publish_window(_utc(24, 21, 0)))
         self.assertTrue(_in_publish_window(_utc(24, 23, 59)))
         self.assertTrue(_in_publish_window(_utc(25, 0, 30)))
         self.assertTrue(_in_publish_window(_utc(25, 3, 59)))
 
     def test_dead_hours_are_outside_the_window(self):
-        for hour in (4, 6, 9, 12, 15, 19):
+        for hour in (4, 6, 9, 12, 15, 19, 20):
             self.assertFalse(_in_publish_window(_utc(24, hour, 0)), f"{hour}:00 UTC should be outside")
 
     def test_in_window_time_is_left_alone(self):
@@ -177,12 +178,18 @@ class PublishWindowTest(unittest.TestCase):
 
     def test_early_morning_time_moves_to_that_evening_not_the_next(self):
         snapped = _snap_into_publish_window(_utc(24, 6, 0))
-        self.assertEqual(snapped.date(), _utc(24, 20).date())
-        self.assertTrue(_utc(24, 20, 0) <= snapped <= _utc(24, 20, 30))
+        self.assertEqual(snapped.date(), _utc(24, 21).date())
+        self.assertTrue(_utc(24, 21, 0) <= snapped <= _utc(24, 21, 30))
 
     def test_late_afternoon_time_moves_to_the_same_evening(self):
         snapped = _snap_into_publish_window(_utc(24, 19, 30))
-        self.assertTrue(_utc(24, 20, 0) <= snapped <= _utc(24, 20, 30))
+        self.assertTrue(_utc(24, 21, 0) <= snapped <= _utc(24, 21, 30))
+
+    def test_the_20_00_hour_is_never_used(self):
+        # The old opening hour: weakest busy slot in the real data.
+        for minute_offset in range(0, 24 * 60, 7):
+            t = _snap_into_publish_window(_utc(24, 0, 0) + timedelta(minutes=minute_offset))
+            self.assertNotEqual(t.hour, 20, t.isoformat())
 
     def _with_log(self, records: list[dict]):
         tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
@@ -207,13 +214,15 @@ class PublishWindowTest(unittest.TestCase):
             self.assertTrue(_in_publish_window(t), f"{t.isoformat()} landed outside the window")
         self.assertEqual(scheduled, sorted(scheduled), "publish times must stay in order")
 
-    def test_a_six_video_batch_starting_at_the_opening_fits_one_evening(self):
+    def test_the_three_video_daily_batch_fits_one_evening_and_starts_at_21(self):
         self._with_log([])
         scheduled = []
-        for _ in range(6):
+        for _ in range(3):
             scheduled.append(_next_publish_time(now=_utc(24, 18, 45)))
             self._with_log([{"scheduled_publish_at": s.isoformat()} for s in scheduled])
         self.assertLess(scheduled[-1] - scheduled[0], timedelta(hours=upload_module.PUBLISH_WINDOW_HOURS))
+        self.assertTrue(all(t.date() == scheduled[0].date() for t in scheduled), "all three on one evening")
+        self.assertGreaterEqual(scheduled[0], _utc(24, 21, 0))
 
     def test_spacing_still_respects_the_minimum_gap(self):
         self._with_log([{"scheduled_publish_at": _utc(24, 21, 0).isoformat()}])
