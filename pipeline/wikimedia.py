@@ -7,6 +7,7 @@ fits CLAUDE.md's "no paid APIs" rule same as every other backend here.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import requests
@@ -22,6 +23,36 @@ USER_AGENT = "faceless-shorts/1.0 (https://github.com/aransok/faceless-shorts; a
 # these keeps the feature usable "here and there" without building an
 # attribution-card system nothing else in this pipeline has.
 ACCEPTED_LICENSES = {"Public domain", "CC0", "CC0 1.0", "Public Domain Mark"}
+
+# Only real photo formats. The old test was `mime.startswith("image/")`,
+# which let book scans through: a `.djvu` file has the type
+# image/vnd.djvu, and its "thumbnail" is a rendered page. The first real
+# Case File run (2026-10-31) put three djvu magazine/book pages on screen
+# labelled as evidence photos. TIFF is excluded too: Commons holds a lot of
+# multi-page archive scans in it.
+PHOTO_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
+
+# Relevance rule (owner's choice 2026-10-31, after the first real Case File
+# run showed unrelated photos labelled as evidence): a Commons file is used
+# only if its FILE NAME shares a meaningful word with the beat's subject. The
+# search matches full text, so a street photo whose description merely
+# mentions "ginger" came back for a ginger recipe. Words this short or this
+# generic say nothing about what the picture shows.
+_GENERIC_WORDS = frozenset({
+    "the", "and", "with", "from", "into", "over", "this", "that", "file", "image", "photo",
+    "picture", "jpg", "jpeg", "png", "webp", "sauce", "recipe", "how", "why", "for",
+})
+
+
+def _title_words(text: str) -> set[str]:
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    # singular/plural: "frogs" and "frog" are the same subject word
+    return {w[:-1] if len(w) > 4 and w.endswith("s") else w for w in words if len(w) >= 4 and w not in _GENERIC_WORDS}
+
+
+def title_matches_subject(title: str, subject: str) -> bool:
+    return bool(_title_words(title) & _title_words(subject))
 
 
 def search_commons_image(subject: str) -> dict | None:
@@ -54,20 +85,23 @@ def search_commons_image(subject: str) -> dict | None:
     except (requests.RequestException, ValueError):
         return None
 
-    return _best_licensed_image(pages)
+    return _best_licensed_image(pages, subject)
 
 
-def _best_licensed_image(pages: dict) -> dict | None:
+def _best_licensed_image(pages: dict, subject: str | None = None) -> dict | None:
+    """First page that is a real photo, under an accepted license and, when a
+    `subject` is given, named for it. No subject means no relevance check."""
     for page in pages.values():
         info_list = page.get("imageinfo") or []
         if not info_list:
             continue
         info = info_list[0]
-        mime = info.get("mime", "")
-        if not mime.startswith("image/") or mime == "image/svg+xml":
-            continue  # SVG diagrams/icons aren't "the real thing" photos
+        if info.get("mime", "") not in PHOTO_MIME_TYPES:
+            continue  # SVG icons, djvu/tiff scans and the like aren't photos of "the real thing"
         license_name = info.get("extmetadata", {}).get("LicenseShortName", {}).get("value", "")
         if license_name not in ACCEPTED_LICENSES:
+            continue
+        if subject and not title_matches_subject(page.get("title", ""), subject):
             continue
         image_url = info.get("thumburl") or info.get("url")
         if not image_url:

@@ -657,6 +657,7 @@ def render_final(video_id: str, words: list[dict]) -> str:
     )
     frame_bytes = W * H * 3
     i = 0
+    ok = False
     try:
         while True:
             buf = dec.stdout.read(frame_bytes)
@@ -674,10 +675,25 @@ def render_final(video_id: str, words: list[dict]) -> str:
             layer.draw(fr, t)
             enc.stdin.write(fr.convert("RGB").tobytes())
             i += 1
+        ok = True
     finally:
-        enc.stdin.close()
+        try:
+            enc.stdin.close()
+        except OSError:  # the encoder already died; the real error is raised below
+            pass
         dec.stdout.close()
+        if not ok:
+            # Reliability pass 2026-10-31: a failed pass used to leave a
+            # zombie ffmpeg and a half-written .tmp.mp4 behind (seen by
+            # forcing a mid-render failure). Several videos run per job, so
+            # clean up before the caller falls back to normal captions.
+            for proc in (dec, enc):
+                proc.kill()
+            for proc in (dec, enc):
+                proc.wait()
+            tmp_path.unlink(missing_ok=True)
     if dec.wait() != 0 or enc.wait() != 0 or i == 0:
+        tmp_path.unlink(missing_ok=True)
         raise RuntimeError(f"casefile final pass failed for {video_id} after {i} frames")
     shutil.move(str(tmp_path), str(out_path))
     update_video(video_id, status="captioned", final_path=str(out_path), cta_overlay_variant="casefile_paper_strip")

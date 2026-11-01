@@ -197,6 +197,29 @@ def _advance_one_stage(video_id: str) -> str:
     return new_status
 
 
+# Total tries to plan one new video (script draft + authenticity review).
+PLAN_ATTEMPTS = 2
+_SINGLE_ATTEMPT_PLANNERS = ("game_night", "family_game_night", "veylorn_story")
+
+
+def failure_line(video_id: str | None, template: str, stage: str, error_message: str) -> str:
+    """One greppable line per failed video (reliability pass 2026-10-31).
+    Every workflow run shows green because the pipeline fails soft per
+    video, and the stage a failure happened in was only in a traceback.
+    `grep '\\[FAILED\\]'` on the job log now lists them all."""
+    one_line = " ".join(error_message.split())[:300]
+    return f"[FAILED] video={video_id or '-'} template={template} stage={stage} error={one_line}"
+
+
+def summarize_results(results: list[dict]) -> tuple[str, bool]:
+    """(one summary line, True when the run attempted videos and every one
+    failed). Partial failure stays a normal run (fail-soft by design);
+    only a run that produced nothing is worth turning the job red."""
+    failed = sum(1 for r in results if r["status"] == "failed")
+    ok = len(results) - failed
+    return f"[run_daily] RESULT ok={ok} failed={failed} attempted={len(results)}", bool(results) and ok == 0
+
+
 def run_video_to_completion(video_id: str) -> dict:
     """Drives one video forward stage by stage until it hits a terminal
     status (awaiting_review, uploaded, failed) or a real error, which is
@@ -224,6 +247,7 @@ def run_video_to_completion(video_id: str) -> dict:
             error_message = f"{type(exc).__name__}: {exc}"
             update_video(video_id, status="failed", error_message=error_message[:2000])
             traceback.print_exc()
+            print(failure_line(video_id, video["template"], _STAGE_NAMES.get(status, status), error_message))
             elapsed = time.monotonic() - video_start
             print(f"[timing] video={video_id} template={get_video(video_id)['template']} TOTAL {elapsed:.1f}s (FAILED)")
             return {
@@ -288,56 +312,70 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
     for i, template in enumerate(sequence):
         print(f"starting new {template} video ({i + 1}/{len(sequence)})...")
         plan_start = time.monotonic()
-        try:
-            # game_night/family_game_night each have their own planner
-            # (round selection + verified claims, no topic/hint concept)
-            # rather than plan()'s template-prompt-file flow -- real gap
-            # found 2026-09-12 for game_night: this dispatch didn't exist
-            # at all, so a `--templates game_night` run failed instantly
-            # with "unknown template: 'game_night'" (plan()'s TEMPLATES
-            # dict only ever had facts/programming/sauce_recipe) even
-            # though _advance_one_stage() already knew how to advance an
-            # EXISTING game_night video through voice/visuals/upload --
-            # there was just no way to ever create one via run_daily() in
-            # the first place. family_game_night gets the same dispatch
-            # up front this time, rather than repeating that gap.
-            if template == "game_night":
-                video_id = plan_game_night()
-            elif template == "family_game_night":
-                video_id = plan_family_game_night()
-            elif template == "veylorn_story":
-                # Standalone-test format (see HANDOFF.md) -- deliberately
-                # NOT in TEMPLATES below, so it only ever gets created via
-                # an explicit `templates=["veylorn_story"]` override, never
-                # by the normal daily rotation.
-                video_id = plan_veylorn_story()
-            else:
-                # A manual hint is a deliberate owner choice and always
-                # wins; research only fills in when there isn't one.
-                # Seasonal replaces the research seed rather than stacking
-                # on it -- an unrelated topic menu would pull the model
-                # away from the theme. Only the first video of each
-                # eligible template per run (every one during the peak),
-                # so the season is part of the day, not all of it.
-                topic_hint = topic_hints.get(template)
-                seasonal_key = None
-                eligible = event is not None and template in event.templates
-                if not topic_hint and eligible and (peak or template not in seasonal_done):
-                    seasonal_key = event.key
-                    seasonal_done.add(template)
-                research_seed = None if topic_hint or seasonal_key else suggest_research_seed(template)
-                seasonal_trending = trending_candidates(template) if seasonal_key else None
-                video_id = plan(
-                    template,
-                    topic_hint=topic_hint,
-                    research_seed=research_seed,
-                    seasonal_event=seasonal_key,
-                    seasonal_trending=seasonal_trending,
-                )
-        except Exception as exc:
-            error_message = f"{type(exc).__name__}: {exc}"
-            print(f"plan() failed for {template}: {error_message}")
-            traceback.print_exc()
+        video_id = None
+        error_message = ""
+        # Reliability pass 2026-10-31: the first real Case File run lost a
+        # whole slot (1 of 3 videos) because the script reviewer rejected a
+        # draft twice, with no second try on a fresh topic. A failed plan()
+        # also leaves no row in state.db, so these losses never show in
+        # failure counts. The reviewer itself is unchanged. Only plan()-path
+        # templates retry; the specialist planners keep their single try.
+        attempts = 1 if template in _SINGLE_ATTEMPT_PLANNERS else PLAN_ATTEMPTS
+        for attempt in range(1, attempts + 1):
+            try:
+                # game_night/family_game_night each have their own planner
+                # (round selection + verified claims, no topic/hint concept)
+                # rather than plan()'s template-prompt-file flow -- real gap
+                # found 2026-09-12 for game_night: this dispatch didn't exist
+                # at all, so a `--templates game_night` run failed instantly
+                # with "unknown template: 'game_night'" (plan()'s TEMPLATES
+                # dict only ever had facts/programming/sauce_recipe) even
+                # though _advance_one_stage() already knew how to advance an
+                # EXISTING game_night video through voice/visuals/upload --
+                # there was just no way to ever create one via run_daily() in
+                # the first place. family_game_night gets the same dispatch
+                # up front this time, rather than repeating that gap.
+                if template == "game_night":
+                    video_id = plan_game_night()
+                elif template == "family_game_night":
+                    video_id = plan_family_game_night()
+                elif template == "veylorn_story":
+                    # Standalone-test format (see HANDOFF.md) -- deliberately
+                    # NOT in TEMPLATES below, so it only ever gets created via
+                    # an explicit `templates=["veylorn_story"]` override, never
+                    # by the normal daily rotation.
+                    video_id = plan_veylorn_story()
+                else:
+                    # A manual hint is a deliberate owner choice and always
+                    # wins; research only fills in when there isn't one.
+                    # Seasonal replaces the research seed rather than stacking
+                    # on it -- an unrelated topic menu would pull the model
+                    # away from the theme. Only the first video of each
+                    # eligible template per run (every one during the peak),
+                    # so the season is part of the day, not all of it.
+                    topic_hint = topic_hints.get(template)
+                    seasonal_key = None
+                    eligible = event is not None and template in event.templates
+                    if not topic_hint and eligible and (peak or template not in seasonal_done):
+                        seasonal_key = event.key
+                        seasonal_done.add(template)
+                    research_seed = None if topic_hint or seasonal_key else suggest_research_seed(template)
+                    seasonal_trending = trending_candidates(template) if seasonal_key else None
+                    video_id = plan(
+                        template,
+                        topic_hint=topic_hint,
+                        research_seed=research_seed,
+                        seasonal_event=seasonal_key,
+                        seasonal_trending=seasonal_trending,
+                    )
+                break
+            except Exception as exc:
+                error_message = f"{type(exc).__name__}: {exc}"
+                traceback.print_exc()
+                print(failure_line(None, template, "plan", error_message))
+                if attempt < attempts:
+                    print(f"[retry] {template}: planning again on a fresh draft (attempt {attempt + 1}/{attempts})")
+        if video_id is None:
             results.append({"video_id": None, "template": template, "status": "failed", "error": error_message})
             continue
         print(f"[timing] video={video_id} template={template} stage=plan (->scripted) {time.monotonic() - plan_start:.1f}s")

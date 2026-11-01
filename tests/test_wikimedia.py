@@ -50,6 +50,28 @@ class TestBestLicensedImage(unittest.TestCase):
         result = wikimedia._best_licensed_image(pages)
         self.assertIsNone(result)
 
+    def test_book_scans_are_not_photos(self):
+        """Real failure, first Case File run 2026-10-31: `.djvu` magazine and
+        book scans (mime image/vnd.djvu) were used as evidence photos."""
+        for title, mime in (
+            ("File:Popular Science Monthly Volume 91.djvu", "image/vnd.djvu"),
+            ("File:Du Faur - The Conquest of Mount Cook.djvu", "image/vnd.djvu"),
+            ("File:Archive page.tiff", "image/tiff"),
+            ("File:Anim.gif", "image/gif"),
+        ):
+            self.assertIsNone(wikimedia._best_licensed_image({"1": _page(title, mime, "Public domain")}), title)
+
+    def test_jpeg_png_and_webp_photos_are_accepted(self):
+        for mime in ("image/jpeg", "image/png", "image/webp"):
+            self.assertIsNotNone(wikimedia._best_licensed_image({"1": _page("File:P.jpg", mime, "CC0")}), mime)
+
+    def test_skips_a_book_scan_and_uses_the_real_photo_after_it(self):
+        pages = {
+            "1": _page("File:Harper's New Monthly Magazine - v109.djvu", "image/vnd.djvu", "Public domain"),
+            "2": _page("File:Glass frog.jpg", "image/jpeg", "Public domain"),
+        }
+        self.assertEqual(wikimedia._best_licensed_image(pages)["title"], "File:Glass frog.jpg")
+
     def test_falls_through_to_a_later_page_with_an_accepted_license(self):
         pages = {
             "1": _page("File:Restricted.jpg", "image/jpeg", "CC BY-SA 4.0"),
@@ -61,6 +83,48 @@ class TestBestLicensedImage(unittest.TestCase):
 
     def test_no_pages_returns_none(self):
         self.assertIsNone(wikimedia._best_licensed_image({}))
+
+
+class TestTitleMustMatchSubject(unittest.TestCase):
+    """Owner's rule (2026-10-31): a photo is used only if its file name
+    shares a meaningful word with the beat subject. Titles below are the real
+    wrong picks from the first Case File run."""
+
+    def test_matching_names_pass_including_plurals_and_case(self):
+        for title, subject in (
+            ("File:Glass frog.jpg", "Glass frog"),
+            ("File:Glass frogs in Costa Rica.jpg", "glass frog"),
+            ("File:Oxford Electric Bell.jpg", "Oxford electric bell"),
+            ("File:Bell.jpg", "Oxford Electric Bell"),
+        ):
+            self.assertTrue(wikimedia.title_matches_subject(title, subject), (title, subject))
+
+    def test_the_real_wrong_picks_are_rejected(self):
+        for title, subject in (
+            ("File:HK SW Sheung Wan Wing Lok Street 1150am August 2026 N13P 104.jpg", "Ginger scallion oil"),
+            ("File:Du Faur - The Conquest of Mount Cook.jpg", "Blanching green aromatics, ice bath shock"),
+            ("File:Popular Science Monthly Volume 91.jpg", "Glass frog heart"),
+        ):
+            self.assertFalse(wikimedia.title_matches_subject(title, subject), (title, subject))
+
+    def test_generic_and_short_words_do_not_count_as_a_match(self):
+        self.assertFalse(wikimedia.title_matches_subject("File:Hot sauce bottle.jpg", "Chimichurri sauce"))
+        self.assertFalse(wikimedia.title_matches_subject("File:The big one.jpg", "The old one"))  # nothing but short/generic words
+
+    def test_an_irrelevant_first_result_is_skipped_for_a_relevant_second(self):
+        pages = {
+            "1": _page("File:Street scene.jpg", "image/jpeg", "CC0"),
+            "2": _page("File:Glass frog.jpg", "image/jpeg", "Public domain"),
+        }
+        self.assertEqual(wikimedia._best_licensed_image(pages, "Glass frog")["title"], "File:Glass frog.jpg")
+
+    def test_nothing_relevant_means_no_image_so_the_beat_stays_footage(self):
+        pages = {"1": _page("File:Street scene.jpg", "image/jpeg", "CC0")}
+        self.assertIsNone(wikimedia._best_licensed_image(pages, "Glass frog"))
+
+    def test_without_a_subject_there_is_no_relevance_check(self):
+        pages = {"1": _page("File:Street scene.jpg", "image/jpeg", "CC0")}
+        self.assertIsNotNone(wikimedia._best_licensed_image(pages))
 
 
 class TestSearchCommonsImage(unittest.TestCase):
@@ -87,6 +151,15 @@ class TestSearchCommonsImage(unittest.TestCase):
             result = wikimedia.search_commons_image("Oxford Electric Bell")
         self.assertIsNotNone(result)
         self.assertEqual(result["title"], "File:Bell.jpg")
+
+    def test_search_applies_the_title_rule_end_to_end(self):
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = {
+            "query": {"pages": {"1": _page("File:HK Wing Lok Street.jpg", "image/jpeg", "CC0")}}
+        }
+        with patch.object(wikimedia.requests, "get", return_value=mock_response):
+            self.assertIsNone(wikimedia.search_commons_image("Ginger scallion oil"))
 
 
 if __name__ == "__main__":

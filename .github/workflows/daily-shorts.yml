@@ -64,6 +64,10 @@ concurrency:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    # A normal 3-video run takes well under an hour. Without a limit a hung
+    # run holds the shared state-writer group (blocking Sync Analytics,
+    # comments and the next daily run) for GitHub's 6 h default.
+    timeout-minutes: 120
     steps:
       # ref: main (not the default github.sha) -- real incident 2026-09-22:
       # a run queued behind another state writer checked out the commit
@@ -199,6 +203,13 @@ jobs:
           # Seasonal themes OFF since the 2026-10-31 reset: Halloween videos
           # had a median of 78 views. pipeline/seasonal.py kill switch.
           ENABLE_SEASONAL_TOPICS: "0"
+          # Trending-news topic seeds OFF since 2026-10-31 (owner: "I want more
+          # views"). They steered facts toward people, news and entertainment
+          # (the Rocky Horror video), while every video over 1,000 views was a
+          # wild nature/science/history subject. Facts and sauce seeds fall back
+          # to Wikipedia "Did you know" / category lists. Delete this line to
+          # turn trending back on (pipeline/research.py kill switch).
+          ENABLE_TRENDING_TOPICS: "0"
           # Hyperframes hybrid trial (pipeline/hf_render.py) PAUSED 2026-10-27 by
           # the owner so it doesn't overlap the comic trial (half comic, half
           # plain old style). Run it after the comic trial ends: uncomment and
@@ -222,7 +233,11 @@ jobs:
       # committed — the runner's filesystem is thrown away after the job
       # ends regardless). Only state.db and the upload-tracking log are
       # small enough, and worth persisting, to commit back.
+      # always(): this must also run when the pipeline step fails or the job
+      # times out. Uploads made before that point exist on YouTube, and their
+      # state.db records are lost if this step is skipped.
       - name: Commit updated state
+        if: always()
         run: |
           git config user.name "faceless-shorts-bot"
           git config user.email "actions@users.noreply.github.com"

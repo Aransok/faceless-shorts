@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import requests
@@ -376,11 +377,54 @@ def _build_clip_pool(
     return pool, selection_log
 
 
+# Reliability pass 2026-10-31: the case-file style cuts every ~2.5 s, so a
+# video now downloads about 10 stock clips instead of about 6, and a single
+# failed download used to raise and kill the whole video. Transient
+# failures (timeouts, dropped connections, 429, 5xx) are retried; a clear
+# 4xx (e.g. a dead file URL) is not, since retrying can't fix it.
+CLIP_DOWNLOAD_ATTEMPTS = 3
+CLIP_DOWNLOAD_BACKOFF_SECONDS = 2
+
+
+def _is_transient_download_error(exc: requests.RequestException) -> bool:
+    response = getattr(exc, "response", None)
+    if response is None:  # timeout / connection error: no HTTP response at all
+        return True
+    return response.status_code == 429 or response.status_code >= 500
+
+
 def _download_clip(video: dict, out_path: Path) -> None:
     file_url = _pick_video_file(video)
-    response = requests.get(file_url, timeout=60)
-    response.raise_for_status()
-    out_path.write_bytes(response.content)
+    for attempt in range(1, CLIP_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            response = requests.get(file_url, timeout=60)
+            response.raise_for_status()
+            out_path.write_bytes(response.content)
+            return
+        except requests.RequestException as exc:
+            if attempt == CLIP_DOWNLOAD_ATTEMPTS or not _is_transient_download_error(exc):
+                raise
+            print(f"[clip download] clip {video.get('id')} attempt {attempt} failed ({type(exc).__name__}), retrying")
+            time.sleep(CLIP_DOWNLOAD_BACKOFF_SECONDS * attempt)
+
+
+def _download_pool(pool: list[dict], tmp_dir: Path, beat_index: int) -> list[Path]:
+    """Downloads a beat's clip pool. A clip that still fails after its
+    retries is skipped (and logged) as long as at least one other clip
+    arrived -- the segments then reuse the clips that did. Only a beat with
+    no clip at all fails, with a message that says why."""
+    paths: list[Path] = []
+    for i, clip in enumerate(pool):
+        path = tmp_dir / f"beat{beat_index}_source_{i:02d}.mp4"
+        try:
+            _download_clip(clip, path)
+        except requests.RequestException as exc:
+            print(f"warning: beat {beat_index}: clip {clip.get('id')} download failed ({exc}) -- skipping it")
+            continue
+        paths.append(path)
+    if not paths:
+        raise RuntimeError(f"beat {beat_index}: every stock clip download failed ({len(pool)} tried)")
+    return paths
 
 
 def _plan_segment_frames(target_duration: float, segment_seconds: float = SEGMENT_TARGET_SECONDS) -> list[int]:
@@ -697,11 +741,13 @@ def visuals_facts(video_id: str) -> str:
                     "source_page": commons_image["source_page"],
                 })
 
-            source_paths = []
-            for i, clip in enumerate(pool):
-                source_path = tmp_dir / f"beat{beat['step_index']}_source_{i:02d}.mp4"
-                _download_clip(clip, source_path)
-                source_paths.append(source_path)
+            source_paths = _download_pool(pool, tmp_dir, beat["step_index"])
+            video_segments = sum(1 for seg in segment_plan if seg["kind"] == "video")
+            if len(source_paths) < video_segments:
+                print(
+                    f"warning: beat {beat['step_index']}: {len(source_paths)} clip(s) for {video_segments} "
+                    "cuts -- clips repeat within this beat"
+                )
 
             sub_segment_paths = []
             video_index = 0

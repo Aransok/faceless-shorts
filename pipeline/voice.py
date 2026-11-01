@@ -123,6 +123,28 @@ def _pad_with_silence(path: Path, seconds: float) -> None:
 # is cheap next to dropping a whole video.
 EDGE_TTS_RETRY_DELAYS = (2, 5, 10, 20, 45)
 
+# Widened 2026-10-31 (reliability pass): a real run on 2026-10-12 lost a
+# whole video to `WSServerHandshakeError: 403` from speech.platform.bing.com,
+# which the NoAudioReceived-only retry let straight through. edge-tts
+# already retries a 403 ONCE itself (it re-syncs its clock first), so a 403
+# that reaches us has failed twice -- a backoff gives a temporary block or
+# a token rotation time to clear. Still only transient failures: bad TLS
+# and every other error fail fast, so a real config problem isn't masked.
+_TRANSIENT_HANDSHAKE_STATUSES = (403, 429)
+
+
+def _is_transient_edge_tts_error(exc: BaseException) -> bool:
+    import aiohttp
+    import edge_tts
+
+    if isinstance(exc, edge_tts.exceptions.NoAudioReceived):
+        return True
+    if isinstance(exc, aiohttp.ClientResponseError):  # includes WSServerHandshakeError
+        return exc.status in _TRANSIENT_HANDSHAKE_STATUSES or exc.status >= 500
+    if isinstance(exc, aiohttp.ClientConnectorCertificateError):
+        return False  # a trust/config problem, not a blip
+    return isinstance(exc, (aiohttp.ClientConnectionError, asyncio.TimeoutError))
+
 
 async def _synth_one_edge_tts_call(text: str, out_path: Path) -> list[dict]:
     """One real edge_tts call, one sentence or the whole text — returns its
@@ -148,8 +170,11 @@ async def _synth_one_edge_tts_call(text: str, out_path: Path) -> list[dict]:
             await asyncio.sleep(delay)
         try:
             return await _attempt()
-        except edge_tts.exceptions.NoAudioReceived as exc:
+        except Exception as exc:
+            if not _is_transient_edge_tts_error(exc):
+                raise
             last_exc = exc
+            print(f"[voice] edge_tts transient failure ({type(exc).__name__}: {str(exc)[:120]}), will retry")
     raise last_exc
 
 
