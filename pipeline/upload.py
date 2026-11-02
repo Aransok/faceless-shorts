@@ -55,6 +55,8 @@ CATEGORY_ID = {
     "veylorn_story": "24",  # Entertainment
     "weird": "24",  # Entertainment
     "food": "26",  # Howto & Style
+    "mix_facts": "27",  # Education
+    "mix_food": "26",  # Howto & Style
 }
 
 VALID_VISIBILITY = ("private", "unlisted", "public", "scheduled")

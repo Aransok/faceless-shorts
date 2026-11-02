@@ -34,9 +34,52 @@ import pipeline.orchestrator as orchestrator  # noqa: E402  (needs the stub abov
 if not _had_real_pipeline_upload:
     del sys.modules["pipeline.upload"]  # don't leak the stub to any other test module's real import
 
+# The real daily rotation (all mix_*, 2026-11-02). Most tests below exercise
+# plan()'s seasonal/research/cap logic, which the mix planners don't use, so
+# they run against the pre-mix rotation patched in via setUp.
+DAILY_TEMPLATES = orchestrator.TEMPLATES
+LEGACY_TEMPLATES = ("facts", "sauce_recipe", "programming", "food", "facts", "sauce_recipe")
+
+
+class DailyMixRotationTest(unittest.TestCase):
+    def test_every_daily_slot_is_a_mix_template(self):
+        self.assertTrue(all(t in ("mix_facts", "mix_food") for t in DAILY_TEMPLATES))
+        self.assertEqual(len(DAILY_TEMPLATES), 3)
+
+    def test_mix_templates_alternate(self):
+        for a, b in zip(DAILY_TEMPLATES, DAILY_TEMPLATES[1:]):
+            self.assertNotEqual(a, b)
+
+    def test_mix_dispatch_uses_plan_mix_with_research_slot(self):
+        with patch.object(orchestrator, "plan_mix", side_effect=lambda t, **k: f"vid-{t}") as pm, \
+             patch.object(orchestrator, "plan") as p, \
+             patch.object(orchestrator, "suggest_research_seed", side_effect=lambda t: f"seed {t}"), \
+             patch.object(orchestrator, "run_video_to_completion", return_value={}), \
+             patch.object(orchestrator, "list_by_status", return_value=[]), \
+             patch.object(orchestrator, "_uploads_today", return_value=0), \
+             patch.object(orchestrator, "active_event", return_value=None):
+            orchestrator.run_daily(count=2)
+        p.assert_not_called()
+        self.assertEqual([c.args[0] for c in pm.call_args_list], list(DAILY_TEMPLATES[:2]))
+        self.assertEqual(pm.call_args_list[0].kwargs["research_seed"], "seed facts")
+
+    def test_mix_topic_hint_skips_research(self):
+        with patch.object(orchestrator, "plan_mix", return_value="v") as pm, \
+             patch.object(orchestrator, "suggest_research_seed") as rs, \
+             patch.object(orchestrator, "run_video_to_completion", return_value={}), \
+             patch.object(orchestrator, "list_by_status", return_value=[]), \
+             patch.object(orchestrator, "_uploads_today", return_value=0), \
+             patch.object(orchestrator, "active_event", return_value=None):
+            orchestrator.run_daily(count=1, templates=["mix_food"], topic_hints={"mix_food": "garlic"})
+        self.assertEqual(pm.call_args.kwargs, {"topic_hint": "garlic", "research_seed": None})
+        rs.assert_not_called()
+
 
 class RunDailyTemplateSequenceTest(unittest.TestCase):
     def setUp(self):
+        templates_patcher = patch.object(orchestrator, "TEMPLATES", LEGACY_TEMPLATES)
+        templates_patcher.start()
+        self.addCleanup(templates_patcher.stop)
         self.plan_patcher = patch.object(orchestrator, "plan")
         self.plan_game_night_patcher = patch.object(orchestrator, "plan_game_night")
         self.plan_family_game_night_patcher = patch.object(orchestrator, "plan_family_game_night")
@@ -121,12 +164,11 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
         self.mock_plan.assert_not_called()
 
     def test_daily_rotation_is_the_owner_chosen_mix(self):
-        # Owner decision (2026-10-31 channel reset): 3/day, 2 facts + 1
-        # sauce_recipe -- the two niches the real winners came from.
+        # Owner decision (2026-11-02): 3/day, all in the mix style.
         from collections import Counter
         self.assertEqual(
-            Counter(orchestrator.TEMPLATES),
-            Counter({"facts": 2, "sauce_recipe": 1}),
+            Counter(DAILY_TEMPLATES),
+            Counter({"mix_facts": 2, "mix_food": 1}),
         )
 
     def test_similar_formats_are_never_back_to_back(self):
@@ -137,7 +179,7 @@ class RunDailyTemplateSequenceTest(unittest.TestCase):
             self.assertFalse(any({a, b} <= group for group in similar), f"{a} next to {b}")
 
     def test_veylorn_story_never_appears_in_the_default_rotation(self):
-        self.assertNotIn("veylorn_story", orchestrator.TEMPLATES)
+        self.assertNotIn("veylorn_story", DAILY_TEMPLATES)
 
     def test_no_templates_falls_back_to_default_rotation_by_count(self):
         orchestrator.run_daily(count=3)
@@ -403,6 +445,14 @@ class AdvanceOneStageScriptedDispatchTest(unittest.TestCase):
         self._set_video("veylorn_story")
         orchestrator._advance_one_stage("vid-1")
         self.mock_render_veylorn.assert_called_once_with("vid-1")
+        self.mock_voice.assert_not_called()
+
+    def test_mix_scripted_calls_mix_render_not_voice(self):
+        with patch.object(orchestrator, "mix_render") as mr:
+            for template in ("mix_facts", "mix_food"):
+                self._set_video(template)
+                orchestrator._advance_one_stage("vid-1")
+        self.assertEqual(mr.call_count, 2)
         self.mock_voice.assert_not_called()
 
     def test_other_templates_scripted_still_call_voice(self):

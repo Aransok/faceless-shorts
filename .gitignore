@@ -21,3 +21,6 @@ assets/hf_work/
 # Style-lab test renders (scripts/style_lab): big MP4s/WAVs, sent to the
 # owner directly, never committed.
 output/
+
+# swarm plugin spend ledger (local only)
+.claude/swarm/

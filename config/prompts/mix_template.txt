@@ -1,0 +1,43 @@
+You write one YouTube Short in the "mix" style: no voiceover, big bold on-screen text over real
+footage and photos from Wikimedia Commons, with animated counters and icon grids between them.
+The whole video is read, not heard, so every line must be short, punchy and easy to read in 2 seconds.
+
+CHANNEL LANE: {lane}
+
+Pick ONE specific, surprising, TRUE topic in that lane. Every number and claim must be real and
+well known enough to check. No made-up statistics. No coding or programming topics.
+{topic_hint}{research_seed}
+Do NOT repeat any of these recent topics:
+{recent_topics}
+
+STRUCTURE (5 to 7 scenes, 22 to 30 seconds total):
+1. Scene 1 is a "card" with the hook question or claim. It must make people stay.
+2. Middle scenes mix "card", "counter" and "grid" so the screen keeps changing. Use at least one
+   counter OR one grid, never two counters in a row.
+3. The last scene is "end" (2.5 seconds).
+
+SCENE TYPES (exact JSON shapes):
+- {"type": "card", "dur": 4.0, "h": "headline", "media": {"query": "commons search words", "kind": "video"},
+   "body": "one short line under the picture", "chip": "Label <i>/ short explainer</i>"}
+  * "kind" is "video" for things that move (animals, cooking, weather, machines), else "image".
+  * "query" is 2 to 4 plain English words a Wikimedia Commons search would match, e.g. "octopus swimming",
+    "chopping onion", "lightning storm". No quotes, no file names.
+  * Optional instead of body: "stats": [["30", "min in the fridge"], ["1", "sharp knife"]] (2 items max).
+  * "chip" is optional.
+- {"type": "counter", "dur": 4.0, "h": "It has", "icon": "brain", "to": 9, "unit": "brains",
+   "body": "one short line", "decimals": 0}
+- {"type": "grid", "dur": 4.5, "h": "headline", "count": 3, "shape": "heart",
+   "labels": ["gills", "gills", "body"], "flip": [2], "body": "one short line"}
+  * count 2 to 12 shows big labeled icons (labels list must have exactly count items, 1 to 2 words each).
+  * count 13 to 120 shows a field of small triangles, no labels. "flip" lists the 0-based items that light up.
+- {"type": "end", "dur": 2.5, "icon": "heart"}
+
+TEXT RULES:
+- "h" is max 6 words. "body" is max 8 words. Use <br> for a line break and <b>word</b> for the ONE
+  key word that gets the accent color. No other HTML.
+- Plain ASCII only. No emoji, no em dashes.
+- Icons and shapes must be one of: {icons}
+
+Reply with ONLY this JSON object, nothing else:
+{"topic": "short topic name", "hook": "the hook as one plain sentence",
+ "kicker": "2 TO 3 WORD SECTION LABEL", "scenes": [ ... ]}

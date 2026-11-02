@@ -17,6 +17,8 @@ from pathlib import Path
 from pipeline.assemble import assemble
 from pipeline.captions import captions
 from pipeline.metadata import generate_metadata
+from pipeline.mix_plan import RESEARCH_SLOT, plan_mix
+from pipeline.mix_render import mix_render
 from pipeline.plan import plan
 from pipeline.plan_family_game import plan_family_game_night
 from pipeline.plan_game import plan_game_night
@@ -85,9 +87,13 @@ from pipeline.voice import voice
 # median (Sept 18-23) to ~40-80. Most of the top 15 were single wild
 # facts or one-sauce videos watched 60-70% through; recent 3-item lists
 # were watched ~20%. Fewer, better videos in the two niches that won:
-# 3/day, facts twice, sauce_recipe once. programming and food paused
-# (still runnable by hand via --templates).
-TEMPLATES = ("facts", "sauce_recipe", "facts")
+# 3/day. programming and food paused (still runnable via --templates).
+#
+# Replaced (2026-11-02, owner decision): every daily short is now the "mix"
+# style (Commons footage/photos, counters, icon grids, synthesized score,
+# no voiceover). Same 3/day cap. See mix_plan.py and mix_render.py. The
+# Case File templates (facts, sauce_recipe) still run via --templates.
+TEMPLATES = ("mix_facts", "mix_food", "mix_facts")
 
 # Daily upload cap (2026-09-24). Real incident 2026-09-22: a manual
 # trigger plus the (4h-late) scheduled run each uploaded a full batch the
@@ -152,6 +158,8 @@ def _advance_one_stage(video_id: str) -> str:
         stage_name = "render_family_game"
     elif status == "scripted" and template == "veylorn_story":
         stage_name = "render_veylorn"
+    elif status == "scripted" and template.startswith("mix_"):
+        stage_name = "mix_render"
     else:
         stage_name = _STAGE_NAMES.get(status, status)
 
@@ -161,6 +169,8 @@ def _advance_one_stage(video_id: str) -> str:
             render_family_game_night(video_id)
         elif template == "veylorn_story":
             render_veylorn_story(video_id)
+        elif template.startswith("mix_"):
+            mix_render(video_id)
         else:
             voice(video_id)
     elif status == "voiced":
@@ -345,6 +355,10 @@ def run_daily(count: int, templates: list[str] | None = None, topic_hints: dict[
                     # an explicit `templates=["veylorn_story"]` override, never
                     # by the normal daily rotation.
                     video_id = plan_veylorn_story()
+                elif template.startswith("mix_"):
+                    topic_hint = topic_hints.get(template)
+                    video_id = plan_mix(template, topic_hint=topic_hint,
+                                        research_seed=None if topic_hint else suggest_research_seed(RESEARCH_SLOT[template]))
                 else:
                     # A manual hint is a deliberate owner choice and always
                     # wins; research only fills in when there isn't one.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -208,6 +209,19 @@ def _append_full_story(description: str, script_text: str) -> str:
     return description + header + story
 
 
+def _append_credits(description: str, credits: list[str]) -> str:
+    """mix templates use CC BY / BY-SA Commons media: attribution goes in
+    the description too (it is also on screen). Same budget rule as
+    _append_full_story: drop whole credit lines, never the CTA."""
+    header = "\n\nMedia from Wikimedia Commons:\n"
+    lines: list[str] = []
+    for c in credits:
+        if len(description) + len(header) + len("\n".join(lines + [c])) > DESCRIPTION_MAX_CHARS:
+            break
+        lines.append(c)
+    return description + header + "\n".join(lines) if lines else description
+
+
 def generate_metadata(video_id: str) -> dict:
     video = get_video(video_id)
     if video is None:
@@ -256,6 +270,8 @@ def generate_metadata(video_id: str) -> dict:
     music_credit = casefile.load_style(video).get("music_credit")
     if music_credit:
         description = _append_music_credit(description, music_credit)
+    if video["template"].startswith("mix_") and video.get("mix_spec"):
+        description = _append_credits(description, json.loads(video["mix_spec"]).get("credits", []))
 
     require_review = os.environ.get("REQUIRE_REVIEW", "true").lower() == "true"
     next_status = "awaiting_review" if require_review else "approved"

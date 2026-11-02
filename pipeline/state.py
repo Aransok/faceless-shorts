@@ -67,6 +67,7 @@ _COLUMNS = (
     "screen_hook",
     "seasonal_event",
     "style_json",
+    "mix_spec",
     "created_at",
     "updated_at",
 )
@@ -210,6 +211,8 @@ def init_db(db_path: Path = DB_PATH) -> None:
         # variably-shaped per-round content.
         if "family_game_segments_json" not in existing_cols:
             conn.execute("ALTER TABLE videos ADD COLUMN family_game_segments_json TEXT")
+        if "mix_spec" not in existing_cols:
+            conn.execute("ALTER TABLE videos ADD COLUMN mix_spec TEXT")
 
         # video_steps: both templates break a video into narrated beats so
         # the visual can change exactly when the narration describing that
