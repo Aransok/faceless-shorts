@@ -1377,5 +1377,25 @@
     "method": "card",
     "template": "facts",
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/840edaf8-bd16-4544-bd08-8be9a145cbe8_thumbnail.jpg"
+  },
+  {
+    "video_id": "c2aa9807-c462-4ee0-abe4-807d9e332697",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/c2aa9807-c462-4ee0-abe4-807d9e332697_thumbnail.jpg"
+  },
+  {
+    "video_id": "8e0511e1-d9a9-43d5-bf2a-2d9f221eea22",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/8e0511e1-d9a9-43d5-bf2a-2d9f221eea22_thumbnail.jpg"
   }
 ]
