@@ -41,6 +41,7 @@ on:
 
 permissions:
   contents: write
+  actions: write  # time guard below cancels its own run
 
 # Real incident (2026-09-12): this workflow and Sync Analytics both got
 # triggered within seconds of each other, and both write state.db.
@@ -70,6 +71,20 @@ jobs:
     # comments and the next daily run) for GitHub's 6 h default.
     timeout-minutes: 120
     steps:
+      # A late-firing schedule event from the old 14:07 cron must not start
+      # before the owner's Claude session limit resets; cancel it instead.
+      - name: Time guard
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          now=$(date -u +%H%M)
+          if [ "$now" -lt 1545 ]; then
+            echo "Scheduled run at ${now} UTC is before 15:45, cancelling."
+            gh run cancel ${{ github.run_id }} -R ${{ github.repository }}
+            sleep 60
+            exit 1
+          fi
       # ref: main (not the default github.sha) -- real incident 2026-09-22:
       # a run queued behind another state writer checked out the commit
       # from when it was QUEUED, ran on stale state.db, and its push hit an
