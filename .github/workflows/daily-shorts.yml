@@ -22,7 +22,8 @@ on:
     # with no other explanation (Actions enabled, workflow registered
     # well before the slot, YAML valid). Off-the-hour minutes queue
     # behind far less contention.
-    - cron: "7 14 * * *"
+    # Moved from 14:07 to 15:48 (2026-11-02) so the run lands after the owner's Claude session limit resets.
+    - cron: "48 15 * * *"
   workflow_dispatch:
     inputs:
       count:
