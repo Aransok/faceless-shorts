@@ -1,11 +1,13 @@
-"""Stage 2 for the mix templates: videos.mix_spec -> final mp4 with score.
+"""Stage 2 for the mix templates: videos.mix_spec -> final mp4 with voice + score.
 
 Ported from the openmontage trial (projects/shorts/build.py) that the owner
 approved on 2026-11-02. Real footage/photos come from Wikimedia Commons
 (pipeline/mix_commons.py), the score is synthesized with numpy, and the page
 is rendered by the same vendored render.mjs the motionmaxxing renderer uses,
-so CI needs nothing new. Status goes scripted -> captioned (no voice, no
-separate caption pass: all text is on screen).
+so CI needs nothing new. Each scene gets one edge-tts line (owner ask
+2026-11-03: a voice, and no low "boom" hits); a scene stretches to fit
+its line. Status goes scripted -> captioned (no separate caption pass:
+all text is on screen).
 """
 
 from __future__ import annotations
@@ -271,8 +273,38 @@ def build_html(spec: dict, starts: list[float], media: dict[int, dict]) -> str:
 """
 
 
-def score(spec: dict, starts: list[float], out_path: Path) -> None:
-    """Marimba bed + whooshes on cuts + counter ticks + impacts + end chime, all synthesized."""
+END_SAY = "Follow for more."
+VOICE_LEAD, VOICE_TAIL = 0.15, 0.45  # seconds of air before/after each scene's line
+MUSIC_UNDER_VOICE = 0.3
+
+
+def narrate(spec: dict, template: str, work: Path) -> list[Path]:
+    """One TTS line per scene -> 48 kHz mono wavs; stretches scene durs to fit. Mutates spec."""
+    from pipeline import voice
+    from pipeline.mix_plan import script_text
+
+    voice._voice_override = voice.voice_for_template(template)
+    wavs = []
+    try:
+        for i, s in enumerate(spec["scenes"]):
+            line = s.get("say") or (END_SAY if s["type"] == "end" else script_text({"scenes": [s]}))
+            mp3, wav = work / f"say{i}.mp3", work / f"say{i}.wav"
+            voice.synthesize(line, mp3, "edge_tts")
+            r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(mp3), "-ac", "1", "-ar", "48000", str(wav)],
+                               capture_output=True, text=True, timeout=60)
+            if r.returncode != 0:
+                raise MixRenderError("voice decode failed: " + r.stderr[-400:])
+            with wave.open(str(wav)) as w:
+                need = w.getnframes() / w.getframerate() + VOICE_LEAD + VOICE_TAIL
+            s["dur"] = round(max(s["dur"], need), 2)
+            wavs.append(wav)
+    finally:
+        voice._voice_override = None
+    return wavs
+
+
+def score(spec: dict, starts: list[float], out_path: Path, voices: list[Path] | None = None) -> None:
+    """Marimba bed + soft whooshes on cuts + counter ticks + end chime, ducked under the voice lines."""
     SR = 48000
     scenes, st = spec["scenes"], spec["style"]
     total = sum(s["dur"] for s in scenes)
@@ -299,8 +331,6 @@ def score(spec: dict, starts: list[float], out_path: Path) -> None:
     for s in range(int(end_at / beat)):
         ch = chords[(s // 8) % len(chords)]
         add(tone(ch[[0, 2, 1, 3, 2, 1, 3, 2][s % 8]], .5, 9), s * beat, .16 if s % 2 else .22)
-        if s % 8 == 0:
-            add(tone(ch[0] / 2, 2.0, 1.6, (1, .2)), s * beat, .35)
     for c in starts[1:]:
         add(swell(.45), c - .45, .25)
     for a, s in zip(starts, scenes):
@@ -309,12 +339,9 @@ def score(spec: dict, starts: list[float], out_path: Path) -> None:
             while t < 1.4:
                 add(tone(2400, .03, 120, (1,)), a + .6 + t, .25)
                 t += .035 + .09 * (t / 1.4) ** 2
-            add(tone(55, 1.2, 3.5, (1, .5, .2)), a + 2.0, .8)
-            add(swell(.08)[::-1], a + 2.0, .4)
         if s["type"] == "grid":
             tt = np.arange(int(1.2 * SR)) / SR
             add(np.sin(2 * np.pi * (600 + 900 * tt / 1.2) * tt) * (tt / 1.2) * .5, a + .2, .18)
-            add(tone(55, 1.2, 3.5, (1, .5, .2)), a + 1.4, .8)
         if s["type"] == "card" and s.get("stats"):
             for j in range(len(s["stats"])):
                 add(tone(1046.5 * (1.25 ** j), .25, 14), a + .7 + .35 * j, .14)
@@ -322,6 +349,12 @@ def score(spec: dict, starts: list[float], out_path: Path) -> None:
         add(tone(f, 1.5, 3), end_at + .1 + j * .07, .2)
     fade = np.minimum(1, np.arange(len(out)) / (SR * .3)) * np.minimum(1, (len(out) - np.arange(len(out))) / (SR * .8))
     out = np.tanh(out * fade * 1.2) * .85
+    if voices:
+        music, out = out * MUSIC_UNDER_VOICE, np.zeros_like(out)
+        for a, wav in zip(starts, voices):
+            with wave.open(str(wav)) as w:
+                add(np.frombuffer(w.readframes(w.getnframes()), np.int16) / 32768, a + VOICE_LEAD, .95)
+        out = np.clip(out + music, -1, 1)
     pcm = (np.repeat(out[:, None], 2, 1) * 32767).astype(np.int16)
     with wave.open(str(out_path), "wb") as w:
         w.setnchannels(2)
@@ -330,19 +363,21 @@ def score(spec: dict, starts: list[float], out_path: Path) -> None:
         w.writeframes(pcm.tobytes())
 
 
-def build_dir(spec: dict, work: Path) -> tuple[list[float], dict[int, dict]]:
-    """Write index.html + assets + score.wav into work. Returns (starts, media)."""
+def build_dir(spec: dict, work: Path, template: str | None = None) -> tuple[list[float], dict[int, dict]]:
+    """Write index.html + assets + score.wav into work. Returns (starts, media).
+    With a template, scenes are voiced first (and may get longer)."""
     if work.exists():
         shutil.rmtree(work)
     assets = work / "assets"
     assets.mkdir(parents=True)
     shutil.copy(GSAP, work / "gsap.min.js")
     shutil.copy(FONT, work / "montserrat.woff2")
+    voices = narrate(spec, template, work) if template else None
     starts = timings(spec["scenes"])
     used: set[str] = set()
     media = {i: resolve_media(s, i, assets, used) for i, s in enumerate(spec["scenes"]) if s["type"] == "card"}
     (work / "index.html").write_text(build_html(spec, starts, media), encoding="utf-8")
-    score(spec, starts, work / "score.wav")
+    score(spec, starts, work / "score.wav", voices)
     return starts, media
 
 
@@ -352,9 +387,9 @@ def mix_render(video_id: str) -> Path:
 
     video = get_video(video_id)
     spec = json.loads(video["mix_spec"])
-    total = round(sum(s["dur"] for s in spec["scenes"]), 3)
     work = WORK_DIR / video_id
-    _, media = build_dir(spec, work)
+    _, media = build_dir(spec, work, video["template"])
+    total = round(sum(s["dur"] for s in spec["scenes"]), 3)
     silent = work / "silent.mp4"
     render_video(work, silent, total)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

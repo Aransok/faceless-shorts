@@ -4,7 +4,13 @@ import unittest
 from pipeline.metadata import DESCRIPTION_MAX_CHARS, _append_credits
 from pipeline.mix_commons import license_ok
 from pipeline.mix_plan import PALETTES, clean_text, script_text, style_for, validate_spec
-from pipeline.mix_render import build_html, timings
+import tempfile
+import wave
+from pathlib import Path
+
+import numpy as np
+
+from pipeline.mix_render import build_html, score, timings
 
 
 def _raw(**over) -> dict:
@@ -40,6 +46,11 @@ class ValidateSpecTest(unittest.TestCase):
         self.assertEqual([s["type"] for s in spec["scenes"]], ["card", "counter", "grid", "card", "end"])
         self.assertEqual(spec["kicker"], "DID YOU KNOW")
         self.assertEqual(spec["scenes"][2]["labels"], [""] * 8)
+
+    def test_say_kept_plain(self):
+        raw = _raw()
+        raw["scenes"][0]["say"] = "Octopuses have <b>three</b> hearts."
+        self.assertEqual(validate_spec(raw)["scenes"][0]["say"], "Octopuses have three hearts.")
 
     def test_first_scene_must_be_card(self):
         raw = _raw()
@@ -120,3 +131,27 @@ class CreditsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ScoreVoiceTest(unittest.TestCase):
+    def test_voice_is_mixed_in_and_music_ducked(self):
+        spec = validate_spec(_raw())
+        spec["style"] = style_for("vid-1")
+        starts = timings(spec["scenes"])
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            v = tmp / "v.wav"
+            with wave.open(str(v), "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(48000)
+                w.writeframes((np.sin(np.arange(4800) * .3) * 20000).astype(np.int16).tobytes())
+            score(spec, starts, tmp / "plain.wav")
+            score(spec, starts, tmp / "voiced.wav", [v] * len(starts))
+
+            def read(p):
+                with wave.open(str(p)) as w:
+                    return np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2)[:, 0] / 32768
+            plain, voiced = read(tmp / "plain.wav"), read(tmp / "voiced.wav")
+        quiet = slice(int(48000 * 1.0), int(48000 * 3.5))  # after the 0.1 s line, before the next cut
+        self.assertLess(np.abs(voiced[quiet]).max(), np.abs(plain[quiet]).max() * 0.5)
+        line = slice(int(48000 * .16), int(48000 * .24))
+        self.assertGreater(np.abs(voiced[line]).max(), .4)

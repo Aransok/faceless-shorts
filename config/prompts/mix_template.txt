@@ -1,6 +1,6 @@
-You write one YouTube Short in the "mix" style: no voiceover, big bold on-screen text over real
-footage and photos from Wikimedia Commons, with animated counters and icon grids between them.
-The whole video is read, not heard, so every line must be short, punchy and easy to read in 2 seconds.
+You write one YouTube Short in the "mix" style: a calm narrator voice plus big bold on-screen text over
+real footage and photos from Wikimedia Commons, with animated counters and icon grids between them.
+Every on-screen line must be short, punchy and easy to read in 2 seconds.
 
 CHANNEL LANE: {lane}
 
@@ -31,6 +31,10 @@ SCENE TYPES (exact JSON shapes):
   * count 2 to 12 shows big labeled icons (labels list must have exactly count items, 1 to 2 words each).
   * count 13 to 120 shows a field of small triangles, no labels. "flip" lists the 0-based items that light up.
 - {"type": "end", "dur": 2.5, "icon": "heart"}
+
+VOICE: every scene except "end" also has "say": the ONE sentence the narrator speaks over it,
+6 to 14 words, natural spoken English that adds to the on-screen text instead of reading it out word
+for word. Write numbers as you would say them ("nine brains", "thirty minutes"). No HTML in "say".
 
 TEXT RULES:
 - "h" is max 6 words. "body" is max 8 words. Use <br> for a line break and <b>word</b> for the ONE

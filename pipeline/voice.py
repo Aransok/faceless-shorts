@@ -24,7 +24,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 EDGE_TTS_VOICE = os.environ.get("EDGE_TTS_VOICE", "en-US-AndrewNeural")
 # Chef series (sauce_recipe + food) gets its own warm voice on every video.
 CHEF_TTS_VOICE = os.environ.get("CHEF_TTS_VOICE", "en-US-GuyNeural")
-_CHEF_TEMPLATES = {"sauce_recipe", "food"}
+_CHEF_TEMPLATES = {"sauce_recipe", "food", "mix_food"}
 _voice_override: str | None = None
 
 

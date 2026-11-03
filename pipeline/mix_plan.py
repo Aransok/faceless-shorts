@@ -107,6 +107,8 @@ def validate_spec(raw: dict) -> dict:
                 raise ValueError(f"scene {i}: empty headline")
         if s.get("body"):
             out["body"] = clean_text(s["body"])
+        if s.get("say"):
+            out["say"] = plain(clean_text(s["say"], 200))
         if typ == "card":
             m = s.get("media") or {}
             query = clean_text(m.get("query"), 60)

@@ -91,7 +91,7 @@ from pipeline.voice import voice
 #
 # Replaced (2026-11-02, owner decision): every daily short is now the "mix"
 # style (Commons footage/photos, counters, icon grids, synthesized score,
-# no voiceover). Same 3/day cap. See mix_plan.py and mix_render.py. The
+# one edge-tts line per scene since 2026-11-03). Same 3/day cap. See mix_plan.py and mix_render.py. The
 # Case File templates (facts, sauce_recipe) still run via --templates.
 TEMPLATES = ("mix_facts", "mix_food", "mix_facts")
 
