@@ -2667,5 +2667,32 @@
     "approach": null,
     "renderer": "mix",
     "scheduled_publish_at": "2026-11-04T01:18:07.221785+00:00"
+  },
+  {
+    "video_id": "e4be167b-3482-47bb-8b7d-478d10defc34",
+    "youtube_video_id": "_97tI_w7ssI",
+    "uploaded_at": "2026-11-04T21:41:07.309473+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-04T23:00:02.147558+00:00"
+  },
+  {
+    "video_id": "cbcd35c0-24b0-41da-91fa-0047592360ab",
+    "youtube_video_id": "yrXWUrRRLCo",
+    "uploaded_at": "2026-11-04T21:44:34.739534+00:00",
+    "template": "mix_food",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-05T00:17:41.884970+00:00"
+  },
+  {
+    "video_id": "935dbd4e-f3d1-4a13-86b5-d775b76d738d",
+    "youtube_video_id": "0XaZBtclNq4",
+    "uploaded_at": "2026-11-04T21:48:20.733553+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-05T01:27:24.725352+00:00"
   }
 ]
