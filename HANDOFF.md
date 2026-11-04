@@ -1,5 +1,18 @@
 # Session handoff — game-night track
 
+## Mix style: no sound effects at all (2026-11-04)
+
+Owner: "I don't like when images change the sound effect, I want it removed."
+`mix_render.score()` is now the marimba bed only (plus the voice lines). Removed:
+the noise swell before every cut (that was the sound on image changes), the grid
+sweep, counter ticks, card-stat chimes and the end chime. The bed now runs
+through the end scene instead of stopping where the chime rang. This is the third
+time the owner has asked for no effects (Case File, the 11-03 "boom" commit, now),
+so the rule is pinned by tests/test_mix.py::ScoreHasNoEffectsTest: the audio must be
+identical for two films of the same length with different cuts and scene types, and
+nothing in the score may be random or louder than the bed. Do not add an effect to
+`score()` without the owner asking for it by name.
+
 ## Views push (2026-11-01, owner: "I want more views, do smth")
 
 Two small, reversible experiments on the branch (judge them after ~10 days, not before):
