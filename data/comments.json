@@ -98,5 +98,17 @@
     "text": "Would you rather try the 8\u2011minute sealed\u2011pot method or stick with the classic 15\u2011minute fry?",
     "shape": "pick_one",
     "posted_at": "2026-11-03T06:50:36.659898+00:00"
+  },
+  {
+    "video_id": "5dc56c15-3448-4a29-b17e-aeac9f7f61f4",
+    "text": "Did you realize the mantis shrimp can detect 16 color channels in just a blink?",
+    "shape": "open_question",
+    "posted_at": "2026-11-04T01:24:09.310100+00:00"
+  },
+  {
+    "video_id": "c8648fd8-3cd8-4d2f-9204-90c65bb0affa",
+    "text": "How many of you can guess which prehistoric animal\u2019s horns the statue\u2019s nose mimics?",
+    "shape": "challenge",
+    "posted_at": "2026-11-04T01:24:10.279532+00:00"
   }
 ]
