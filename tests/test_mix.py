@@ -155,3 +155,55 @@ class ScoreVoiceTest(unittest.TestCase):
         self.assertLess(np.abs(voiced[quiet]).max(), np.abs(plain[quiet]).max() * 0.5)
         line = slice(int(48000 * .16), int(48000 * .24))
         self.assertGreater(np.abs(voiced[line]).max(), .4)
+
+
+class ScoreHasNoEffectsTest(unittest.TestCase):
+    """Owner, 2026-11-04: "I don't like when images change the sound effect, I want
+    it removed". The 11-03 commit removed only the low booms and the cut whoosh was
+    still there, so this pins the whole rule: the score is the music bed and nothing
+    else. If any effect is tied to a cut or a scene type, two films of the same
+    length with different cuts and scene types stop producing the same audio."""
+
+    @staticmethod
+    def _read(path: Path) -> np.ndarray:
+        with wave.open(str(path)) as w:
+            return np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2)[:, 0] / 32768
+
+    def _score(self, raw: dict, seed: int | None = None) -> np.ndarray:
+        spec = validate_spec(raw)
+        spec["style"] = style_for("vid-1")
+        if seed is not None:
+            spec["style"]["seed"] = seed
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "s.wav"
+            score(spec, timings(spec["scenes"]), out)
+            return self._read(out)
+
+    def test_same_length_different_cuts_and_scene_types_give_identical_audio(self):
+        a = self._score(_raw())  # card 4, counter 4, grid 5, card 4, end 3 = 20 s
+        other = _raw(scenes=[
+            {"type": "card", "dur": 5, "h": "One", "media": {"query": "octopus", "kind": "video"}},
+            {"type": "card", "dur": 4, "h": "Two", "media": {"query": "octopus", "kind": "image"}},
+            {"type": "card", "dur": 3.5, "h": "Three", "media": {"query": "octopus", "kind": "video"}},
+            {"type": "card", "dur": 4.5, "h": "Four", "media": {"query": "octopus", "kind": "video"}},
+            {"type": "end", "dur": 3},
+        ])  # 20 s, cuts at 5, 9, 12.5, 17 (card scenes are 3.5-5 s, see mix_plan.DUR_RANGE)
+        b = self._score(other)
+        self.assertEqual(len(a), len(b))
+        self.assertTrue(np.array_equal(a, b), "the score changed with the cuts or scene types: an effect is tied to them")
+
+    def test_nothing_in_the_score_is_random(self):
+        self.assertTrue(np.array_equal(self._score(_raw(), seed=1), self._score(_raw(), seed=999)))
+
+    def test_the_music_runs_through_the_end_scene_instead_of_dropping_out(self):
+        x = self._score(_raw())
+        end = x[int(48000 * 17.5):int(48000 * 19.0)]  # the end scene starts at 17 s
+        self.assertGreater(20 * np.log10(np.sqrt(np.mean(end ** 2)) + 1e-9), -35)
+
+    def test_no_burst_above_the_bed_anywhere(self):
+        x = self._score(_raw())
+        win = 48000 // 10
+        levels = np.array([np.sqrt(np.mean(x[i:i + win] ** 2)) for i in range(0, len(x) - win, win)])
+        body = levels[3:-8]  # skip the fade-in and the fade-out
+        self.assertLess(body.max(), np.median(body) * 3, "something louder than the music bed is in the score")
+

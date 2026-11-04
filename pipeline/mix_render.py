@@ -304,12 +304,20 @@ def narrate(spec: dict, template: str, work: Path) -> list[Path]:
 
 
 def score(spec: dict, starts: list[float], out_path: Path, voices: list[Path] | None = None) -> None:
-    """Marimba bed + soft whooshes on cuts + counter ticks + end chime, ducked under the voice lines."""
+    """Marimba bed under the voice lines. No sound effects.
+
+    2026-11-04 (owner: "I don't like when images change the sound effect, I want
+    it removed"): the noise swell before every cut, the grid sweep, the counter
+    ticks, the card-stat chimes and the end chime are gone. The 11-03 commit
+    dropped only the low booms and the cut sound was still there, which is the
+    one-effect-at-a-time pattern the owner keeps hitting; this takes all of them
+    out. The bed also plays through the end scene now (it used to stop where the
+    end chime rang, which would leave the closing line over silence). The score
+    depends only on the total length and the style's chords and tempo, never on
+    scene types or cuts (tests/test_mix.py pins that)."""
     SR = 48000
     scenes, st = spec["scenes"], spec["style"]
     total = sum(s["dur"] for s in scenes)
-    end_at = next((a for a, s in zip(starts, scenes) if s["type"] == "end"), total)
-    rng = np.random.default_rng(st["seed"])
     out = np.zeros(int(SR * total))
 
     def add(sig: np.ndarray, at: float, gain: float = 1.0) -> None:
@@ -322,31 +330,11 @@ def score(spec: dict, starts: list[float], out_path: Path, voices: list[Path] | 
         t = np.arange(int(d * SR)) / SR
         return sum(a * np.sin(2 * np.pi * f * (k + 1) * t) for k, a in enumerate(harm)) * np.exp(-t * decay) * np.minimum(1, t / .004)
 
-    def swell(d: float) -> np.ndarray:
-        n = np.convolve(rng.standard_normal(int(d * SR)), np.ones(40) / 40, "same")
-        return n * (np.arange(len(n)) / len(n)) ** 2.5 * 3
-
     beat = 60 / st["bpm"] / 2
     chords = st["chords"]
-    for s in range(int(end_at / beat)):
+    for s in range(int(total / beat)):  # through the end scene too; the fade-out below closes it
         ch = chords[(s // 8) % len(chords)]
         add(tone(ch[[0, 2, 1, 3, 2, 1, 3, 2][s % 8]], .5, 9), s * beat, .16 if s % 2 else .22)
-    for c in starts[1:]:
-        add(swell(.45), c - .45, .25)
-    for a, s in zip(starts, scenes):
-        if s["type"] == "counter":
-            t = 0.0
-            while t < 1.4:
-                add(tone(2400, .03, 120, (1,)), a + .6 + t, .25)
-                t += .035 + .09 * (t / 1.4) ** 2
-        if s["type"] == "grid":
-            tt = np.arange(int(1.2 * SR)) / SR
-            add(np.sin(2 * np.pi * (600 + 900 * tt / 1.2) * tt) * (tt / 1.2) * .5, a + .2, .18)
-        if s["type"] == "card" and s.get("stats"):
-            for j in range(len(s["stats"])):
-                add(tone(1046.5 * (1.25 ** j), .25, 14), a + .7 + .35 * j, .14)
-    for j, f in enumerate((523.3, 659.3, 784.0, 1046.5)):
-        add(tone(f, 1.5, 3), end_at + .1 + j * .07, .2)
     fade = np.minimum(1, np.arange(len(out)) / (SR * .3)) * np.minimum(1, (len(out) - np.arange(len(out))) / (SR * .8))
     out = np.tanh(out * fade * 1.2) * .85
     if voices:
