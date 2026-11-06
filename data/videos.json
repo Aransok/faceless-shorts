@@ -2712,5 +2712,23 @@
     "approach": null,
     "renderer": "mix",
     "scheduled_publish_at": "2026-11-06T00:04:14.854435+00:00"
+  },
+  {
+    "video_id": "4a670ce0-e804-4e27-a47e-085c50ecbbfb",
+    "youtube_video_id": "SU5Qgs5TfL4",
+    "uploaded_at": "2026-11-06T21:12:26.847588+00:00",
+    "template": "mix_food",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-06T22:24:52.964385+00:00"
+  },
+  {
+    "video_id": "15e49d66-d884-4335-8e44-db0439f50fae",
+    "youtube_video_id": "F1jkzO5uW5g",
+    "uploaded_at": "2026-11-06T21:16:07.735349+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-06T23:36:05.900877+00:00"
   }
 ]
