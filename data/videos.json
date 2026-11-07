@@ -2730,5 +2730,23 @@
     "approach": null,
     "renderer": "mix",
     "scheduled_publish_at": "2026-11-06T23:36:05.900877+00:00"
+  },
+  {
+    "video_id": "e517ea9f-7720-449c-a670-a7245754430b",
+    "youtube_video_id": "I8T4jKqjNFY",
+    "uploaded_at": "2026-11-07T19:42:59.244490+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-07T21:05:42.505940+00:00"
+  },
+  {
+    "video_id": "3e250c94-e3e3-4aaf-a2fe-1455df86b93e",
+    "youtube_video_id": "OtQU0u8v10A",
+    "uploaded_at": "2026-11-07T19:46:51.160677+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-07T22:21:37.279821+00:00"
   }
 ]
