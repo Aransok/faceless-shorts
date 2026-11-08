@@ -128,5 +128,17 @@
     "text": "Drop a comment if you actually knew this one.",
     "shape": "pool",
     "posted_at": "2026-11-07T02:50:48.178070+00:00"
+  },
+  {
+    "video_id": "e517ea9f-7720-449c-a670-a7245754430b",
+    "text": "I bet half of you can name all three fingerprint types shown, who's right?",
+    "shape": "challenge",
+    "posted_at": "2026-11-08T00:38:40.369639+00:00"
+  },
+  {
+    "video_id": "3e250c94-e3e3-4aaf-a2fe-1455df86b93e",
+    "text": "Which of the three cat names, \u201cMaynila,\u201d \u201cHimala,\u201d or \u201cMula sa Langit\u201d, did you think matched their personality best?",
+    "shape": "open_question",
+    "posted_at": "2026-11-08T00:38:42.245928+00:00"
   }
 ]
