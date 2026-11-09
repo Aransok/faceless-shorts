@@ -2766,5 +2766,14 @@
     "approach": null,
     "renderer": "mix",
     "scheduled_publish_at": "2026-11-08T22:24:50.184182+00:00"
+  },
+  {
+    "video_id": "e997f31f-47d9-40ea-b61a-4e9319cfb9ed",
+    "youtube_video_id": "ob15uuep--M",
+    "uploaded_at": "2026-11-09T23:58:50.489979+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-10T01:21:29.369957+00:00"
   }
 ]
