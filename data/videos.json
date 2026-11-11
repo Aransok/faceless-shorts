@@ -2775,5 +2775,23 @@
     "approach": null,
     "renderer": "mix",
     "scheduled_publish_at": "2026-11-10T01:21:29.369957+00:00"
+  },
+  {
+    "video_id": "912b7eff-f7e1-4314-a396-b8c82e10c209",
+    "youtube_video_id": "qQddy59Mpso",
+    "uploaded_at": "2026-11-11T22:26:52.073075+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-11T23:48:29.661660+00:00"
+  },
+  {
+    "video_id": "cd56d39f-f466-4a48-ae32-60d15e161448",
+    "youtube_video_id": "2sNSG628e-M",
+    "uploaded_at": "2026-11-11T22:30:54.049456+00:00",
+    "template": "mix_facts",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-12T01:01:11.881698+00:00"
   }
 ]
