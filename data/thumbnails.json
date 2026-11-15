@@ -1627,5 +1627,15 @@
       0.0
     ],
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/65486c44-1ac4-4772-b4b7-5b619553ef98_thumbnail.jpg"
+  },
+  {
+    "video_id": "709a09a7-b276-4608-900f-b8e25c29b7a8",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/709a09a7-b276-4608-900f-b8e25c29b7a8_thumbnail.jpg"
   }
 ]
