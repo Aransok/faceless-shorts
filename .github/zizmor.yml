@@ -1,0 +1,12 @@
+# zizmor config (GitHub Actions security audit). Run: zizmor .github/workflows
+rules:
+  artipacked:
+    # Every workflow commits state.db (or a log) back to main at the end, so the
+    # checkout must keep its token. No workflow uploads artifacts, which is the
+    # leak this rule guards against.
+    disable: true
+  adhoc-packages:
+    # `npm install -g @anthropic-ai/claude-code` is on purpose: the pipeline
+    # wants the current Claude Code each run. Pin a version here if a bad
+    # release ever breaks a run.
+    disable: true
