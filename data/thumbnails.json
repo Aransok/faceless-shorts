@@ -1687,5 +1687,35 @@
       0.0
     ],
     "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/131f12ff-4646-4d1a-ae85-a34115f2c40f_thumbnail.jpg"
+  },
+  {
+    "video_id": "fc1dec8b-907d-4843-82e8-3a7b1bea92c6",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/fc1dec8b-907d-4843-82e8-3a7b1bea92c6_thumbnail.jpg"
+  },
+  {
+    "video_id": "43354349-2390-4314-bf14-92c212152186",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/43354349-2390-4314-bf14-92c212152186_thumbnail.jpg"
+  },
+  {
+    "video_id": "3fe3af15-885e-4b14-9965-1a0051dbc268",
+    "method": "frame",
+    "chosen_timestamp": 0.0,
+    "candidate_timestamps": [
+      0.0,
+      0.0
+    ],
+    "thumbnail_path": "/home/runner/work/faceless-shorts/faceless-shorts/assets/output/3fe3af15-885e-4b14-9965-1a0051dbc268_thumbnail.jpg"
   }
 ]
