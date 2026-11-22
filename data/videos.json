@@ -2946,5 +2946,14 @@
     "approach": null,
     "renderer": "mix",
     "scheduled_publish_at": "2026-11-21T23:38:41.064823+00:00"
+  },
+  {
+    "video_id": "8b4f9418-170e-4ebf-85b9-87f985adb15a",
+    "youtube_video_id": "pjQ9VdC1SME",
+    "uploaded_at": "2026-11-22T21:24:22.101200+00:00",
+    "template": "mix_food",
+    "approach": null,
+    "renderer": "mix",
+    "scheduled_publish_at": "2026-11-22T22:42:39.743301+00:00"
   }
 ]
